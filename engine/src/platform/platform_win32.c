@@ -128,26 +128,26 @@ uint8_t platform_poll_messages(platform_state* plat_state)
 
 void platform_console_write(const char *message, uint8_t colour)
 {
-    HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
-    // FATAL,ERROR,WARN,INFO,DEBUG,TRACE
-    static uint8_t levels[6] = {64, 4, 6, 2, 1, 8};
-    SetConsoleTextAttribute(console_handle, levels[colour]);
-    OutputDebugStringA(message);
-    uint64_t length = strlen(message);
-    LPDWORD number_written = 0;
-    WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), message, (DWORD)length, number_written, 0);
+	HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	// FATAL,ERROR,WARN,INFO,DEBUG,TRACE
+	static uint8_t levels[6] = {64, 4, 6, 2, 1, 8};
+	SetConsoleTextAttribute(console_handle, levels[colour]);
+	OutputDebugStringA(message);
+	uint64_t length = strlen(message);
+	LPDWORD number_written = 0;
+	WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), message, (DWORD)length, number_written, 0);
 }
 
 void platform_console_write_error(const char *message, uint8_t colour)
 {
-    HANDLE console_handle = GetStdHandle(STD_ERROR_HANDLE);
-    // FATAL,ERROR,WARN,INFO,DEBUG,TRACE
-    static uint8_t levels[6] = {64, 4, 6, 2, 1, 8};
-    SetConsoleTextAttribute(console_handle, levels[colour]);
-    OutputDebugStringA(message);
-    uint64_t length = strlen(message);
-    LPDWORD number_written = 0;
-    WriteConsoleA(GetStdHandle(STD_ERROR_HANDLE), message, (DWORD)length, number_written, 0);
+	HANDLE console_handle = GetStdHandle(STD_ERROR_HANDLE);
+	// FATAL,ERROR,WARN,INFO,DEBUG,TRACE
+	static uint8_t levels[6] = {64, 4, 6, 2, 1, 8};
+	SetConsoleTextAttribute(console_handle, levels[colour]);
+	OutputDebugStringA(message);
+	uint64_t length = strlen(message);
+	LPDWORD number_written = 0;
+	WriteConsoleA(GetStdHandle(STD_ERROR_HANDLE), message, (DWORD)length, number_written, 0);
 }
 
 double platform_get_absolute_time()
@@ -212,11 +212,11 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, uint32_t msg, WPARAM w_param, 
 //			}
 		} break;
 		case WM_LBUTTONDOWN:
-        case WM_MBUTTONDOWN:
-        case WM_RBUTTONDOWN:
-        case WM_LBUTTONUP:
-        case WM_MBUTTONUP:
-        case WM_RBUTTONUP:
+		case WM_MBUTTONDOWN:
+		case WM_RBUTTONDOWN:
+		case WM_LBUTTONUP:
+		case WM_MBUTTONUP:
+		case WM_RBUTTONUP:
 		{
 //			int pressed = (msg == WM_LBUTTONDOWN || msg == WM_RBUTTONDOWN || msg == WM_MBUTTONDOWN);
 			// TODO: Input processing
