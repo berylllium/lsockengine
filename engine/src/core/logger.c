@@ -6,7 +6,7 @@
 
 #include "platform/platform.h"
 
-int8_t logging_init()
+int8_t logger_init()
 {
 	// TODO: Create log file, etc
 	return 1;

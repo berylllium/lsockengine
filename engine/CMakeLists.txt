@@ -1,7 +1,9 @@
 
 set(LISE_SOURCES
 	platform/platform_win32.c
+	platform/platform_linux.c
 	core/logger.c
+	core/application.c
 )
 list(TRANSFORM LISE_SOURCES PREPEND "src/")
 
@@ -52,6 +54,7 @@ if (UNIX)
 	target_compile_definitions(lise PUBLIC L_ISLINUX)
 
 	message(STATUS "Generating build files specifically for linux.")
+	
 
 	#	if(NOT EXISTS "${CMAKE_BINARY_DIR}/resources")
 	#		message(STATUS "Creating symlink for resources.")

@@ -22,7 +22,7 @@ typedef enum log_level
 	LOG_LEVEL_TRACE = 5
 } log_level;
 
-int8_t logging_init();
+int8_t logger_init();
 void logging_shutdown();
 
 LAPI void llog(log_level level, const char* message, ...);
