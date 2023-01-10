@@ -11,7 +11,7 @@ int8_t game_initialize(game* game_instance)
 	LINFO("A test message: %f", 3.14f);
 	LDEBUG("A test message: %f", 3.14f);
 	LTRACE("A test message: %f", 3.14f);
-
+	
     return 1;
 }
 

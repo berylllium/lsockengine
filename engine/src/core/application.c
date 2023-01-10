@@ -95,5 +95,3 @@ int8_t application_run()
 	return 1;
 }
 
-
-
