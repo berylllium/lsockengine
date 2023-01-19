@@ -1,10 +1,10 @@
-#include "core/application.h"
+#include "core/application.hpp"
 
-#include "game_type.h"
-#include "core/logger.h"
-#include "platform/platform.h"
+#include "game_type.hpp"
+#include "core/logger.hpp"
+#include "platform/platform.hpp"
 
-typedef struct application_state
+struct application_state
 {
 	int8_t is_initialized;
 	game* game_instance;
@@ -14,16 +14,16 @@ typedef struct application_state
 	int16_t width;
 	int16_t height;
 	double last_time;
-} application_state;
+};
 
 static application_state app_state;
 
-int8_t application_create(game* game_instance)
+bool application_create(game* game_instance)
 {
 	if (app_state.is_initialized)
 	{
 		LERROR("'application_create' has been called more than once.");
-		return 0;
+		return false;
 	}
 
 	app_state.game_instance = game_instance;
@@ -43,22 +43,22 @@ int8_t application_create(game* game_instance)
 				game_instance->app_create_config.window_height))
 	{
 		LFATAL("Error setting platform up.");
-		return 0;
+		return false;
 	}
 
 	// Run consumer initialization function
 	if (!app_state.game_instance->initialize(game_instance))
 	{
 		LFATAL("Consumer failed to initialize");
-		return 0;
+		return false;
 	}
 
 	app_state.is_initialized = 1;
 
-	return 1;
+	return true;
 }
 
-int8_t application_run()
+bool application_run()
 {
 	while (app_state.is_running)
 	{
@@ -92,6 +92,6 @@ int8_t application_run()
 	
 	platform_shutdown(&app_state.platform);
 
-	return 1;
+	return true;
 }
 

@@ -1,6 +1,2 @@
 build/
-.cache/
 .vscode/
-
-*.vim
-

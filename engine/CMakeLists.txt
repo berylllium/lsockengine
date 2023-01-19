@@ -1,9 +1,9 @@
 
 set(LISE_SOURCES
-	platform/platform_win32.c
-	platform/platform_linux.c
-	core/logger.c
-	core/application.c
+	core/application.cpp
+	core/logger.cpp
+	platform/platform_win32.cpp
+	platform/platform_linux.cpp
 )
 list(TRANSFORM LISE_SOURCES PREPEND "src/")
 
@@ -67,4 +67,3 @@ if (UNIX)
 	#	endif()
 
 endif (UNIX)
-

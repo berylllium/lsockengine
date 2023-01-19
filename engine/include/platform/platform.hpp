@@ -1,13 +1,13 @@
 #pragma once
 
-#include "definitions.h"
+#include "definitions.hpp"
 
-typedef struct platform_state
+struct platform_state
 {
 	void* internal_state;
-} platform_state;
+};
 
-LAPI uint8_t platform_init(
+LAPI bool platform_init(
 	platform_state* plat_state,
 	const char* application_name,
 	int32_t x, int32_t y,
@@ -15,7 +15,7 @@ LAPI uint8_t platform_init(
 
 LAPI void platform_shutdown(platform_state* plat_state);
 
-LAPI uint8_t platform_poll_messages(platform_state* plat_state);
+LAPI bool platform_poll_messages(platform_state* plat_state);
 
 void platform_console_write(const char* message, uint8_t color);
 void platform_console_write_error(const char* message, uint8_t color);

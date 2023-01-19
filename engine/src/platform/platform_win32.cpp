@@ -1,4 +1,4 @@
-#include "platform/platform.h"
+#include "platform/platform.hpp"
 
 #ifdef L_ISWIN
 
@@ -19,7 +19,7 @@ static LARGE_INTEGER start_time;
 
 LRESULT CALLBACK win32_process_message(HWND hwnd, uint32_t msg, WPARAM w_param, LPARAM l_param);
 
-uint8_t platform_init(
+bool platform_init(
 	platform_state* plat_state,
 	const char* application_name,
 	int32_t x, int32_t y,
@@ -41,13 +41,13 @@ uint8_t platform_init(
 	wc.hInstance = state->h_instance;
 	wc.hIcon = icon;
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wc.hbrBackground = NULL;
+	wc.hbrBackground = nullptr;
 	wc.lpszClassName = window_class_name;
 
 	if (!RegisterClassA(&wc))
 	{
 		MessageBoxA(0, "Window registration failed.", "Error", MB_ICONEXCLAMATION | MB_OK);
-		return 0;
+		return false;
 	}
 
 	uint32_t client_x = x;
@@ -79,11 +79,11 @@ uint8_t platform_init(
 
 	if (handle == 0)
 	{
-		MessageBoxA(NULL, "Window creation failed.", "Error", MB_ICONEXCLAMATION | MB_OK);
+		MessageBoxA(nullptr, "Window creation failed.", "Error", MB_ICONEXCLAMATION | MB_OK);
 
 		// TODO: Add logger fatal log.
 
-		return 0;
+		return false;
 	}
 
 	state->hwnd = handle;
@@ -100,7 +100,7 @@ uint8_t platform_init(
 	clock_frequency = 1.0 / (double) freq.QuadPart;
 	QueryPerformanceCounter(&start_time);
 
-	return 1;
+	return true;
 }
 
 void platform_shutdown(platform_state* plat_state)
@@ -114,7 +114,7 @@ void platform_shutdown(platform_state* plat_state)
 	}
 }
 
-uint8_t platform_poll_messages(platform_state* plat_state)
+bool platform_poll_messages(platform_state* plat_state)
 {
 	MSG message;
 	while (PeekMessageA(&message, NULL, 0, 0, PM_REMOVE))
@@ -123,7 +123,7 @@ uint8_t platform_poll_messages(platform_state* plat_state)
 		DispatchMessageA(&message);
 	}
 
-	return 1;
+	return true;
 }
 
 void platform_console_write(const char *message, uint8_t colour)

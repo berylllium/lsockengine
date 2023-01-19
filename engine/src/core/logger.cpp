@@ -1,15 +1,15 @@
-#include "core/logger.h"
+#include "core/logger.hpp"
 
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "platform/platform.h"
+#include "platform/platform.hpp"
 
-int8_t logger_init()
+bool logger_init()
 {
 	// TODO: Create log file, etc
-	return 1;
+	return true;
 }
 
 void logging_shutdown()

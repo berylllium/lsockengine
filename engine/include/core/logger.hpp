@@ -1,6 +1,6 @@
 #pragma once
 
-#include "definitions.h"
+#include "definitions.hpp"
 
 #define LOG_WARN_ENABLED 1
 #define LOG_INFO_ENABLED 1
@@ -12,7 +12,7 @@
 	#define LOG_TRACE_ENABLED 0
 #endif
 
-typedef enum log_level
+enum log_level
 {
 	LOG_LEVEL_FATAL = 0,
 	LOG_LEVEL_ERROR = 1,
@@ -20,9 +20,9 @@ typedef enum log_level
 	LOG_LEVEL_INFO = 3,
 	LOG_LEVEL_DEBUG = 4,
 	LOG_LEVEL_TRACE = 5
-} log_level;
+};
 
-int8_t logger_init();
+bool logger_init();
 void logging_shutdown();
 
 LAPI void llog(log_level level, const char* message, ...);

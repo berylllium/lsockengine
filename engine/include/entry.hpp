@@ -1,9 +1,9 @@
 #pragma once
 
-#include "definitions.h"
+#include "definitions.hpp"
 
-#include "core/logger.h"
-#include "game_type.h"
+#include "core/logger.hpp"
+#include "game_type.hpp"
 
 int8_t create_game(game* out_game);
 

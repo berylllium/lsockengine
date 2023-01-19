@@ -1,8 +1,8 @@
-#include "game.h"
+#include "game.hpp"
 
-#include <core/logger.h>
+#include <core/logger.hpp>
 
-int8_t game_initialize(game* game_instance) 
+bool game_initialize(game* game_instance) 
 {
 
 	LFATAL("A test message: %f", 3.14f);
@@ -12,17 +12,17 @@ int8_t game_initialize(game* game_instance)
 	LDEBUG("A test message: %f", 3.14f);
 	LTRACE("A test message: %f", 3.14f);
 	
-    return 1;
+    return true;
 }
 
-int8_t game_update(game* game_instance, float delta_time) 
+bool game_update(game* game_instance, float delta_time) 
 {
-    return 1;
+    return true;
 }
 
-int8_t game_render(game* game_instance, float delta_time) 
+bool game_render(game* game_instance, float delta_time) 
 {
-    return 1;
+    return true;
 }
 
 void game_on_resize(game* game_instance, uint32_t width, uint32_t height) 
