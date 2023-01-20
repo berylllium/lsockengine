@@ -2,6 +2,7 @@
 
 #include "game_type.hpp"
 #include "core/logger.hpp"
+#include "core/event.hpp"
 #include "platform/platform.hpp"
 
 struct application_state
@@ -30,6 +31,7 @@ bool application_create(game* game_instance)
 
 	// Initialize subsystems
 	logger_init();
+	event_init();
 	
 	app_state.is_running = 1;
 	app_state.is_suspended = 0;
@@ -89,6 +91,7 @@ bool application_run()
 	app_state.is_running = 0;
 
 	// Perform shutdown code
+	event_shutdown();
 	
 	platform_shutdown(&app_state.platform);
 

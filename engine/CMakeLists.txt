@@ -1,6 +1,7 @@
 
 set(LISE_SOURCES
 	core/application.cpp
+	core/event.cpp
 	core/logger.cpp
 	platform/platform_win32.cpp
 	platform/platform_linux.cpp
