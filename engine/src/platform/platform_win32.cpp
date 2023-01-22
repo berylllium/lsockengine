@@ -3,6 +3,7 @@
 #ifdef L_ISWIN
 
 #include "core/event.hpp"
+#include "core/input.hpp"
 
 #include <windows.h>
 #include <windowsx.h>
@@ -195,8 +196,11 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, uint32_t msg, WPARAM w_param, 
 		case WM_SYSKEYUP:
 		{
 			// Key pressed / released
-//			int pressed = (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN);
+			int pressed = (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN);
+			keys key = (keys) w_param;
+
 			// TODO: Input processing
+			input_process_keys(key, pressed);
 		} break;
 		case WM_MOUSEMOVE:
 		{
