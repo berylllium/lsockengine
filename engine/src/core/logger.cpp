@@ -1,8 +1,8 @@
 #include "core/logger.hpp"
 
-#include <string.h>
-#include <stdio.h>
-#include <stdarg.h>
+#include <string>
+#include <sstream>
+#include <cstdarg>
 
 #include "platform/platform.hpp"
 
@@ -23,21 +23,42 @@ void llog(log_level level, const char* message, ...)
 
 	int8_t is_error = level <= LOG_LEVEL_ERROR;
 
-	uint64_t log_entry_length = 32000;
-	char out_message[log_entry_length];
-	memset(out_message, 0, sizeof(out_message));
+	std::string formatted;
 
-	__builtin_va_list arg_ptr;
-	va_start(arg_ptr, message);
-	vsnprintf(out_message, log_entry_length, message, arg_ptr);
-	va_end(arg_ptr);
+	va_list args, args_copy;
+	
+	va_start(args, message);
+	va_copy(args_copy, args);
 
-	char out_message2[log_entry_length];
-	sprintf(out_message2, "$%s%s\n", level_strings[level], out_message);
+	int len = vsnprintf(nullptr, 0, message, args);
+
+	if (len < 0)
+	{
+		LERROR("Encoding error in llog, vsnprintf.");
+
+		va_end(args);
+		va_end(args_copy);
+
+		return;
+	}	
+
+	if (len > 0)
+	{
+		formatted.resize(len);
+
+		vsnprintf(formatted.data(), len+1, message, args_copy);
+	}
+
+	va_end(args);
+	va_end(args_copy);
+
+	std::stringstream ss;
+	
+	ss << level_strings[level] << formatted << "\n";
 
 	if (is_error)
-		platform_console_write_error(out_message2, level);
+		platform_console_write_error(ss.str().c_str(), level);
 	else
-		platform_console_write(out_message2, level);
+		platform_console_write(ss.str().c_str(), level);
 }
 
