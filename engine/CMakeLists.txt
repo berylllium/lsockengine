@@ -5,6 +5,7 @@ set(LISE_HEADERS
 	game_type.hpp
 	container/vector2.hpp
 	core/application.hpp
+	core/clock.hpp
 	core/event.hpp
 	core/input.hpp
 	core/logger.hpp
@@ -15,6 +16,7 @@ list(TRANSFORM LISE_HEADERS PREPEND "include/")
 set(LISE_SOURCES
 	container/vector2.cpp
 	core/application.cpp
+	core/clock.cpp
 	core/event.cpp
 	core/input.cpp
 	core/logger.cpp
