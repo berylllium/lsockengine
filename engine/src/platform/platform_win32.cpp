@@ -199,15 +199,15 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, uint32_t msg, WPARAM w_param, 
 			int pressed = (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN);
 			keys key = (keys) w_param;
 
-			// TODO: Input processing
 			input_process_keys(key, pressed);
 		} break;
 		case WM_MOUSEMOVE:
 		{
 			// Mouse move
-//			int32_t x_position = GET_X_LPARAM(l_param);
-//			int32_t y_position = GET_Y_LPARAM(l_param);
-			// TODO: Input processing
+			int32_t x_position = GET_X_LPARAM(l_param);
+			int32_t y_position = GET_Y_LPARAM(l_param);
+		
+			input_process_mouse_move(lise::vector2i { x_position, y_position });
 		} break;
 		case WM_MOUSEWHEEL:
 		{

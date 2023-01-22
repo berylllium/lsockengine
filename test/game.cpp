@@ -20,6 +20,10 @@ bool game_initialize(game* game_instance)
 	event_add_listener(engine_event_codes::ON_KEY_UP, [](uint16_t event_code, event_context ctx) {
 		LDEBUG("Key released: %d", ctx.data.u32[0]);
 	});
+
+	event_add_listener(engine_event_codes::ON_MOUSE_MOVE, [](uint16_t event_code, event_context ctx) {
+		LDEBUG("Mouse moved: %d, %d", ctx.data.u32[0], ctx.data.u32[1]);
+	});
 	
     return true;
 }
