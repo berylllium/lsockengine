@@ -66,7 +66,7 @@ void input_process_mouse_move(lise::vector2i pos)
 	}
 }
 
-void input_process_mouse_scroll(int8_t dz)
+void input_process_mouse_wheel(int8_t dz)
 {
 	// No internal state to handle.
 

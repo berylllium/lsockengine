@@ -211,13 +211,14 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, uint32_t msg, WPARAM w_param, 
 		} break;
 		case WM_MOUSEWHEEL:
 		{
-//			int32_t z_delta = GET_WHEEL_DELTA_WPARAM(w_param);
-//			if (z_delta != 0)
-//			{
-//				// Normalize input in range [-1, 1]
-//				z_delta = (z_delta < 0) : -1 : 1;
-//				// TODO: Input processing
-//			}
+			int8_t dz = GET_WHEEL_DELTA_WPARAM(w_param);
+			if (dz != 0)
+			{
+				// Normalize input in range [-1, 1]
+				dz = (dz < 0) ? -1 : 1;
+			
+				input_process_mouse_wheel(dz);
+			}
 		} break;
 		case WM_LBUTTONDOWN:
 		case WM_MBUTTONDOWN:
