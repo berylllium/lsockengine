@@ -1,14 +1,29 @@
 
+set(LISE_HEADERS
+	definitions.hpp
+	entry.hpp
+	game_type.hpp
+	container/vector2.hpp
+	core/application.hpp
+	core/event.hpp
+	core/input.hpp
+	core/logger.hpp
+	platform/platform.hpp
+)
+list(TRANSFORM LISE_HEADERS PREPEND "include/")
+
 set(LISE_SOURCES
+	container/vector2.cpp
 	core/application.cpp
 	core/event.cpp
+	core/input.cpp
 	core/logger.cpp
 	platform/platform_win32.cpp
 	platform/platform_linux.cpp
 )
 list(TRANSFORM LISE_SOURCES PREPEND "src/")
 
-add_library(lise SHARED ${LISE_SOURCES})
+add_library(lise SHARED ${LISE_SOURCES} ${LISE_HEADERS})
 target_include_directories(lise PUBLIC include/)
 target_compile_definitions(lise PRIVATE L_EXPORT)
 target_compile_options(lise PRIVATE -fvisibility=hidden)

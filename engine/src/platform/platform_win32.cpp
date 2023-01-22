@@ -173,7 +173,7 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, uint32_t msg, WPARAM w_param, 
 			return 1;
 		case WM_CLOSE:
 			// TODO: Fire an event for the application to quit.
-			fire_event(engine_event_codes::ON_WINDOW_CLOSE, event_context {});
+			event_fire(engine_event_codes::ON_WINDOW_CLOSE, event_context {});
 
 			return 0;
 		case WM_DESTROY:

@@ -15,7 +15,7 @@ bool event_init()
 {
 	for (int i = engine_event_codes::ON_WINDOW_CLOSE; i < engine_event_codes::ON_WINDOW_RESIZE; i++)
 	{
-		register_event(i);
+		event_register(i);
 	}
 
 	return true;
@@ -26,7 +26,7 @@ void event_shutdown()
 
 }
 
-void register_event(uint16_t event_code)
+void event_register(uint16_t event_code)
 {
 	event_entry entry {};
 	entry.event_code = event_code;
@@ -34,7 +34,7 @@ void register_event(uint16_t event_code)
 	REGISTERED_EVENTS.push_back(entry);
 }
 
-void fire_event(uint16_t event_code, event_context ctx)
+void event_fire(uint16_t event_code, event_context ctx)
 {
 	for (int entry = 0; entry < REGISTERED_EVENTS.size(); entry++)
 	{
@@ -50,7 +50,7 @@ void fire_event(uint16_t event_code, event_context ctx)
 	}
 }
 
-void add_listener(uint16_t event_code, on_event_cb listener)
+void event_add_listener(uint16_t event_code, on_event_cb listener)
 {
 	for (int entry = 0; entry < REGISTERED_EVENTS.size(); entry++)
 	{

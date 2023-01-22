@@ -7,15 +7,17 @@
 
 struct application_state
 {
-	int8_t is_initialized;
+	bool is_initialized;
 	game* game_instance;
-	int8_t is_running;
-	int8_t is_suspended;
+	bool is_running;
+	bool is_suspended;
 	platform_state platform;
 	int16_t width;
 	int16_t height;
 	double last_time;
 };
+
+void on_window_close(uint16_t event_code, event_context ctx);
 
 static application_state app_state;
 
@@ -33,8 +35,8 @@ bool application_create(game* game_instance)
 	logger_init();
 	event_init();
 	
-	app_state.is_running = 1;
-	app_state.is_suspended = 0;
+	app_state.is_running = true;
+	app_state.is_suspended = false;
 
 	if (!platform_init(
 				&app_state.platform,
@@ -55,7 +57,10 @@ bool application_create(game* game_instance)
 		return false;
 	}
 
-	app_state.is_initialized = 1;
+	// Register events
+	event_add_listener(engine_event_codes::ON_WINDOW_CLOSE, on_window_close);
+
+	app_state.is_initialized = true;
 
 	return true;
 }
@@ -67,7 +72,7 @@ bool application_run()
 		if (!platform_poll_messages(&app_state.platform))
 		{
 			LFATAL("Failed to poll platform messages");
-			app_state.is_running = 0;
+			app_state.is_running = false;
 		}
 		
 		if (!app_state.is_suspended)
@@ -75,20 +80,20 @@ bool application_run()
 			if (!app_state.game_instance->update(app_state.game_instance, 0.0f))
 			{
 				LFATAL("Consumer game update failed.");
-				app_state.is_running = 0;
+				app_state.is_running = false;
 				break;
 			}
 
 			if (!app_state.game_instance->render(app_state.game_instance, 0.0f))
 			{
 				LFATAL("Consumer game render failed.");
-				app_state.is_running = 0;
+				app_state.is_running = false;
 				break;
 			}
 		}
 	}
 
-	app_state.is_running = 0;
+	app_state.is_running = false;
 
 	// Perform shutdown code
 	event_shutdown();
@@ -98,3 +103,7 @@ bool application_run()
 	return true;
 }
 
+void on_window_close(uint16_t event_code, event_context ctx)
+{
+	app_state.is_running = false;
+}

@@ -6,6 +6,11 @@ enum engine_event_codes
 {
 	ON_WINDOW_CLOSE,
 
+	ON_MOUSE_BUTTON_DOWN,
+	ON_MOUSE_BUTTON_UP,
+	ON_MOUSE_MOVE,
+	ON_MOUSE_WHEEL_MOVE,
+
 	ON_KEY_DOWN,
 	ON_KEY_UP,
 
@@ -33,13 +38,13 @@ struct event_context
 	} data;
 };
 
-typedef bool (*on_event_cb)(uint16_t event_code, event_context ctx);
+typedef void (*on_event_cb)(uint16_t event_code, event_context ctx);
 
 bool event_init();
 void event_shutdown();
 
-LAPI void register_event(uint16_t event_code);
+LAPI void event_register(uint16_t event_code);
 
-LAPI void fire_event(uint16_t event_code, event_context ctx);
+LAPI void event_fire(uint16_t event_code, event_context ctx);
 
-LAPI void add_listener(uint16_t event_code, on_event_cb listener);
+LAPI void event_add_listener(uint16_t event_code, on_event_cb listener);
