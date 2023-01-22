@@ -2,6 +2,9 @@
 
 #include "core/application.hpp"
 
+namespace lise
+{
+
 struct game
 {
 	application_create_config app_create_config;
@@ -13,3 +16,5 @@ struct game
 
 	void* custom_state;
 };
+
+}

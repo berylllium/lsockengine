@@ -4,6 +4,9 @@
 
 #include "container/vector2.hpp"
 
+namespace lise
+{
+
 enum mouse_buttons
 {
 	MOUSE_LEFT, MOUSE_RIGHT, MOUSE_MIDDLE,
@@ -165,3 +168,5 @@ LAPI lise::vector2i input_get_previous_mouse_position();
 void input_process_button(mouse_buttons button, bool down);
 void input_process_mouse_move(lise::vector2i pos);
 void input_process_mouse_wheel(int8_t dz);
+
+}

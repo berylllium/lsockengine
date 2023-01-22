@@ -8,6 +8,9 @@
 #include <windows.h>
 #include <windowsx.h>
 
+namespace lise
+{
+
 static const char* window_class_name = "lise_window_class";
 
 typedef struct internal_state
@@ -233,6 +236,8 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, uint32_t msg, WPARAM w_param, 
 	}
 
 	return DefWindowProcA(hwnd, msg, w_param, l_param);
+}
+
 }
 
 #endif

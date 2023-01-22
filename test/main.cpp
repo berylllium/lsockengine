@@ -3,7 +3,7 @@
 
 #include "game.hpp"
 
-int8_t create_game(game* out_game)
+int8_t create_game(lise::game* out_game)
 {
 	out_game->app_create_config.window_pos_x = 100;
     out_game->app_create_config.window_pos_y = 100;

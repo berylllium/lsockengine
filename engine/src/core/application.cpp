@@ -5,6 +5,9 @@
 #include "core/event.hpp"
 #include "platform/platform.hpp"
 
+namespace lise
+{
+
 struct application_state
 {
 	bool is_initialized;
@@ -106,4 +109,6 @@ bool application_run()
 void on_window_close(uint16_t event_code, event_context ctx)
 {
 	app_state.is_running = false;
+}
+
 }

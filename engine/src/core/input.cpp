@@ -2,6 +2,9 @@
 
 #include "core/event.hpp"
 
+namespace lise
+{
+
 struct mouse_state
 {
 	lise::vector2i pos;
@@ -126,4 +129,6 @@ lise::vector2i input_get_mouse_position()
 lise::vector2i input_get_previous_mouse_position()
 {
 	return mouse_previous.pos;
+}
+
 }

@@ -2,6 +2,9 @@
 
 #include "definitions.hpp"
 
+namespace lise
+{
+
 struct game;
 
 struct application_create_config
@@ -17,3 +20,5 @@ struct application_create_config
 LAPI bool application_create(game* game_instance);
 
 LAPI bool application_run();
+
+}

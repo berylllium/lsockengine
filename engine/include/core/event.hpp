@@ -2,6 +2,9 @@
 
 #include "definitions.hpp"
 
+namespace lise
+{
+
 enum engine_event_codes
 {
 	ON_WINDOW_CLOSE,
@@ -48,3 +51,5 @@ LAPI void event_register(uint16_t event_code);
 LAPI void event_fire(uint16_t event_code, event_context ctx);
 
 LAPI void event_add_listener(uint16_t event_code, on_event_cb listener);
+
+}

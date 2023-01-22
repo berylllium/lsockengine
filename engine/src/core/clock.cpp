@@ -2,6 +2,9 @@
 
 #include "platform/platform.hpp"
 
+namespace lise
+{
+
 clock::clock()
 {
 	start_time = platform_get_absolute_time();
@@ -10,4 +13,6 @@ clock::clock()
 double clock::get_elapsed_time()
 {
 	return platform_get_absolute_time() - start_time;
+}
+
 }

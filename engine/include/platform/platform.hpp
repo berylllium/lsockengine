@@ -2,6 +2,9 @@
 
 #include "definitions.hpp"
 
+namespace lise
+{
+
 struct platform_state
 {
 	void* internal_state;
@@ -24,3 +27,4 @@ double platform_get_absolute_time();
 
 void platform_sleep(uint64_t ms);
 
+}

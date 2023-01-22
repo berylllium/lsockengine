@@ -2,6 +2,9 @@
 
 #include <vector>
 
+namespace lise
+{
+
 struct event_entry
 {
 	uint16_t event_code;
@@ -59,4 +62,6 @@ void event_add_listener(uint16_t event_code, on_event_cb listener)
 			REGISTERED_EVENTS[entry].listeners.push_back(listener);
 		}
 	}
+}
+
 }

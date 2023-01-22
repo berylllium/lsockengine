@@ -6,6 +6,9 @@
 
 #include "platform/platform.hpp"
 
+namespace lise
+{
+
 bool logger_init()
 {
 	// TODO: Create log file, etc
@@ -62,3 +65,4 @@ void llog(log_level level, const char* message, ...)
 		platform_console_write(ss.str().c_str(), level);
 }
 
+}
