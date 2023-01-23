@@ -2,6 +2,11 @@
 
 #include "core/application.hpp"
 
+/**
+ * @brief The main namespace for the engine. All functions and structures are defined within this
+ * namespace.
+ * 
+ */
 namespace lise
 {
 
