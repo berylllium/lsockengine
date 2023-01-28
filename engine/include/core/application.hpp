@@ -17,12 +17,6 @@ struct application_create_config
 	const char* window_name;
 };
 
-/**
- * @brief BOOOOO
- * 
- * @param game_instance 
- * @return LAPI 
- */
 LAPI bool application_create(game* game_instance);
 
 LAPI bool application_run();

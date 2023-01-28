@@ -34,6 +34,20 @@ bool game_initialize(lise::game* game_instance)
 
 bool game_update(lise::game* game_instance, float delta_time) 
 {
+	static float sum = 0;
+	static int count = 0;
+
+	sum += delta_time;
+	count++;
+
+	if (sum >= 1)
+	{
+		LDEBUG("Its been a second, %d game loops have passed. The average frametime was %f", count, sum / count);
+
+		sum = 0;
+		count = 0;
+	}
+
     return true;
 }
 

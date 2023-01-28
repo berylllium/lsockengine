@@ -9,6 +9,7 @@ struct clock
 
 	clock();
 
+	void reset();
 	double get_elapsed_time();
 };
 

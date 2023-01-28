@@ -7,6 +7,11 @@ namespace lise
 
 clock::clock()
 {
+	reset();
+}
+
+void clock::reset()
+{
 	start_time = platform_get_absolute_time();
 }
 

@@ -2,7 +2,9 @@
 
 #include "game_type.hpp"
 #include "core/logger.hpp"
+#include "core/clock.hpp"
 #include "core/event.hpp"
+#include "core/input.hpp"
 #include "platform/platform.hpp"
 
 namespace lise
@@ -15,9 +17,10 @@ struct application_state
 	bool is_running;
 	bool is_suspended;
 	platform_state platform;
+	clock delta_clock;
 	int16_t width;
 	int16_t height;
-	double last_time;
+	double delta_time;
 };
 
 void on_window_close(uint16_t event_code, event_context ctx);
@@ -72,6 +75,10 @@ bool application_run()
 {
 	while (app_state.is_running)
 	{
+		// Calculate delta time.
+		app_state.delta_time = app_state.delta_clock.get_elapsed_time();
+		app_state.delta_clock.reset();
+
 		if (!platform_poll_messages(&app_state.platform))
 		{
 			LFATAL("Failed to poll platform messages");
@@ -80,19 +87,21 @@ bool application_run()
 		
 		if (!app_state.is_suspended)
 		{
-			if (!app_state.game_instance->update(app_state.game_instance, 0.0f))
+			if (!app_state.game_instance->update(app_state.game_instance, app_state.delta_time))
 			{
 				LFATAL("Consumer game update failed.");
 				app_state.is_running = false;
 				break;
 			}
 
-			if (!app_state.game_instance->render(app_state.game_instance, 0.0f))
+			if (!app_state.game_instance->render(app_state.game_instance, app_state.delta_time))
 			{
 				LFATAL("Consumer game render failed.");
 				app_state.is_running = false;
 				break;
 			}
+
+			input_update();
 		}
 	}
 
