@@ -1,27 +1,26 @@
 
 set(LISE_HEADERS
-	definitions.hpp
-	entry.hpp
-	game_type.hpp
-	container/vector2.hpp
-	core/application.hpp
-	core/clock.hpp
-	core/event.hpp
-	core/input.hpp
-	core/logger.hpp
-	platform/platform.hpp
+	container/darray.h
+	container/vector2.h
+	core/application.h
+	core/clock.h
+	core/event.h
+	core/input.h
+	core/logger.h
+	platform/platform.h
 )
 list(TRANSFORM LISE_HEADERS PREPEND "include/")
 
 set(LISE_SOURCES
-	container/vector2.cpp
-	core/application.cpp
-	core/clock.cpp
-	core/event.cpp
-	core/input.cpp
-	core/logger.cpp
-	platform/platform_win32.cpp
-	platform/platform_linux.cpp
+	container/darray.c
+	container/vector2.c
+	core/application.c
+	core/clock.c
+	core/event.c
+	core/input.c
+	core/logger.c
+	platform/platform_linux.c
+	platform/platform_win32.c
 )
 list(TRANSFORM LISE_SOURCES PREPEND "src/")
 

@@ -1,15 +1,12 @@
-#include "platform/platform.hpp"
+#include "platform/platform.h"
 
 #ifdef L_ISWIN
 
-#include "core/event.hpp"
-#include "core/input.hpp"
+#include "core/event.h"
+#include "core/input.h"
 
 #include <windows.h>
 #include <windowsx.h>
-
-namespace lise
-{
 
 static const char* window_class_name = "lise_window_class";
 
@@ -25,8 +22,8 @@ static LARGE_INTEGER start_time;
 
 LRESULT CALLBACK win32_process_message(HWND hwnd, uint32_t msg, WPARAM w_param, LPARAM l_param);
 
-bool platform_init(
-	platform_state* plat_state,
+bool lise_platform_init(
+	lise_platform_state* plat_state,
 	const char* application_name,
 	int32_t x, int32_t y,
 	int32_t width, int32_t height)
@@ -47,7 +44,7 @@ bool platform_init(
 	wc.hInstance = state->h_instance;
 	wc.hIcon = icon;
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wc.hbrBackground = nullptr;
+	wc.hbrBackground = NULL;
 	wc.lpszClassName = window_class_name;
 
 	if (!RegisterClassA(&wc))
@@ -85,7 +82,7 @@ bool platform_init(
 
 	if (handle == 0)
 	{
-		MessageBoxA(nullptr, "Window creation failed.", "Error", MB_ICONEXCLAMATION | MB_OK);
+		MessageBoxA(NULL, "Window creation failed.", "Error", MB_ICONEXCLAMATION | MB_OK);
 
 		// TODO: Add logger fatal log.
 
@@ -109,7 +106,7 @@ bool platform_init(
 	return true;
 }
 
-void platform_shutdown(platform_state* plat_state)
+void lise_platform_shutdown(lise_platform_state* plat_state)
 {
 	internal_state* state = (internal_state*) plat_state->internal_state;
 
@@ -120,7 +117,7 @@ void platform_shutdown(platform_state* plat_state)
 	}
 }
 
-bool platform_poll_messages(platform_state* plat_state)
+bool lise_platform_poll_messages(lise_platform_state* plat_state)
 {
 	MSG message;
 	while (PeekMessageA(&message, NULL, 0, 0, PM_REMOVE))
@@ -132,7 +129,7 @@ bool platform_poll_messages(platform_state* plat_state)
 	return true;
 }
 
-void platform_console_write(const char *message, uint8_t colour)
+void lise_platform_console_write(const char *message, uint8_t colour)
 {
 	HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
 	// FATAL,ERROR,WARN,INFO,DEBUG,TRACE
@@ -144,7 +141,7 @@ void platform_console_write(const char *message, uint8_t colour)
 	WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), message, (DWORD)length, number_written, 0);
 }
 
-void platform_console_write_error(const char *message, uint8_t colour)
+void lise_platform_console_write_error(const char *message, uint8_t colour)
 {
 	HANDLE console_handle = GetStdHandle(STD_ERROR_HANDLE);
 	// FATAL,ERROR,WARN,INFO,DEBUG,TRACE
@@ -156,14 +153,14 @@ void platform_console_write_error(const char *message, uint8_t colour)
 	WriteConsoleA(GetStdHandle(STD_ERROR_HANDLE), message, (DWORD)length, number_written, 0);
 }
 
-double platform_get_absolute_time()
+double lise_platform_get_absolute_time()
 {
 	LARGE_INTEGER now_time;
 	QueryPerformanceCounter(&now_time);
 	return (double) now_time.QuadPart * clock_frequency;
 }
 
-void platform_sleep(uint64_t ms)
+void lise_platform_sleep(uint64_t ms)
 {
 	Sleep(ms);
 }
@@ -177,7 +174,7 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, uint32_t msg, WPARAM w_param, 
 			return 1;
 		case WM_CLOSE:
 			// TODO: Fire an event for the application to quit.
-			event_fire(engine_event_codes::ON_WINDOW_CLOSE, event_context {});
+			lise_event_fire(LISE_EVENT_ON_WINDOW_CLOSE, (lise_event_context) {});
 
 			return 0;
 		case WM_DESTROY:
@@ -200,9 +197,9 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, uint32_t msg, WPARAM w_param, 
 		{
 			// Key pressed / released
 			int pressed = (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN);
-			keys key = (keys) w_param;
+			lise_keys key = (lise_keys) w_param;
 
-			input_process_keys(key, pressed);
+			lise_input_process_keys(key, pressed);
 		} break;
 		case WM_MOUSEMOVE:
 		{
@@ -210,7 +207,7 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, uint32_t msg, WPARAM w_param, 
 			int32_t x_position = GET_X_LPARAM(l_param);
 			int32_t y_position = GET_Y_LPARAM(l_param);
 		
-			input_process_mouse_move(lise::vector2i { x_position, y_position });
+			lise_input_process_mouse_move((lise_vector2i) { x_position, y_position });
 		} break;
 		case WM_MOUSEWHEEL:
 		{
@@ -220,7 +217,7 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, uint32_t msg, WPARAM w_param, 
 				// Normalize input in range [-1, 1]
 				dz = (dz < 0) ? -1 : 1;
 			
-				input_process_mouse_wheel(dz);
+				lise_input_process_mouse_wheel(dz);
 			}
 		} break;
 		case WM_LBUTTONDOWN:
@@ -236,8 +233,6 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, uint32_t msg, WPARAM w_param, 
 	}
 
 	return DefWindowProcA(hwnd, msg, w_param, l_param);
-}
-
 }
 
 #endif

@@ -1,6 +1,7 @@
 #pragma once
 
-#include <cstdint>
+#include <stdint.h>
+#include <stdbool.h>
 
 // Define static assertions
 #if defined(__clang__) || defined(__gcc__)
@@ -22,4 +23,3 @@
 		#define LAPI 
 	#endif
 #endif
-
