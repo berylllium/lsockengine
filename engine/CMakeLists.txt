@@ -8,6 +8,8 @@ set(LISE_HEADERS
 	core/input.h
 	core/logger.h
 	platform/platform.h
+	renderer/renderer.h
+	renderer/vulkan_backend.h
 )
 list(TRANSFORM LISE_HEADERS PREPEND "include/")
 
@@ -21,6 +23,8 @@ set(LISE_SOURCES
 	core/logger.c
 	platform/platform_linux.c
 	platform/platform_win32.c
+	renderer/renderer.c
+	renderer/vulkan_backend.c
 )
 list(TRANSFORM LISE_SOURCES PREPEND "src/")
 
