@@ -7,4 +7,3 @@ set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
 
 add_subdirectory(engine)
 add_subdirectory(test)
-

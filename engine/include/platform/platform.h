@@ -23,3 +23,5 @@ void lise_platform_console_write_error(const char* message, uint8_t color);
 double lise_platform_get_absolute_time();
 
 void lise_platform_sleep(uint64_t ms);
+
+const char** lise_platform_get_required_instance_extensions(uint32_t* out_extension_count);

@@ -235,4 +235,15 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, uint32_t msg, WPARAM w_param, 
 	return DefWindowProcA(hwnd, msg, w_param, l_param);
 }
 
+const char** lise_platform_get_required_instance_extensions(uint32_t* out_extension_count)
+{
+	static char* required_instance_extensions[] = {
+		"VK_KHR_win32_surface"
+	};
+
+	*out_extension_count = 1;
+
+	return required_instance_extensions;
+}
+
 #endif

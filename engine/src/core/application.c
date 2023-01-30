@@ -69,7 +69,6 @@ bool lise_application_create(lise_application_create_info app_create_info)
 		return false;
 	}
 
-
 	// Register events
 	lise_event_add_listener(LISE_EVENT_ON_WINDOW_CLOSE, on_window_close);
 
