@@ -42,8 +42,6 @@ bool lise_application_create(lise_application_create_info app_create_info)
 	app_state.width = app_create_info.window_width;
 	app_state.height = app_create_info.window_height;
 
-	lise_clock_reset(&app_state.delta_clock);
-
 	// Initialize subsystems
 	lise_logger_init();
 	lise_event_init();
@@ -61,6 +59,8 @@ bool lise_application_create(lise_application_create_info app_create_info)
 		LFATAL("Error setting platform up.");
 		return false;
 	}
+
+	lise_clock_reset(&app_state.delta_clock);
 
 	if (!lise_renderer_initialize(app_create_info.window_name))
 	{
