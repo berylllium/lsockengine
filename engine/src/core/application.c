@@ -16,8 +16,6 @@ typedef struct application_state
 	bool is_running;
 	bool is_suspended;
 
-	lise_platform_state platform;
-
 	int16_t width;
 	int16_t height;
 
@@ -52,7 +50,6 @@ bool lise_application_create(lise_application_create_info app_create_info)
 	app_state.is_suspended = false;
 
 	if (!lise_platform_init(
-				&app_state.platform,
 				app_create_info.window_name,
 				app_create_info.window_pos_x,
 				app_create_info.window_pos_y,
@@ -92,7 +89,7 @@ bool lise_application_run()
 		app_state.delta_time = lise_clock_get_elapsed_time(app_state.delta_clock);
 		lise_clock_reset(&app_state.delta_clock);
 
-		if (!lise_platform_poll_messages(&app_state.platform))
+		if (!lise_platform_poll_messages())
 		{
 			LFATAL("Failed to poll platform messages");
 			app_state.is_running = false;
@@ -126,7 +123,7 @@ bool lise_application_run()
 
 	lise_renderer_shutdown();
 	
-	lise_platform_shutdown(&app_state.platform);
+	lise_platform_shutdown();
 
 	return true;
 }

@@ -19,6 +19,8 @@ typedef struct internal_state
 	HWND hwnd;
 } internal_state;
 
+static internal_state state;
+
 // Clock
 static double clock_frequency;
 static LARGE_INTEGER start_time;
@@ -26,25 +28,21 @@ static LARGE_INTEGER start_time;
 LRESULT CALLBACK win32_process_message(HWND hwnd, uint32_t msg, WPARAM w_param, LPARAM l_param);
 
 bool lise_platform_init(
-	lise_platform_state* plat_state,
 	const char* application_name,
 	int32_t x, int32_t y,
 	int32_t width, int32_t height)
 {
 	
-	plat_state->internal_state = malloc(sizeof(internal_state));
-	internal_state* state = (internal_state*) plat_state->internal_state;
+	state.h_instance = GetModuleHandleA(0);
 
-	state->h_instance = GetModuleHandleA(0);
-
-	HICON icon = LoadIcon(state->h_instance, IDI_APPLICATION);
+	HICON icon = LoadIcon(state.h_instance, IDI_APPLICATION);
 	WNDCLASSA wc;
 	memset(&wc, 0, sizeof(wc));
 	wc.style = CS_DBLCLKS;
 	wc.lpfnWndProc = win32_process_message;
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
-	wc.hInstance = state->h_instance;
+	wc.hInstance = state.h_instance;
 	wc.hIcon = icon;
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wc.hbrBackground = NULL;
@@ -81,7 +79,7 @@ bool lise_platform_init(
 	HWND handle = CreateWindowExA(
 		window_ex_style, window_class_name, application_name,
 		window_style, window_x, window_y, window_width, window_height,
-		0, 0, state->h_instance, 0);
+		0, 0, state.h_instance, 0);
 
 	if (handle == 0)
 	{
@@ -92,13 +90,13 @@ bool lise_platform_init(
 		return false;
 	}
 
-	state->hwnd = handle;
+	state.hwnd = handle;
 
 	// Show the window
 	int32_t should_activate = 1; // Whether the window should accept input or not.
 	int32_t show_window_command_flags = should_activate ? SW_SHOW : SW_SHOWNOACTIVATE;
 
-	ShowWindow(state->hwnd, show_window_command_flags);
+	ShowWindow(state.hwnd, show_window_command_flags);
 
 	// Time setup
 	LARGE_INTEGER freq;
@@ -109,18 +107,16 @@ bool lise_platform_init(
 	return true;
 }
 
-void lise_platform_shutdown(lise_platform_state* plat_state)
+void lise_platform_shutdown()
 {
-	internal_state* state = (internal_state*) plat_state->internal_state;
-
-	if (state->hwnd)
+	if (state.hwnd)
 	{
-		DestroyWindow(state->hwnd);
-		state->hwnd = 0;
+		DestroyWindow(state.hwnd);
+		state.hwnd = 0;
 	}
 }
 
-bool lise_platform_poll_messages(lise_platform_state* plat_state)
+bool lise_platform_poll_messages()
 {
 	MSG message;
 	while (PeekMessageA(&message, NULL, 0, 0, PM_REMOVE))
@@ -249,16 +245,14 @@ const char** lise_platform_get_required_instance_extensions(uint32_t* out_extens
 	return required_instance_extensions;
 }
 
-bool lise_vulkan_platform_create_vulkan_surface(lise_platform_state* plat_state,
-                                                VkInstance instance,
-                                                VkSurfaceKHR* out_surface)
+bool lise_vulkan_platform_create_vulkan_surface(
+	VkInstance instance,
+	VkSurfaceKHR* out_surface)
 {
-	internal_state* state = (internal_state*) plat_state->internal_state;
-
     VkWin32SurfaceCreateInfoKHR create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-	create_info.hinstance = state->h_instance;
-	create_info.hwnd = state->hwnd;
+	create_info.hinstance = state.h_instance;
+	create_info.hwnd = state.hwnd;
 
 	if (vkCreateWin32SurfaceKHR(instance, &create_info, NULL, out_surface) != VK_SUCCESS)
 	{

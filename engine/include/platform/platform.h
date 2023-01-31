@@ -2,20 +2,14 @@
 
 #include "definitions.h"
 
-typedef struct lise_platform_state
-{
-	void* internal_state;
-} lise_platform_state;
-
 LAPI bool lise_platform_init(
-	lise_platform_state* plat_state,
 	const char* application_name,
 	int32_t x, int32_t y,
 	int32_t width, int32_t height);
 
-LAPI void lise_platform_shutdown(lise_platform_state* plat_state);
+LAPI void lise_platform_shutdown();
 
-LAPI bool lise_platform_poll_messages(lise_platform_state* plat_state);
+LAPI bool lise_platform_poll_messages();
 
 void lise_platform_console_write(const char* message, uint8_t color);
 void lise_platform_console_write_error(const char* message, uint8_t color);
