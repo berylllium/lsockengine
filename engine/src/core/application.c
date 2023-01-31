@@ -35,6 +35,8 @@ bool lise_application_create(lise_application_create_info app_create_info)
 		return false;
 	}
 
+	LINFO("Creating the application / starting the engine...");
+
 	app_state.entry_points = app_create_info.entry_points;
 
 	app_state.width = app_create_info.window_width;
@@ -78,11 +80,15 @@ bool lise_application_create(lise_application_create_info app_create_info)
 
 	app_state.is_initialized = true;
 
+	LINFO("Successfully created the application / engine.");
+
 	return true;
 }
 
 bool lise_application_run()
 {
+	LINFO("Starting the engine.");
+
 	while (app_state.is_running)
 	{
 		// Calculate delta time.
@@ -118,12 +124,16 @@ bool lise_application_run()
 	app_state.is_running = false;
 
 	// Perform shutdown code
+	LINFO("Shutting down the engine...");
+
 	lise_event_shutdown();
 	lise_logger_shutdown();
 
 	lise_renderer_shutdown();
 	
 	lise_platform_shutdown();
+
+	LINFO("Successfully shut down the engine.");
 
 	return true;
 }

@@ -1,5 +1,6 @@
 #include "core/event.h"
 
+#include "core/logger.h"
 #include "container/darray.h"
 
 typedef struct lise_event_entry
@@ -20,6 +21,8 @@ bool lise_event_init()
 		lise_event_register(i);
 	}
 
+	LINFO("Successfully initialized the event subsystem.");
+
 	return true;
 }
 
@@ -34,6 +37,8 @@ void lise_event_shutdown()
 	}
 
 	lise_darray_free(&registered_events);
+
+	LINFO("Successfully shut down the event system.");
 }
 
 void lise_event_register(uint16_t event_code)

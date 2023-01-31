@@ -65,7 +65,7 @@ bool lise_vulkan_initialize(const char* application_name)
 	}
 
 	// Create vulkan instance
-	if (vkCreateInstance(&create_info, NULL, &vulkan_context.instance))
+	if (vkCreateInstance(&create_info, NULL, &vulkan_context.instance) != VK_SUCCESS)
 	{
 		LFATAL("Failed to create Vulkan instance.");
 		return false;

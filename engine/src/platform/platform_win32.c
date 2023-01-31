@@ -4,6 +4,7 @@
 
 #include "core/event.h"
 #include "core/input.h"
+#include "core/logger.h"
 
 #include <windows.h>
 #include <windowsx.h>
@@ -32,7 +33,6 @@ bool lise_platform_init(
 	int32_t x, int32_t y,
 	int32_t width, int32_t height)
 {
-	
 	state.h_instance = GetModuleHandleA(0);
 
 	HICON icon = LoadIcon(state.h_instance, IDI_APPLICATION);
@@ -51,6 +51,8 @@ bool lise_platform_init(
 	if (!RegisterClassA(&wc))
 	{
 		MessageBoxA(0, "Window registration failed.", "Error", MB_ICONEXCLAMATION | MB_OK);
+
+		LFATAL("Window registration failed.");
 		return false;
 	}
 
@@ -85,8 +87,7 @@ bool lise_platform_init(
 	{
 		MessageBoxA(NULL, "Window creation failed.", "Error", MB_ICONEXCLAMATION | MB_OK);
 
-		// TODO: Add logger fatal log.
-
+		LFATAL("Window creation failed.");
 		return false;
 	}
 
@@ -104,6 +105,8 @@ bool lise_platform_init(
 	clock_frequency = 1.0 / (double) freq.QuadPart;
 	QueryPerformanceCounter(&start_time);
 
+	LINFO("Successfully initialized the windows platform subsystem.");
+
 	return true;
 }
 
@@ -114,6 +117,8 @@ void lise_platform_shutdown()
 		DestroyWindow(state.hwnd);
 		state.hwnd = 0;
 	}
+
+	LINFO("Sucessfully shut down the windows platform subsystem.");
 }
 
 bool lise_platform_poll_messages()
