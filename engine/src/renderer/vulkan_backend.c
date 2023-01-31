@@ -31,14 +31,16 @@ bool lise_vulkan_initialize(const char* application_name)
 	}
 
 	// Vulkan Instance 
-	VkApplicationInfo app_info = {VK_STRUCTURE_TYPE_APPLICATION_INFO};
+	VkApplicationInfo app_info = {};
+	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	app_info.apiVersion = VK_API_VERSION_1_3;
 	app_info.pApplicationName = application_name;
 	app_info.applicationVersion = VK_MAKE_VERSION(0, 1, 0);
 	app_info.pEngineName = "Lipin Sock Engine";
 	app_info.engineVersion = VK_MAKE_VERSION(0, 1, 0);
 
-	VkInstanceCreateInfo create_info = {VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
+	VkInstanceCreateInfo create_info = {};
+	create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	create_info.pApplicationInfo = &app_info;
 
 	// Instance Extensions
@@ -69,6 +71,12 @@ bool lise_vulkan_initialize(const char* application_name)
 	}
 
 	return true;
+}
+
+void lise_vulkan_shutdown()
+{
+	
+	vkDestroyInstance(vulkan_context.instance, NULL);
 }
 
 // Static helper functions
