@@ -23,8 +23,6 @@ int main()
 		return -1;
 	}
 
-	LINFO("hii");
-
 	if (!lise_application_run())
 	{
 		LFATAL("Application did not shut down correctly.");
