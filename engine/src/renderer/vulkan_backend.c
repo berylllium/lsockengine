@@ -5,6 +5,7 @@
 
 #include "core/logger.h"
 #include "platform/platform.h"
+#include "renderer/vulkan_platform.h"
 
 #ifdef NDEBUG
 	static const bool enable_validation_layers = false;
@@ -66,7 +67,15 @@ bool lise_vulkan_initialize(const char* application_name)
 	// Create vulkan instance
 	if (vkCreateInstance(&create_info, NULL, &vulkan_context.instance))
 	{
-		LFATAL("Failed to create Vulkan instance");
+		LFATAL("Failed to create Vulkan instance.");
+		return false;
+	}
+
+	// Create vulkan surface
+	if (!lise_vulkan_platform_create_vulkan_surface(vulkan_context.instance,
+		&vulkan_context.surface))
+	{
+		LFATAL("Failed to create vulkan surface.");
 		return false;
 	}
 

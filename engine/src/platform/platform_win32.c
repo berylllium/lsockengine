@@ -4,7 +4,6 @@
 
 #include "core/event.h"
 #include "core/input.h"
-#include "core/logger.h"
 
 #include <windows.h>
 #include <windowsx.h>
@@ -256,7 +255,6 @@ bool lise_vulkan_platform_create_vulkan_surface(
 
 	if (vkCreateWin32SurfaceKHR(instance, &create_info, NULL, out_surface) != VK_SUCCESS)
 	{
-		LFATAL("Failed to create a vulkan surface.");
 		return false;
 	}
 
