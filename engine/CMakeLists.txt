@@ -10,6 +10,7 @@ set(LISE_HEADERS
 	platform/platform.h
 	renderer/renderer.h
 	renderer/vulkan_backend.h
+	renderer/vulkan_platform.h
 )
 list(TRANSFORM LISE_HEADERS PREPEND "include/")
 

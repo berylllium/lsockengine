@@ -4,9 +4,12 @@
 
 #include "core/event.h"
 #include "core/input.h"
+#include "core/logger.h"
 
 #include <windows.h>
 #include <windowsx.h>
+
+#include "renderer/vulkan_platform.h"
 
 static const char* window_class_name = "lise_window_class";
 
@@ -244,6 +247,26 @@ const char** lise_platform_get_required_instance_extensions(uint32_t* out_extens
 	*out_extension_count = 2;
 
 	return required_instance_extensions;
+}
+
+bool lise_vulkan_platform_create_vulkan_surface(lise_platform_state* plat_state,
+                                                VkInstance instance,
+                                                VkSurfaceKHR* out_surface)
+{
+	internal_state* state = (internal_state*) plat_state->internal_state;
+
+    VkWin32SurfaceCreateInfoKHR create_info = {};
+    create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+	create_info.hinstance = state->h_instance;
+	create_info.hwnd = state->hwnd;
+
+	if (vkCreateWin32SurfaceKHR(instance, &create_info, NULL, out_surface) != VK_SUCCESS)
+	{
+		LFATAL("Failed to create a vulkan surface.");
+		return false;
+	}
+
+	return true;
 }
 
 #endif
