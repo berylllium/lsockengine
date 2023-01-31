@@ -4,6 +4,7 @@
 #include "core/clock.h"
 #include "core/event.h"
 #include "core/input.h"
+#include "renderer/renderer.h"
 #include "platform/platform.h"
 
 typedef struct application_state
@@ -62,6 +63,12 @@ bool lise_application_create(lise_application_create_info app_create_info)
 		return false;
 	}
 
+	if (!lise_renderer_initialize(app_create_info.window_name))
+	{
+		LFATAL("Failed to initialize renderer submodule.");
+		return false;
+	}
+
 	// Run consumer initialization function
 	if (!app_state.entry_points.initialize())
 	{
@@ -116,6 +123,8 @@ bool lise_application_run()
 	// Perform shutdown code
 	lise_event_shutdown();
 	lise_logger_shutdown();
+
+	lise_renderer_shutdown();
 	
 	lise_platform_shutdown(&app_state.platform);
 
