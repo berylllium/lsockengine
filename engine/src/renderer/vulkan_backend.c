@@ -79,13 +79,19 @@ bool lise_vulkan_initialize(const char* application_name)
 		return false;
 	}
 
+	LINFO("Successfully initialized the vulkan backend.");
+
 	return true;
 }
 
 void lise_vulkan_shutdown()
 {
+
+	vkDestroySurfaceKHR(vulkan_context.instance, vulkan_context.surface, NULL);
 	
 	vkDestroyInstance(vulkan_context.instance, NULL);
+
+	LINFO("Successfully shut the vulkan backend down.");
 }
 
 // Static helper functions

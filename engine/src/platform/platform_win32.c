@@ -9,6 +9,7 @@
 #include <windowsx.h>
 
 #include "renderer/vulkan_platform.h"
+#include <vulkan/vulkan_win32.h>
 
 static const char* window_class_name = "lise_window_class";
 
