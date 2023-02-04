@@ -19,6 +19,12 @@ static const char* validation_layers[] = {
 };
 static const uint32_t validation_layer_count = 1;
 
+// Hardcoded device extensions
+static const char* device_extensions[] = {
+	VK_KHR_SWAPCHAIN_EXTENSION_NAME
+};
+static const uint32_t device_extension_count = 1;
+
 static lise_vulkan_context vulkan_context;
 
 static bool check_validation_layer_support();
@@ -79,6 +85,20 @@ bool lise_vulkan_initialize(const char* application_name)
 		return false;
 	}
 
+	// Create the device
+	if (!lise_device_create(
+			vulkan_context.instance,
+			device_extensions,
+			device_extension_count,
+			validation_layers,
+			validation_layer_count,
+			vulkan_context.surface,
+			&vulkan_context.device))
+	{
+		LFATAL("Failed to create a logical device.");
+		return false;
+	}
+
 	LINFO("Successfully initialized the vulkan backend.");
 
 	return true;
@@ -86,6 +106,7 @@ bool lise_vulkan_initialize(const char* application_name)
 
 void lise_vulkan_shutdown()
 {
+	lise_device_destroy(&vulkan_context.device);
 
 	vkDestroySurfaceKHR(vulkan_context.instance, vulkan_context.surface, NULL);
 	

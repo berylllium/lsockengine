@@ -30,17 +30,29 @@ typedef struct lise_device
 {
 	VkPhysicalDevice physical_device;
 	VkPhysicalDeviceProperties physical_device_properties;
-	VkPhysicalDeviceFeatures physcial_device_features;
+	VkPhysicalDeviceFeatures physical_device_features;
 	VkPhysicalDeviceMemoryProperties physical_device_memory_properties;
-
-	VkDevice logical_device;
 
 	lise_device_swap_chain_support_info device_swapchain_support_info;
 
-	lise_device_queue_indices queue_indices;
+	lise_device_queue_indices queue_indices; // NOTE: I don't know if this field will be ever used.
+
+	VkDevice logical_device;
+
+	VkQueue graphics_queue;
+	VkQueue present_queue;
+	VkQueue transfer_queue;
 } lise_device;
 
-lise_device lise_device_create();
+bool lise_device_create(
+	VkInstance vulkan_instance,
+	const char** physical_device_extensions,
+	uint32_t physical_device_extension_count,
+	const char** validation_layers,
+	uint32_t validation_layer_count,
+	VkSurfaceKHR surface,
+	lise_device* out_device
+);
 
 void lise_device_destroy(lise_device* device);
 
