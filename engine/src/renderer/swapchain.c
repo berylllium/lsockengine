@@ -261,3 +261,35 @@ bool lise_swapchain_acquire_next_image_index(
 
 	return true;
 }
+
+bool lise_swapchain_present(
+	const lise_device* device,
+	lise_swapchain* swapchain,
+	VkSemaphore render_complete_semaphore,
+	uint32_t present_image_index
+)
+{
+	VkPresentInfoKHR present_info = {};
+	present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	present_info.waitSemaphoreCount = 1;
+	present_info.pWaitSemaphores = &render_complete_semaphore;
+	present_info.swapchainCount = 1;
+	present_info.pSwapchains = &swapchain->swapchain_handle;
+	present_info.pImageIndices = &present_image_index;
+	
+	VkResult result = vkQueuePresentKHR(device->present_queue, &present_info);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+	{
+		LDEBUG("Swapchain is out of date. Attempring to recreate.");
+		swapchain->swapchain_out_of_date = true;
+		return false;
+	}
+	else if (result != VK_SUCCESS)
+	{
+		LFATAL("Failed to present swapchain image.");
+		return false;
+	}
+
+	return false;
+}

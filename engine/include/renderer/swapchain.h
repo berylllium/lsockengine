@@ -48,3 +48,10 @@ bool lise_swapchain_acquire_next_image_index(
 	VkFence fence,
 	uint32_t* out_image_index
 );
+
+bool lise_swapchain_present(
+	const lise_device* device,
+	lise_swapchain* swapchain,
+	VkSemaphore render_complete_semaphore,
+	uint32_t present_image_index
+);
