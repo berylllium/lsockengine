@@ -29,7 +29,7 @@ static lise_vulkan_context vulkan_context;
 
 static bool check_validation_layer_support();
 
-bool lise_vulkan_initialize(const char* application_name)
+bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application_name)
 {
 	if (enable_validation_layers && !check_validation_layer_support())
 	{
@@ -79,7 +79,8 @@ bool lise_vulkan_initialize(const char* application_name)
 
 	// Create vulkan surface
 	if (!lise_vulkan_platform_create_vulkan_surface(vulkan_context.instance,
-		&vulkan_context.surface))
+		&vulkan_context.surface
+	))
 	{
 		LFATAL("Failed to create vulkan surface.");
 		return false;
@@ -93,9 +94,22 @@ bool lise_vulkan_initialize(const char* application_name)
 			validation_layers,
 			validation_layer_count,
 			vulkan_context.surface,
-			&vulkan_context.device))
+			&vulkan_context.device
+	))
 	{
 		LFATAL("Failed to create a logical device.");
+		return false;
+	}
+
+	// Create the swapchain
+	if (!lise_swapchain_create(
+		&vulkan_context.device,
+		vulkan_context.surface,
+		(VkExtent2D) { window_extent.x, window_extent.y },
+		&vulkan_context.swapchain
+	))
+	{
+		LFATAL("Failed to create the swapchain.");
 		return false;
 	}
 
@@ -106,6 +120,8 @@ bool lise_vulkan_initialize(const char* application_name)
 
 void lise_vulkan_shutdown()
 {
+	lise_swapchain_destroy(vulkan_context.device.logical_device, &vulkan_context.swapchain);
+
 	lise_device_destroy(&vulkan_context.device);
 
 	vkDestroySurfaceKHR(vulkan_context.instance, vulkan_context.surface, NULL);

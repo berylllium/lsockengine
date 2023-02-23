@@ -10,8 +10,11 @@ set(LISE_HEADERS
 	platform/platform.h
 	renderer/device.h
 	renderer/renderer.h
+	renderer/swapchain.h
 	renderer/vulkan_backend.h
+	renderer/vulkan_image.h
 	renderer/vulkan_platform.h
+	util/math_utils.h
 	util/string_utils.h
 )
 list(TRANSFORM LISE_HEADERS PREPEND "include/")
@@ -28,7 +31,10 @@ set(LISE_SOURCES
 	platform/platform_win32.c
 	renderer/device.c
 	renderer/renderer.c
+	renderer/swapchain.c
 	renderer/vulkan_backend.c
+	renderer/vulkan_image.c
+	util/math_utils.c
 	util/string_utils.c
 )
 list(TRANSFORM LISE_SOURCES PREPEND "src/")

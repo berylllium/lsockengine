@@ -26,11 +26,6 @@ static lise_device_queue_indices find_queue_families(
 	VkSurfaceKHR surface
 );
 
-static lise_device_swap_chain_support_info query_swap_chain_support(
-	VkPhysicalDevice physical_device,
-	VkSurfaceKHR surface
-);
-
 bool lise_device_create(
 	VkInstance vulkan_instance,
 	const char** physical_device_extensions,	
@@ -70,7 +65,7 @@ bool lise_device_create(
 	);
 
 	out_device->device_swapchain_support_info =
-		query_swap_chain_support(out_device->physical_device, surface);
+		lise_device_query_swap_chain_support(out_device->physical_device, surface);
 	
 	out_device->queue_indices = find_queue_families(out_device->physical_device, surface);
 
@@ -304,7 +299,7 @@ static bool is_physical_device_suitable(
 
 	// Check if swapchain supported by the physcial device is adequate for our needs
 	lise_device_swap_chain_support_info swap_chain_info =
-		query_swap_chain_support(physical_device, surface);
+		lise_device_query_swap_chain_support(physical_device, surface);
 
 	if (swap_chain_info.surface_format_count == 0 || swap_chain_info.present_mode_count == 0)
 	{
@@ -360,7 +355,7 @@ static lise_device_queue_indices find_queue_families(
 	return queue_indices;
 }
 
-static lise_device_swap_chain_support_info query_swap_chain_support(
+lise_device_swap_chain_support_info lise_device_query_swap_chain_support(
 	VkPhysicalDevice physical_device,
 	VkSurfaceKHR surface
 )

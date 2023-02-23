@@ -29,6 +29,7 @@ typedef struct lise_device_queue_indices
 typedef struct lise_device
 {
 	VkPhysicalDevice physical_device;
+
 	VkPhysicalDeviceProperties physical_device_properties;
 	VkPhysicalDeviceFeatures physical_device_features;
 	VkPhysicalDeviceMemoryProperties physical_device_memory_properties;
@@ -52,6 +53,11 @@ bool lise_device_create(
 	uint32_t validation_layer_count,
 	VkSurfaceKHR surface,
 	lise_device* out_device
+);
+
+lise_device_swap_chain_support_info lise_device_query_swap_chain_support(
+	VkPhysicalDevice physical_device,
+	VkSurfaceKHR surface
 );
 
 void lise_device_destroy(lise_device* device);
