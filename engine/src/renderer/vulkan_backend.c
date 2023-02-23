@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "core/event.h"
 #include "core/logger.h"
 #include "platform/platform.h"
 #include "renderer/vulkan_platform.h"
@@ -24,6 +25,9 @@ static const char* device_extensions[] = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 static const uint32_t device_extension_count = 1;
+
+// Events
+void on_window_resized(uint16_t event_code, lise_event_context ctx);
 
 static lise_vulkan_context vulkan_context;
 
@@ -113,6 +117,9 @@ bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application
 		return false;
 	}
 
+	// Register events
+	lise_event_add_listener(LISE_EVENT_ON_WINDOW_RESIZE, on_window_resized);
+
 	LINFO("Successfully initialized the vulkan backend.");
 
 	return true;
@@ -165,4 +172,11 @@ static bool check_validation_layer_support()
 
 	free(available_layers);
 	return true;
+}
+
+// Event definitions
+void on_window_resized(uint16_t event_code, lise_event_context ctx)
+{
+	vulkan_context.framebuffer_width = ctx.data.u32[0];
+	vulkan_context.framebuffer_height = ctx.data.u32[1];
 }

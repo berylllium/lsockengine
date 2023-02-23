@@ -16,7 +16,7 @@ bool lise_event_init()
 {
 	registered_events = lise_darray_create(lise_event_entry);
 
-	for (int i = LISE_EVENT_ON_WINDOW_CLOSE; i < LISE_EVENT_ON_WINDOW_RESIZE; i++)
+	for (int i = LISE_EVENT_ON_WINDOW_CLOSE; i < LISE_EVENT_MAX_ENUM; i++)
 	{
 		lise_event_register(i);
 	}

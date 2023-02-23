@@ -22,6 +22,11 @@ void on_event(uint16_t event_code, lise_event_context ctx)
 	}
 }
 
+void on_window_resize(uint16_t event_code, lise_event_context ctx)
+{
+	LDEBUG("New window size: %d, %d", ctx.data.u32[0], ctx.data.u32[1]);
+}
+
 bool game_initialize() 
 {
 
@@ -39,6 +44,8 @@ bool game_initialize()
 	lise_event_add_listener(LISE_EVENT_ON_MOUSE_MOVE, on_event);
 
 	lise_event_add_listener(LISE_EVENT_ON_MOUSE_WHEEL_MOVE, on_event);
+
+	lise_event_add_listener(LISE_EVENT_ON_WINDOW_RESIZE, on_window_resize);
 	
     return true;
 }

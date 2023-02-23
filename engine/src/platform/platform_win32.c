@@ -186,13 +186,17 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, uint32_t msg, WPARAM w_param, 
 			return 0;
 		case WM_SIZE:
 		{
-//			RECT r;
-//			GetClientRect(hwnd, &r);
-//
-//			uint32_t width = r.right - r.left;
-//			uint32_t height = r.bottom - r.top;
-//
-//			// TODO: Fire an event for window resize. 
+			RECT r;
+			GetClientRect(hwnd, &r);
+
+			uint32_t width = r.right - r.left;
+			uint32_t height = r.bottom - r.top;
+
+			lise_event_context ctx = {};
+			ctx.data.u32[0] = width;
+			ctx.data.u32[1] = height;
+
+			lise_event_fire(LISE_EVENT_ON_WINDOW_RESIZE, ctx);
 		}
 		case WM_KEYDOWN:
 		case WM_SYSKEYDOWN:

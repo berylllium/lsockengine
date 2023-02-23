@@ -206,6 +206,17 @@ bool lise_swapchain_create(
 	return true;
 }
 
+bool lise_swapchain_recreate(
+	lise_device* device,
+	VkSurfaceKHR surface,
+	VkExtent2D window_extent,
+	lise_swapchain* swapchain
+)
+{
+	lise_swapchain_destroy(device->logical_device, swapchain);
+	return lise_swapchain_create(device, surface, window_extent, swapchain);
+}
+
 void lise_swapchain_destroy(VkDevice device, lise_swapchain* swapchain)
 {
 	lise_vulkan_image_destroy(device, &swapchain->depth_attachment);
@@ -216,4 +227,37 @@ void lise_swapchain_destroy(VkDevice device, lise_swapchain* swapchain)
 	}
 
 	vkDestroySwapchainKHR(device, swapchain->swapchain_handle, NULL);
+}
+
+bool lise_swapchain_acquire_next_image_index(
+	const lise_device* device,
+	lise_swapchain* swapchain,
+	uint64_t timeout_ns,
+	VkSemaphore image_available_semaphore,
+	VkFence fence,
+	uint32_t* out_image_index
+)
+{
+	VkResult result = vkAcquireNextImageKHR(
+		device->logical_device,
+		swapchain->swapchain_handle,
+		timeout_ns,
+		image_available_semaphore,
+		fence,
+		out_image_index
+	);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		LDEBUG("Swapchain is out of date. Attempring to recreate.");
+		swapchain->swapchain_out_of_date = true;
+		return false;
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	{
+		LFATAL("Failed to acquire next swapchain image.");
+		return false;
+	}
+
+	return true;
 }

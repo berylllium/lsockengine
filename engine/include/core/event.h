@@ -14,7 +14,9 @@ typedef enum lise_event_codes
 	LISE_EVENT_ON_KEY_DOWN,
 	LISE_EVENT_ON_KEY_UP,
 
-	LISE_EVENT_ON_WINDOW_RESIZE
+	LISE_EVENT_ON_WINDOW_RESIZE,
+
+	LISE_EVENT_MAX_ENUM
 } lise_event_codes;
 
 typedef struct lise_event_context
