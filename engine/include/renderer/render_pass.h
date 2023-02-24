@@ -5,7 +5,6 @@
 #include "definitions.h"
 #include "renderer/command_buffer.h"
 #include "renderer/device.h"
-#include "renderer/swapchain.h"
 
 typedef enum lise_render_pass_state
 {
@@ -32,7 +31,8 @@ typedef struct lise_render_pass
 
 bool lise_render_pass_create(
 	lise_device* device,
-	lise_swapchain* swapchain,
+	VkFormat color_format,
+	VkFormat depth_format,
 	float x, float y, float w, float h,
 	float r, float g, float b, float a,
 	float depth,

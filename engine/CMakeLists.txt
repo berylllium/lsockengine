@@ -10,6 +10,8 @@ set(LISE_HEADERS
 	platform/platform.h
 	renderer/command_buffer.h
 	renderer/device.h
+	renderer/fence.h
+	renderer/framebuffer.h
 	renderer/render_pass.h
 	renderer/renderer.h
 	renderer/swapchain.h
@@ -33,6 +35,8 @@ set(LISE_SOURCES
 	platform/platform_win32.c
 	renderer/command_buffer.c
 	renderer/device.c
+	renderer/fence.c
+	renderer/framebuffer.c
 	renderer/render_pass.c
 	renderer/renderer.c
 	renderer/swapchain.c

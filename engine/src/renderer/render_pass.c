@@ -6,7 +6,8 @@
 
 bool lise_render_pass_create(
 	lise_device* device,
-	lise_swapchain* swapchain,
+	VkFormat color_format,
+	VkFormat depth_format,
 	float x, float y, float w, float h,
 	float r, float g, float b, float a,
 	float depth,
@@ -24,7 +25,7 @@ bool lise_render_pass_create(
 
 	// Color attachment
 	VkAttachmentDescription color_attachment = {};
-	color_attachment.format = swapchain->image_format.format;
+	color_attachment.format = color_format;
 	color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -45,7 +46,7 @@ bool lise_render_pass_create(
 
 	// Depth attachment, if there is one
 	VkAttachmentDescription depth_attachment = {};
-	depth_attachment.format = swapchain->depth_format;
+	depth_attachment.format = depth_format;
 	depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;

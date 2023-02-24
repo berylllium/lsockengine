@@ -121,7 +121,8 @@ bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application
 	// Create the render pass
 	if (!lise_render_pass_create(
 		&vulkan_context.device,
-		&vulkan_context.swapchain,
+		vulkan_context.swapchain.image_format.format,
+		vulkan_context.swapchain.depth_format,
 		0, 0, window_extent.x, window_extent.y,
 		0.0f, 0.0f, 0.0f, 0.0f,
 		1.0f,

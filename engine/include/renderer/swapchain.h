@@ -4,6 +4,7 @@
 
 #include "renderer/device.h"
 #include "renderer/vulkan_image.h"
+#include "renderer/framebuffer.h"
 
 #include "definitions.h"
 
@@ -20,7 +21,9 @@ typedef struct lise_swapchain
 	uint8_t current_frame;
 	
 	VkFormat depth_format;
-	lise_vulkan_image depth_attachment;
+	lise_vulkan_image* depth_attachments;
+
+	lise_framebuffer* framebuffers;
 
 	bool swapchain_out_of_date;
 } lise_swapchain;

@@ -13,6 +13,7 @@ bool lise_swapchain_create(
 )
 {
 	out_swapchain->swapchain_out_of_date = false;
+	out_swapchain->max_frames_in_flight = 2;
 
 	lise_device_swap_chain_support_info swap_chain_support_info = device->device_swapchain_support_info;
 	
@@ -193,19 +194,30 @@ bool lise_swapchain_create(
 
 	out_swapchain->depth_format = depth_format;
 
-	lise_vulkan_image_create(
-		device,
-		VK_IMAGE_TYPE_2D,
-		swapchain_extent.width,
-		swapchain_extent.height,
-		depth_format,
-		VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		true,
-		VK_IMAGE_ASPECT_DEPTH_BIT,
-		&out_swapchain->depth_attachment
-	);
+	// Create the depth attachments
+	if (!out_swapchain->depth_attachments)
+	{
+		out_swapchain->depth_attachments = malloc(sizeof(lise_vulkan_image) * out_swapchain->image_count);
+	}
+
+	for (uint32_t i = 0; i < out_swapchain->image_count; i++)
+	{
+		lise_vulkan_image_create(
+			device,
+			VK_IMAGE_TYPE_2D,
+			swapchain_extent.width,
+			swapchain_extent.height,
+			depth_format,
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			true,
+			VK_IMAGE_ASPECT_DEPTH_BIT,
+			&out_swapchain->depth_attachments[i]
+		);
+	}
+
+	// TODO: Create framebuffers
 
 	return true;
 }
@@ -223,14 +235,22 @@ bool lise_swapchain_recreate(
 
 void lise_swapchain_destroy(VkDevice device, lise_swapchain* swapchain)
 {
-	lise_vulkan_image_destroy(device, &swapchain->depth_attachment);
-
 	for (uint32_t i = 0; i < swapchain->image_count; i++)
 	{
+		lise_vulkan_image_destroy(device, &swapchain->depth_attachments[i]);
+
 		vkDestroyImageView(device, swapchain->image_views[i], NULL);
 	}
 
+	free(swapchain->images);
+	swapchain->images = NULL;
+	free(swapchain->image_views);
+	swapchain->image_views = NULL;
+	free(swapchain->depth_attachments);
+	swapchain->depth_attachments = NULL;
+
 	vkDestroySwapchainKHR(device, swapchain->swapchain_handle, NULL);
+	swapchain->swapchain_handle = NULL;
 }
 
 bool lise_swapchain_acquire_next_image_index(
@@ -295,5 +315,7 @@ bool lise_swapchain_present(
 		return false;
 	}
 
-	return false;
+	swapchain->current_frame = (swapchain->current_frame + 1) % swapchain->max_frames_in_flight;
+
+	return true;
 }
