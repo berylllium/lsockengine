@@ -4,7 +4,9 @@
 
 #include "definitions.h"
 #include "container/vector2.h"
+#include "renderer/command_buffer.h"
 #include "renderer/device.h"
+#include "renderer/render_pass.h"
 #include "renderer/swapchain.h"
 
 typedef struct lise_vulkan_context
@@ -18,6 +20,9 @@ typedef struct lise_vulkan_context
 	lise_device device;
 
 	lise_swapchain swapchain;
+	lise_render_pass render_pass;
+
+	lise_command_buffer* graphics_command_buffers;
 } lise_vulkan_context;
 
 bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application_name);

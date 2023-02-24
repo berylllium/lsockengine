@@ -43,6 +43,8 @@ typedef struct lise_device
 	VkQueue graphics_queue;
 	VkQueue present_queue;
 	VkQueue transfer_queue;
+
+	VkCommandPool graphics_command_pool;
 } lise_device;
 
 bool lise_device_create(

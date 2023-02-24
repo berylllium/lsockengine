@@ -8,7 +8,9 @@ set(LISE_HEADERS
 	core/input.h
 	core/logger.h
 	platform/platform.h
+	renderer/command_buffer.h
 	renderer/device.h
+	renderer/render_pass.h
 	renderer/renderer.h
 	renderer/swapchain.h
 	renderer/vulkan_backend.h
@@ -29,7 +31,9 @@ set(LISE_SOURCES
 	core/logger.c
 	platform/platform_linux.c
 	platform/platform_win32.c
+	renderer/command_buffer.c
 	renderer/device.c
+	renderer/render_pass.c
 	renderer/renderer.c
 	renderer/swapchain.c
 	renderer/vulkan_backend.c

@@ -32,6 +32,7 @@ void on_window_resized(uint16_t event_code, lise_event_context ctx);
 static lise_vulkan_context vulkan_context;
 
 static bool check_validation_layer_support();
+static void create_command_buffers();
 
 bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application_name)
 {
@@ -117,6 +118,24 @@ bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application
 		return false;
 	}
 
+	// Create the render pass
+	if (!lise_render_pass_create(
+		&vulkan_context.device,
+		&vulkan_context.swapchain,
+		0, 0, window_extent.x, window_extent.y,
+		0.0f, 0.0f, 0.0f, 0.0f,
+		1.0f,
+		0,
+		&vulkan_context.render_pass
+	))
+	{
+		LFATAL("Failed to create render pass.");
+		return false;
+	}
+
+	// Create the graphics command buffers
+	create_command_buffers();
+
 	// Register events
 	lise_event_add_listener(LISE_EVENT_ON_WINDOW_RESIZE, on_window_resized);
 
@@ -127,6 +146,21 @@ bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application
 
 void lise_vulkan_shutdown()
 {
+	for (uint32_t i = 0; i < vulkan_context.swapchain.image_count; i++)
+	{
+		if (vulkan_context.graphics_command_buffers->handle)
+		{
+			lise_command_buffer_free(
+				vulkan_context.device.logical_device,
+				vulkan_context.device.graphics_command_pool,
+				&vulkan_context.graphics_command_buffers[i]
+			);
+		}
+	}
+	free(vulkan_context.graphics_command_buffers);
+
+	lise_render_pass_destroy(vulkan_context.device.logical_device, &vulkan_context.render_pass);
+
 	lise_swapchain_destroy(vulkan_context.device.logical_device, &vulkan_context.swapchain);
 
 	lise_device_destroy(&vulkan_context.device);
@@ -139,7 +173,6 @@ void lise_vulkan_shutdown()
 }
 
 // Static helper functions
-
 static bool check_validation_layer_support()
 {
 	// Get available validation layers
@@ -179,4 +212,41 @@ void on_window_resized(uint16_t event_code, lise_event_context ctx)
 {
 	vulkan_context.framebuffer_width = ctx.data.u32[0];
 	vulkan_context.framebuffer_height = ctx.data.u32[1];
+}
+
+void create_command_buffers()
+{
+	if (!vulkan_context.graphics_command_buffers)
+	{
+		LDEBUG("Creating initial command buffers");
+
+		// Reserve memory for the command buffers. There are as many command buffers as there are drawable surfaces in
+		// the swapchain.
+		vulkan_context.graphics_command_buffers = calloc(
+			vulkan_context.swapchain.image_count, 
+			sizeof(lise_command_buffer)
+		);
+	}
+
+	for (uint32_t i = 0; i < vulkan_context.swapchain.image_count; i++)
+	{
+		// Free buffer if exists
+		if (vulkan_context.graphics_command_buffers[i].handle)
+		{
+			lise_command_buffer_free(
+				vulkan_context.device.logical_device,
+				vulkan_context.device.graphics_command_pool,
+				&vulkan_context.graphics_command_buffers[i]
+			);
+		}
+
+		memset(&vulkan_context.graphics_command_buffers[i], 0, sizeof(lise_command_buffer));
+
+		lise_command_buffer_allocate(
+			vulkan_context.device.logical_device,
+			vulkan_context.device.graphics_command_pool,
+			true,
+			&vulkan_context.graphics_command_buffers[i]
+		);
+	}
 }

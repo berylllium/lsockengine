@@ -19,6 +19,7 @@ typedef struct lise_swapchain
 	uint8_t max_frames_in_flight;
 	uint8_t current_frame;
 	
+	VkFormat depth_format;
 	lise_vulkan_image depth_attachment;
 
 	bool swapchain_out_of_date;

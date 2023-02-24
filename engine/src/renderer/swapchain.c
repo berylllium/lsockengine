@@ -12,6 +12,8 @@ bool lise_swapchain_create(
 	lise_swapchain* out_swapchain
 )
 {
+	out_swapchain->swapchain_out_of_date = false;
+
 	lise_device_swap_chain_support_info swap_chain_support_info = device->device_swapchain_support_info;
 	
 	// Choose swap surface format
@@ -77,13 +79,13 @@ bool lise_swapchain_create(
 
 	VkSwapchainCreateInfoKHR swap_chain_ci = {};
 	swap_chain_ci.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    swap_chain_ci.surface = surface;
-    swap_chain_ci.minImageCount = swap_chain_image_count;
-    swap_chain_ci.imageFormat = surface_format.format;
-    swap_chain_ci.imageColorSpace = surface_format.colorSpace;
-    swap_chain_ci.imageExtent = swapchain_extent;
-    swap_chain_ci.imageArrayLayers = 1;
-    swap_chain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	swap_chain_ci.surface = surface;
+	swap_chain_ci.minImageCount = swap_chain_image_count;
+	swap_chain_ci.imageFormat = surface_format.format;
+	swap_chain_ci.imageColorSpace = surface_format.colorSpace;
+	swap_chain_ci.imageExtent = swapchain_extent;
+	swap_chain_ci.imageArrayLayers = 1;
+	swap_chain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
 	uint32_t queue_indices[] = {device->queue_indices.graphics_queue_index, device->queue_indices.present_queue_index};
 
@@ -141,14 +143,14 @@ bool lise_swapchain_create(
 	{
 		VkImageViewCreateInfo view_ci = {};
 		view_ci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        view_ci.image = out_swapchain->images[i];
-        view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        view_ci.format = surface_format.format;
-        view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        view_ci.subresourceRange.baseMipLevel = 0;
-        view_ci.subresourceRange.levelCount = 1;
-        view_ci.subresourceRange.baseArrayLayer = 0;
-        view_ci.subresourceRange.layerCount = 1;
+		view_ci.image = out_swapchain->images[i];
+		view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		view_ci.format = surface_format.format;
+		view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		view_ci.subresourceRange.baseMipLevel = 0;
+		view_ci.subresourceRange.levelCount = 1;
+		view_ci.subresourceRange.baseArrayLayer = 0;
+		view_ci.subresourceRange.layerCount = 1;
 
 		vkCreateImageView(device->logical_device, &view_ci, NULL, &out_swapchain->image_views[i]);
 	}
@@ -157,8 +159,8 @@ bool lise_swapchain_create(
 	const uint32_t candidate_count = 3;
 	const VkFormat candidates[3] = {
 		VK_FORMAT_D32_SFLOAT,
-        VK_FORMAT_D32_SFLOAT_S8_UINT,
-        VK_FORMAT_D24_UNORM_S8_UINT
+		VK_FORMAT_D32_SFLOAT_S8_UINT,
+		VK_FORMAT_D24_UNORM_S8_UINT
 	};
 
 	bool formats_supported = false;
@@ -188,6 +190,8 @@ bool lise_swapchain_create(
 		LFATAL("Failed to find supported depth format during swapchain creation.");
 		return false;
 	}
+
+	out_swapchain->depth_format = depth_format;
 
 	lise_vulkan_image_create(
 		device,

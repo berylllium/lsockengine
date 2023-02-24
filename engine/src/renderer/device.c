@@ -138,7 +138,7 @@ bool lise_device_create(
 	{
 		LFATAL("Failed to create the logical device.");
 
-		free(unique_queue_indices);
+		free(unique_queue_indices); // Not that necessary because of fatal error.
 		free(queue_create_infos);
 
 		return false;
@@ -170,11 +170,28 @@ bool lise_device_create(
 		&out_device->transfer_queue
 	);
 
+	// Create the graphics command pool
+	VkCommandPoolCreateInfo graphics_pool_ci = {};
+	graphics_pool_ci.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	graphics_pool_ci.queueFamilyIndex = out_device->queue_indices.graphics_queue_index;
+	graphics_pool_ci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+	if (vkCreateCommandPool(out_device->logical_device, &graphics_pool_ci, NULL, &out_device->graphics_command_pool)
+		!= VK_SUCCESS
+	)
+	{
+		LFATAL("Failed to create the graphics command pool.");
+		return false;
+	}
+
 	return true;	
 }
 
 void lise_device_destroy(lise_device* device)
 {
+	// Destroy graphics command pool
+	vkDestroyCommandPool(device->logical_device, device->graphics_command_pool, NULL);
+
 	// Destroy the logical device
 	if (device->logical_device)
 	{
