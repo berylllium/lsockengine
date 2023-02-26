@@ -94,6 +94,8 @@ if (UNIX)
 	target_compile_definitions(lise PUBLIC L_ISLINUX)
 
 	message(STATUS "Generating build files specifically for linux.")
+
+	target_link_libraries(lise vulkan xcb X11-xcb X11)
 	
 
 	#	if(NOT EXISTS "${CMAKE_BINARY_DIR}/resources")
