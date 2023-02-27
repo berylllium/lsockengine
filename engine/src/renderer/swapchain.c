@@ -8,83 +8,21 @@
 bool lise_swapchain_create(
 	lise_device* device,
 	VkSurfaceKHR surface,
-	VkExtent2D window_extent,
+	lise_swapchain_info swapchain_info,
+	lise_render_pass* render_pass,
 	lise_swapchain* out_swapchain
 )
 {
 	out_swapchain->swapchain_out_of_date = false;
 	out_swapchain->max_frames_in_flight = 2;
 
-	lise_device_swap_chain_support_info swap_chain_support_info = device->device_swapchain_support_info;
-	
-	// Choose swap surface format
-	VkSurfaceFormatKHR surface_format = swap_chain_support_info.surface_formats[0]; // Default, first surface format.
-
-	for (uint32_t i = 0; i < swap_chain_support_info.surface_format_count; i++)
-	{
-		if (swap_chain_support_info.surface_formats[i].format == VK_FORMAT_B8G8R8A8_SRGB &&
-			swap_chain_support_info.surface_formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-		{
-			surface_format = swap_chain_support_info.surface_formats[i];
-			break;
-		}
-	}
-
-	out_swapchain->image_format = surface_format;
-
-	// Choose swap present mode
-	VkPresentModeKHR surface_present_mode = VK_PRESENT_MODE_FIFO_KHR; // Default, guaranteed present mode
-
-	for (uint32_t i = 0; i < swap_chain_support_info.present_mode_count; i++)
-	{
-		if (swap_chain_support_info.present_modes[i] == VK_PRESENT_MODE_MAILBOX_KHR)
-		{
-			surface_present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
-			break;
-		}
-	}
-
-	// Choose swap extent
-	VkExtent2D swapchain_extent;
-
-	if (swap_chain_support_info.surface_capabilities.currentExtent.width != UINT32_MAX)
-	{
-		swapchain_extent = swap_chain_support_info.surface_capabilities.currentExtent;
-	}
-	else
-	{
-		VkExtent2D actual_extent = window_extent;
-
-		actual_extent.width = lise_clamp(
-			actual_extent.width,
-			swap_chain_support_info.surface_capabilities.minImageExtent.width,
-			swap_chain_support_info.surface_capabilities.maxImageExtent.width
-		);
-
-		actual_extent.height = lise_clamp(
-			actual_extent.height,
-			swap_chain_support_info.surface_capabilities.minImageExtent.height,
-			swap_chain_support_info.surface_capabilities.maxImageExtent.height
-		);
-
-		swapchain_extent = actual_extent;
-	}
-
-	uint32_t swap_chain_image_count = swap_chain_support_info.surface_capabilities.minImageCount + 1;
-
-	// Make sure to not exceed the maximum image count
-	if (swap_chain_image_count > swap_chain_support_info.surface_capabilities.maxImageCount)
-	{
-		swap_chain_image_count = swap_chain_support_info.surface_capabilities.maxImageCount;
-	}
-
 	VkSwapchainCreateInfoKHR swap_chain_ci = {};
 	swap_chain_ci.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	swap_chain_ci.surface = surface;
-	swap_chain_ci.minImageCount = swap_chain_image_count;
-	swap_chain_ci.imageFormat = surface_format.format;
-	swap_chain_ci.imageColorSpace = surface_format.colorSpace;
-	swap_chain_ci.imageExtent = swapchain_extent;
+	swap_chain_ci.minImageCount = swapchain_info.image_count;
+	swap_chain_ci.imageFormat = swapchain_info.image_format.format;
+	swap_chain_ci.imageColorSpace = swapchain_info.image_format.colorSpace;
+	swap_chain_ci.imageExtent = swapchain_info.swapchain_extent;
 	swap_chain_ci.imageArrayLayers = 1;
 	swap_chain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -103,7 +41,7 @@ bool lise_swapchain_create(
 
 	swap_chain_ci.preTransform = device->device_swapchain_support_info.surface_capabilities.currentTransform;
 	swap_chain_ci.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-	swap_chain_ci.presentMode = surface_present_mode;
+	swap_chain_ci.presentMode = swapchain_info.present_mode;
 	swap_chain_ci.clipped = VK_TRUE;
 	swap_chain_ci.oldSwapchain = VK_NULL_HANDLE;
 
@@ -146,7 +84,7 @@ bool lise_swapchain_create(
 		view_ci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		view_ci.image = out_swapchain->images[i];
 		view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		view_ci.format = surface_format.format;
+		view_ci.format = swapchain_info.image_format.format;
 		view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		view_ci.subresourceRange.baseMipLevel = 0;
 		view_ci.subresourceRange.levelCount = 1;
@@ -156,44 +94,6 @@ bool lise_swapchain_create(
 		vkCreateImageView(device->logical_device, &view_ci, NULL, &out_swapchain->image_views[i]);
 	}
 
-	// Check if device supports depth format
-	const uint32_t candidate_count = 3;
-	const VkFormat candidates[3] = {
-		VK_FORMAT_D32_SFLOAT,
-		VK_FORMAT_D32_SFLOAT_S8_UINT,
-		VK_FORMAT_D24_UNORM_S8_UINT
-	};
-
-	bool formats_supported = false;
-	VkFormat depth_format;
-	uint32_t flags = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
-	for (uint32_t i = 0; i < candidate_count; i++)
-	{
-		VkFormatProperties format_properties;
-		vkGetPhysicalDeviceFormatProperties(device->physical_device, candidates[i], &format_properties);
-
-		if ((format_properties.linearTilingFeatures & flags) == flags)
-		{
-			depth_format = candidates[i];
-			formats_supported = true;
-			break;
-		}
-		else if ((format_properties.optimalTilingFeatures & flags) == flags)
-		{
-			depth_format = candidates[i];
-			formats_supported = true;
-			break;
-		}
-	}
-
-	if (!formats_supported)
-	{
-		LFATAL("Failed to find supported depth format during swapchain creation.");
-		return false;
-	}
-
-	out_swapchain->depth_format = depth_format;
-
 	// Create the depth attachments
 	if (!out_swapchain->depth_attachments)
 	{
@@ -202,22 +102,53 @@ bool lise_swapchain_create(
 
 	for (uint32_t i = 0; i < out_swapchain->image_count; i++)
 	{
-		lise_vulkan_image_create(
+		if (!lise_vulkan_image_create(
 			device,
 			VK_IMAGE_TYPE_2D,
-			swapchain_extent.width,
-			swapchain_extent.height,
-			depth_format,
+			swapchain_info.swapchain_extent.width,
+			swapchain_info.swapchain_extent.height,
+			swapchain_info.depth_format,
 			VK_IMAGE_TILING_OPTIMAL,
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			true,
 			VK_IMAGE_ASPECT_DEPTH_BIT,
 			&out_swapchain->depth_attachments[i]
-		);
+		))
+		{
+			LFATAL("Failed to create image swap chain depth attachments.");
+			return false;
+		}
 	}
 
-	// TODO: Create framebuffers
+	// Create framebuffers
+	if (!out_swapchain->framebuffers)
+	{
+		out_swapchain->framebuffers = malloc(sizeof(lise_framebuffer) * out_swapchain->image_count);
+	}
+
+	for (uint32_t i = 0; i < out_swapchain->image_count; i++)
+	{
+		uint32_t attachment_count = 2;
+		VkImageView attachments[] = {
+			out_swapchain->image_views[i],
+			out_swapchain->depth_attachments[i].image_view
+		};
+
+		if (!lise_framebuffer_create(
+			device->logical_device,
+			render_pass,
+			swapchain_info.swapchain_extent.width,
+			swapchain_info.swapchain_extent.height,
+			attachment_count,
+			attachments,
+			&out_swapchain->framebuffers[i]
+		))
+		{
+			LFATAL("Failed to create swap chain frame buffers");
+			return false;
+		}
+	}
 
 	return true;
 }
@@ -225,18 +156,21 @@ bool lise_swapchain_create(
 bool lise_swapchain_recreate(
 	lise_device* device,
 	VkSurfaceKHR surface,
-	VkExtent2D window_extent,
+	lise_swapchain_info swapchain_info,
+	lise_render_pass* render_pass,
 	lise_swapchain* swapchain
 )
 {
 	lise_swapchain_destroy(device->logical_device, swapchain);
-	return lise_swapchain_create(device, surface, window_extent, swapchain);
+	return lise_swapchain_create(device, surface, swapchain_info, render_pass, swapchain);
 }
 
 void lise_swapchain_destroy(VkDevice device, lise_swapchain* swapchain)
 {
 	for (uint32_t i = 0; i < swapchain->image_count; i++)
 	{
+		lise_framebuffer_destroy(device, &swapchain->framebuffers[i]);
+
 		lise_vulkan_image_destroy(device, &swapchain->depth_attachments[i]);
 
 		vkDestroyImageView(device, swapchain->image_views[i], NULL);
@@ -248,6 +182,8 @@ void lise_swapchain_destroy(VkDevice device, lise_swapchain* swapchain)
 	swapchain->image_views = NULL;
 	free(swapchain->depth_attachments);
 	swapchain->depth_attachments = NULL;
+	free(swapchain->framebuffers);
+	swapchain->framebuffers = NULL;
 
 	vkDestroySwapchainKHR(device, swapchain->swapchain_handle, NULL);
 	swapchain->swapchain_handle = NULL;
@@ -318,4 +254,119 @@ bool lise_swapchain_present(
 	swapchain->current_frame = (swapchain->current_frame + 1) % swapchain->max_frames_in_flight;
 
 	return true;
+}
+
+lise_swapchain_info lise_swapchain_query_info(lise_device* device, VkExtent2D window_extent)
+{
+	lise_swapchain_info info = {};
+
+	lise_device_swap_chain_support_info swap_chain_support_info = device->device_swapchain_support_info;
+	
+	// Choose swap surface format
+	VkSurfaceFormatKHR surface_format = swap_chain_support_info.surface_formats[0]; // Default, first surface format.
+
+	for (uint32_t i = 0; i < swap_chain_support_info.surface_format_count; i++)
+	{
+		if (swap_chain_support_info.surface_formats[i].format == VK_FORMAT_B8G8R8A8_SRGB &&
+			swap_chain_support_info.surface_formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+		{
+			surface_format = swap_chain_support_info.surface_formats[i];
+			break;
+		}
+	}
+
+	info.image_format = surface_format;
+
+	// Choose swap present mode
+	VkPresentModeKHR surface_present_mode = VK_PRESENT_MODE_FIFO_KHR; // Default, guaranteed present mode
+
+	for (uint32_t i = 0; i < swap_chain_support_info.present_mode_count; i++)
+	{
+		if (swap_chain_support_info.present_modes[i] == VK_PRESENT_MODE_MAILBOX_KHR)
+		{
+			surface_present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
+			break;
+		}
+	}
+
+	info.present_mode = surface_present_mode;
+
+	// Choose swap extent
+	VkExtent2D swapchain_extent;
+
+	if (swap_chain_support_info.surface_capabilities.currentExtent.width != UINT32_MAX)
+	{
+		swapchain_extent = swap_chain_support_info.surface_capabilities.currentExtent;
+	}
+	else
+	{
+		VkExtent2D actual_extent = window_extent;
+
+		actual_extent.width = lise_clamp(
+			actual_extent.width,
+			swap_chain_support_info.surface_capabilities.minImageExtent.width,
+			swap_chain_support_info.surface_capabilities.maxImageExtent.width
+		);
+
+		actual_extent.height = lise_clamp(
+			actual_extent.height,
+			swap_chain_support_info.surface_capabilities.minImageExtent.height,
+			swap_chain_support_info.surface_capabilities.maxImageExtent.height
+		);
+
+		swapchain_extent = actual_extent;
+	}
+
+	info.swapchain_extent = swapchain_extent;
+
+	uint32_t swap_chain_image_count = swap_chain_support_info.surface_capabilities.minImageCount + 1;
+
+	// Make sure to not exceed the maximum image count
+	if (swap_chain_image_count > swap_chain_support_info.surface_capabilities.maxImageCount &&
+		swap_chain_support_info.surface_capabilities.maxImageCount > 0)
+	{
+		swap_chain_image_count = swap_chain_support_info.surface_capabilities.maxImageCount;
+	}
+
+	info.image_count = swap_chain_image_count;
+
+	// Check if device supports depth format
+	const uint32_t candidate_count = 3;
+	const VkFormat candidates[3] = {
+		VK_FORMAT_D32_SFLOAT,
+		VK_FORMAT_D32_SFLOAT_S8_UINT,
+		VK_FORMAT_D24_UNORM_S8_UINT
+	};
+
+	bool formats_supported = false;
+	VkFormat depth_format;
+	uint32_t flags = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+	for (uint32_t i = 0; i < candidate_count; i++)
+	{
+		VkFormatProperties format_properties;
+		vkGetPhysicalDeviceFormatProperties(device->physical_device, candidates[i], &format_properties);
+
+		if ((format_properties.linearTilingFeatures & flags) == flags)
+		{
+			depth_format = candidates[i];
+			formats_supported = true;
+			break;
+		}
+		else if ((format_properties.optimalTilingFeatures & flags) == flags)
+		{
+			depth_format = candidates[i];
+			formats_supported = true;
+			break;
+		}
+	}
+
+	if (!formats_supported)
+	{
+		LFATAL("Failed to find supported depth format during swapchain creation.");
+		return (lise_swapchain_info) {};
+	}
+
+	info.depth_format = depth_format;
+
+	return info;
 }

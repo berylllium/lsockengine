@@ -8,6 +8,17 @@
 
 #include "definitions.h"
 
+typedef struct lise_swapchain_info
+{
+	VkSurfaceFormatKHR image_format;
+	VkPresentModeKHR present_mode;
+	VkExtent2D swapchain_extent;
+
+	VkFormat depth_format;
+
+	uint32_t image_count;
+} lise_swapchain_info;
+
 typedef struct lise_swapchain
 {
 	VkSwapchainKHR swapchain_handle;
@@ -31,14 +42,16 @@ typedef struct lise_swapchain
 bool lise_swapchain_create(
 	lise_device* device,
 	VkSurfaceKHR surface,
-	VkExtent2D window_extent,
+	lise_swapchain_info swapchain_info,
+	lise_render_pass* render_pass,
 	lise_swapchain* out_swapchain
 );
 
 bool lise_swapchain_recreate(
 	lise_device* device,
 	VkSurfaceKHR surface,
-	VkExtent2D window_extent,
+	lise_swapchain_info swapchain_info,
+	lise_render_pass* render_pass,
 	lise_swapchain* swapchain
 );
 
@@ -59,3 +72,5 @@ bool lise_swapchain_present(
 	VkSemaphore render_complete_semaphore,
 	uint32_t present_image_index
 );
+
+lise_swapchain_info lise_swapchain_query_info(lise_device* device, VkExtent2D window_extent);

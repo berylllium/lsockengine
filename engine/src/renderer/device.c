@@ -6,6 +6,8 @@
 #include "core/logger.h"
 #include "util/string_utils.h"
 
+#define AMD_VENDOR_ID 0x1002
+
 static bool pick_physical_device(
 	VkInstance vulkan_instance,
 	const char** physical_device_extensions,

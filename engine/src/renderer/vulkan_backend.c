@@ -106,23 +106,17 @@ bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application
 		return false;
 	}
 
-	// Create the swapchain
-	if (!lise_swapchain_create(
+	// Get swapchain info
+	lise_swapchain_info swapchain_info = lise_swapchain_query_info(
 		&vulkan_context.device,
-		vulkan_context.surface,
-		(VkExtent2D) { window_extent.x, window_extent.y },
-		&vulkan_context.swapchain
-	))
-	{
-		LFATAL("Failed to create the swapchain.");
-		return false;
-	}
-
+		(VkExtent2D) { window_extent.x, window_extent.y }
+	);
+	
 	// Create the render pass
 	if (!lise_render_pass_create(
 		&vulkan_context.device,
-		vulkan_context.swapchain.image_format.format,
-		vulkan_context.swapchain.depth_format,
+		swapchain_info.image_format.format,
+		swapchain_info.depth_format,
 		0, 0, window_extent.x, window_extent.y,
 		0.0f, 0.0f, 0.0f, 0.0f,
 		1.0f,
@@ -131,6 +125,19 @@ bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application
 	))
 	{
 		LFATAL("Failed to create render pass.");
+		return false;
+	}
+
+	// Create the swapchain
+	if (!lise_swapchain_create(
+		&vulkan_context.device,
+		vulkan_context.surface,
+		swapchain_info,
+		&vulkan_context.render_pass,
+		&vulkan_context.swapchain
+	))
+	{
+		LFATAL("Failed to create the swapchain.");
 		return false;
 	}
 

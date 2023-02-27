@@ -49,7 +49,9 @@ bool lise_vulkan_image_create(
 	int32_t memory_type = -1;
 	for (uint32_t i = 0; i < device->physical_device_memory_properties.memoryTypeCount; i++)
 	{
-		if (memory_reqs.memoryTypeBits & (1 << i) && (device->physical_device_memory_properties.memoryTypes[i].propertyFlags & memory_flags) == memory_flags)
+		if (memory_reqs.memoryTypeBits & (1 << i) &&
+			(device->physical_device_memory_properties.memoryTypes[i].propertyFlags & memory_flags) == memory_flags &&
+			(device->physical_device_memory_properties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) == 0)
 		{
 			memory_type = i;
 		}
