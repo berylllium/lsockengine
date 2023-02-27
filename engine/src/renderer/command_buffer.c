@@ -3,10 +3,10 @@
 #include <string.h>
 
 void lise_command_buffer_allocate(
-    VkDevice device,
-    VkCommandPool command_pool,
-    bool is_primary,
-    lise_command_buffer* out_command_buffer
+	VkDevice device,
+	VkCommandPool command_pool,
+	bool is_primary,
+	lise_command_buffer* out_command_buffer
 )
 {
 	memset(out_command_buffer, 0, sizeof(lise_command_buffer));
@@ -29,9 +29,9 @@ void lise_command_buffer_allocate(
 }
 
 void lise_command_buffer_free(
-    VkDevice device,
-    VkCommandPool command_pool,
-    lise_command_buffer* command_buffer
+	VkDevice device,
+	VkCommandPool command_pool,
+	lise_command_buffer* command_buffer
 )
 {
 	vkFreeCommandBuffers(device, command_pool, 1, &command_buffer->handle);
@@ -41,24 +41,24 @@ void lise_command_buffer_free(
 }
 
 void lise_command_buffer_begin(
-    lise_command_buffer* command_buffer,
-    bool is_single_use,
-    bool is_render_pass_continue,
-    bool is_simultaneous_use
+	lise_command_buffer* command_buffer,
+	bool is_single_use,
+	bool is_render_pass_continue,
+	bool is_simultaneous_use
 )
 {
 	VkCommandBufferBeginInfo begin_info = {};
 	begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
 	if (is_single_use) {
-        begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    }
-    if (is_render_pass_continue) {
-        begin_info.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
-    }
-    if (is_simultaneous_use) {
-        begin_info.flags |= VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-    }
+		begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+	}
+	if (is_render_pass_continue) {
+		begin_info.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+	}
+	if (is_simultaneous_use) {
+		begin_info.flags |= VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+	}
 
 	vkBeginCommandBuffer(command_buffer->handle, &begin_info);
 
@@ -83,9 +83,9 @@ void lise_command_buffer_reset(lise_command_buffer* command_buffer)
 }
 
 void lise_command_buffer_allocate_and_begin_single_use(
-    VkDevice device,
-    VkCommandPool command_pool,
-    lise_command_buffer* out_command_buffer
+	VkDevice device,
+	VkCommandPool command_pool,
+	lise_command_buffer* out_command_buffer
 )
 {
 	lise_command_buffer_allocate(device, command_pool, true, out_command_buffer);
@@ -93,10 +93,10 @@ void lise_command_buffer_allocate_and_begin_single_use(
 }
 
 void lise_command_buffer_end_and_submit_single_use(
-    VkDevice device,
-    VkCommandPool command_pool,
-    lise_command_buffer* command_buffer,
-    VkQueue queue
+	VkDevice device,
+	VkCommandPool command_pool,
+	lise_command_buffer* command_buffer,
+	VkQueue queue
 )
 {
 	// End buffer

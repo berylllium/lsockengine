@@ -215,13 +215,6 @@ static bool check_validation_layer_support()
 	return true;
 }
 
-// Event definitions
-void on_window_resized(uint16_t event_code, lise_event_context ctx)
-{
-	vulkan_context.framebuffer_width = ctx.data.u32[0];
-	vulkan_context.framebuffer_height = ctx.data.u32[1];
-}
-
 void create_command_buffers()
 {
 	if (!vulkan_context.graphics_command_buffers)
@@ -257,4 +250,11 @@ void create_command_buffers()
 			&vulkan_context.graphics_command_buffers[i]
 		);
 	}
+}
+
+// Event definitions
+void on_window_resized(uint16_t event_code, lise_event_context ctx)
+{
+	vulkan_context.framebuffer_width = ctx.data.u32[0];
+	vulkan_context.framebuffer_height = ctx.data.u32[1];
 }

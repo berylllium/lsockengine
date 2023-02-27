@@ -258,8 +258,8 @@ bool lise_vulkan_platform_create_vulkan_surface(
 	VkInstance instance,
 	VkSurfaceKHR* out_surface)
 {
-    VkWin32SurfaceCreateInfoKHR create_info = {};
-    create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+	VkWin32SurfaceCreateInfoKHR create_info = {};
+	create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 	create_info.hinstance = state.h_instance;
 	create_info.hwnd = state.hwnd;
 
