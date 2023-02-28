@@ -18,7 +18,7 @@ The following instructions apply to Arch Linux. Other distributions have differe
 - Install the following packages from pacman: `vulkan-devel shaderc`. (`vulkan-devel` contains everything needed for vulkan development, including Vulkan headers and the library required for linking. The `shaderc` package contains the `glslc` binary used to compile GLSL code into SPIR-V bytecode.)
 - Configure the CMake project and build it.
 
-> **__NOTE:__** Please read through the [Notice](#notice) section for more information about the quirks running LiSE on GNU/Linux using the Xorg window system.
+> **__NOTE:__** Please read through the [Notice](#notice) section for more information about the quirks of running LiSE on GNU/Linux using the Xorg window system.
 
 ## Notice
 
