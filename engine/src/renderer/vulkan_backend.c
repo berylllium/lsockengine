@@ -144,6 +144,37 @@ bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application
 	// Create the graphics command buffers
 	create_command_buffers();
 
+	// Create sync objects
+	vulkan_context.image_available_semaphores =
+		malloc(sizeof(VkSemaphore) * vulkan_context.swapchain.max_frames_in_flight);
+	
+	vulkan_context.queue_complete_semaphores =
+		malloc(sizeof(VkSemaphore) * vulkan_context.swapchain.max_frames_in_flight);
+
+	vulkan_context.in_flight_fences = malloc(sizeof(lise_fence) * vulkan_context.swapchain.max_frames_in_flight);
+
+	for (uint32_t i = 0; i < vulkan_context.swapchain.max_frames_in_flight; i++)
+	{
+		VkSemaphoreCreateInfo semaphore_ci = {};
+		semaphore_ci.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+		vkCreateSemaphore(
+			vulkan_context.device.logical_device,
+			&semaphore_ci,
+			NULL,
+			&vulkan_context.image_available_semaphores[i]
+		);
+
+		vkCreateSemaphore(
+			vulkan_context.device.logical_device,
+			&semaphore_ci,
+			NULL,
+			&vulkan_context.queue_complete_semaphores[i]
+		);
+
+		lise_fence_create(vulkan_context.device.logical_device, true, &vulkan_context.in_flight_fences[i]);
+	}
+
 	// Register events
 	lise_event_add_listener(LISE_EVENT_ON_WINDOW_RESIZE, on_window_resized);
 
@@ -154,6 +185,34 @@ bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application
 
 void lise_vulkan_shutdown()
 {
+	vkDeviceWaitIdle(vulkan_context.device.logical_device);
+
+	for (uint32_t i = 0; i < vulkan_context.swapchain.max_frames_in_flight; i++)
+	{
+		if (vulkan_context.image_available_semaphores[i])
+		{
+			vkDestroySemaphore(
+				vulkan_context.device.logical_device, 
+				vulkan_context.image_available_semaphores[i],
+				NULL
+			);
+		}
+
+		if (vulkan_context.queue_complete_semaphores[i])
+		{
+			vkDestroySemaphore(
+				vulkan_context.device.logical_device, 
+				vulkan_context.queue_complete_semaphores[i],
+				NULL
+			);
+		}
+
+		lise_fence_destroy(vulkan_context.device.logical_device, &vulkan_context.in_flight_fences[i]);
+	}
+	free(vulkan_context.image_available_semaphores);
+	free(vulkan_context.queue_complete_semaphores);
+	free(vulkan_context.in_flight_fences);
+
 	for (uint32_t i = 0; i < vulkan_context.swapchain.image_count; i++)
 	{
 		if (vulkan_context.graphics_command_buffers->handle)
@@ -257,4 +316,14 @@ void on_window_resized(uint16_t event_code, lise_event_context ctx)
 {
 	vulkan_context.framebuffer_width = ctx.data.u32[0];
 	vulkan_context.framebuffer_height = ctx.data.u32[1];
+}
+
+bool lise_vulkan_begin_frame(float delta_time)
+{
+	
+}
+
+bool lise_vulkan_end_frame(float delta_time)
+{
+
 }

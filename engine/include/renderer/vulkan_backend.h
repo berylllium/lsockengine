@@ -8,6 +8,7 @@
 #include "renderer/device.h"
 #include "renderer/render_pass.h"
 #include "renderer/swapchain.h"
+#include "renderer/fence.h"
 
 typedef struct lise_vulkan_context
 {
@@ -23,8 +24,19 @@ typedef struct lise_vulkan_context
 	lise_render_pass render_pass;
 
 	lise_command_buffer* graphics_command_buffers;
+
+	VkSemaphore* image_available_semaphores;
+
+	VkSemaphore* queue_complete_semaphores;
+
+	uint32_t in_flight_fence_count;
+	lise_fence* in_flight_fences;
 } lise_vulkan_context;
 
 bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application_name);
 
 void lise_vulkan_shutdown();
+
+bool lise_vulkan_begin_frame(float delta_time);
+
+bool lise_vulkan_end_frame(float delta_time);

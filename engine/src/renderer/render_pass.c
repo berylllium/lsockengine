@@ -15,6 +15,19 @@ bool lise_render_pass_create(
 	lise_render_pass* out_render_pass
 )
 {
+	out_render_pass->x = x;
+	out_render_pass->y = y;
+	out_render_pass->w = w;
+	out_render_pass->h = h;
+
+	out_render_pass->r = r;
+	out_render_pass->g = g;
+	out_render_pass->b = b;
+	out_render_pass->a = a;
+
+	out_render_pass->depth = depth;
+	out_render_pass->stencil = stencil;
+
 	// Main subpass
 	VkSubpassDescription subpass = {};
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
