@@ -3,7 +3,7 @@ A PS1-style game engine.
 
 ## Support
 
-LiSE provides native support for Windows and GNU/Linux systems. Support for MacOs is not planned.
+LiSE provides native support for Windows and GNU/Linux systems using the Xorg window system. Support for MacOs is not planned.
 
 ### Windows
 
@@ -18,7 +18,10 @@ The following instructions apply to Arch Linux. Other distributions have differe
 - Install the following packages from pacman: `vulkan-devel shaderc`. (`vulkan-devel` contains everything needed for vulkan development, including Vulkan headers and the library required for linking. The `shaderc` package contains the `glslc` binary used to compile GLSL code into SPIR-V bytecode.)
 - Configure the CMake project and build it.
 
+> **__NOTE:__** Please read through the [Notice](#notice) section for more information about the quirks running LiSE on GNU/Linux using the Xorg window system.
+
 ## Notice
 
-LiSE uses `= {}` struct initialization. At the time of writing, this is a GCC extension. C23 will
-include this as standard in the future.
+LiSE uses `= {}` struct initialization. At the time of writing, this is a GCC extension. C23 will include this as standard in the future.
+
+Xorg does not support disabling key-repeats for specific windows. This means that when one wants to disable key-repeats they have to do so for the entire window system. Meaning LiSE will disable key-repeats for the entire system and reenable it when closing down. This also means that key-repeats will remain disabled if the program closes without successfully going through the shutdown procedure; this may occur on crashes.
