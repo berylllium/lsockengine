@@ -117,6 +117,13 @@ bool lise_application_run()
 				break;
 			}
 
+			if (!lise_renderer_draw_frame(app_state.delta_time))
+			{
+				LFATAL("Failed to draw the next frame.");
+				app_state.is_running = false;
+				break;
+			}
+
 			lise_input_update();
 		}
 	}

@@ -125,6 +125,31 @@ bool lise_render_pass_create(
 	return true;
 }
 
+bool lise_render_pass_recreate(
+	lise_device* device,
+	VkFormat color_format,
+	VkFormat depth_format,
+	float x, float y, float w, float h,
+	float r, float g, float b, float a,
+	float depth,
+	float stencil,
+	lise_render_pass* out_render_pass
+)
+{
+	lise_render_pass_destroy(device->logical_device, out_render_pass);
+
+	return lise_render_pass_create(
+		device,
+		color_format,
+		depth_format,
+		x, y, w, h,
+		r, g, b, a,
+		depth,
+		stencil,
+		out_render_pass
+	);
+}
+
 void lise_render_pass_destroy(VkDevice device, lise_render_pass* render_pass)
 {
 	if (render_pass && render_pass->handle)

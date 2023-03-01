@@ -292,32 +292,21 @@ lise_swapchain_info lise_swapchain_query_info(lise_device* device, VkExtent2D wi
 	info.present_mode = surface_present_mode;
 
 	// Choose swap extent
-	VkExtent2D swapchain_extent;
+	VkExtent2D actual_extent = window_extent;
 
-	if (swap_chain_support_info.surface_capabilities.currentExtent.width != UINT32_MAX)
-	{
-		swapchain_extent = swap_chain_support_info.surface_capabilities.currentExtent;
-	}
-	else
-	{
-		VkExtent2D actual_extent = window_extent;
+//	actual_extent.width = lise_clamp(
+//		actual_extent.width,
+//		swap_chain_support_info.surface_capabilities.minImageExtent.width,
+//		swap_chain_support_info.surface_capabilities.maxImageExtent.width
+//	);
+//
+//	actual_extent.height = lise_clamp(
+//		actual_extent.height,
+//		swap_chain_support_info.surface_capabilities.minImageExtent.height,
+//		swap_chain_support_info.surface_capabilities.maxImageExtent.height
+//	);
 
-		actual_extent.width = lise_clamp(
-			actual_extent.width,
-			swap_chain_support_info.surface_capabilities.minImageExtent.width,
-			swap_chain_support_info.surface_capabilities.maxImageExtent.width
-		);
-
-		actual_extent.height = lise_clamp(
-			actual_extent.height,
-			swap_chain_support_info.surface_capabilities.minImageExtent.height,
-			swap_chain_support_info.surface_capabilities.maxImageExtent.height
-		);
-
-		swapchain_extent = actual_extent;
-	}
-
-	info.swapchain_extent = swapchain_extent;
+	info.swapchain_extent = actual_extent;
 
 	uint32_t swap_chain_image_count = swap_chain_support_info.surface_capabilities.minImageCount + 1;
 

@@ -31,6 +31,11 @@ typedef struct lise_vulkan_context
 
 	uint32_t in_flight_fence_count;
 	lise_fence* in_flight_fences;
+
+	// Fences in this array are not owned by the array
+	lise_fence** images_in_flight;
+
+	uint32_t current_image_index;
 } lise_vulkan_context;
 
 bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application_name);

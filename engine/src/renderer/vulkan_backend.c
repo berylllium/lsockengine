@@ -26,13 +26,19 @@ static const char* device_extensions[] = {
 };
 static const uint32_t device_extension_count = 1;
 
-// Events
-void on_window_resized(uint16_t event_code, lise_event_context ctx);
+// This boolean defines whether the renderer has looped at least once, and is thus capable of detecting Surface size
+// changes on its own.
+static bool has_looped = false;
 
 static lise_vulkan_context vulkan_context;
 
+// Static helper functions
 static bool check_validation_layer_support();
 static void create_command_buffers();
+static bool recreate_swapchain();
+
+// Events
+void on_window_resized(uint16_t event_code, lise_event_context ctx);
 
 bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application_name)
 {
@@ -41,6 +47,9 @@ bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application
 		LFATAL("One or more requested validation layers do not exist.");
 		return false;
 	}
+
+	vulkan_context.framebuffer_width = window_extent.x;
+	vulkan_context.framebuffer_height = window_extent.y;
 
 	// Vulkan Instance 
 	VkApplicationInfo app_info = {};
@@ -175,6 +184,8 @@ bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application
 		lise_fence_create(vulkan_context.device.logical_device, true, &vulkan_context.in_flight_fences[i]);
 	}
 
+	vulkan_context.images_in_flight = calloc(vulkan_context.swapchain.image_count, sizeof(lise_fence*));
+
 	// Register events
 	lise_event_add_listener(LISE_EVENT_ON_WINDOW_RESIZE, on_window_resized);
 
@@ -213,6 +224,8 @@ void lise_vulkan_shutdown()
 	free(vulkan_context.queue_complete_semaphores);
 	free(vulkan_context.in_flight_fences);
 
+	free(vulkan_context.images_in_flight);
+
 	for (uint32_t i = 0; i < vulkan_context.swapchain.image_count; i++)
 	{
 		if (vulkan_context.graphics_command_buffers->handle)
@@ -237,6 +250,156 @@ void lise_vulkan_shutdown()
 	vkDestroyInstance(vulkan_context.instance, NULL);
 
 	LINFO("Successfully shut the vulkan backend down.");
+}
+
+bool lise_vulkan_begin_frame(float delta_time)
+{
+	// Indicate that the render system has looped at least once.
+	has_looped = true;
+
+	if (vulkan_context.swapchain.swapchain_out_of_date)
+	{
+		recreate_swapchain();
+		return lise_vulkan_begin_frame(delta_time);
+	}
+
+	// Wait for the current frame
+	if (!lise_fence_wait(
+		vulkan_context.device.logical_device,
+		&vulkan_context.in_flight_fences[vulkan_context.swapchain.current_frame],
+		UINT64_MAX
+	))
+	{
+		LWARN("Failed to wait on an in-flight fence.");
+		return false;
+	}
+
+	// Acquire next image in swapchain
+	if (!lise_swapchain_acquire_next_image_index(
+		&vulkan_context.device,
+		&vulkan_context.swapchain,
+		UINT64_MAX,
+		vulkan_context.image_available_semaphores[vulkan_context.swapchain.current_frame],
+		NULL,
+		&vulkan_context.current_image_index
+	))
+	{
+		LWARN("Failed to acquire next swapchain image");
+		return false;
+	}
+
+	// Begin command buffer
+	lise_command_buffer* command_buffer = &vulkan_context.graphics_command_buffers[vulkan_context.current_image_index];
+
+	lise_command_buffer_reset(command_buffer);
+	lise_command_buffer_begin(command_buffer, false, false, false);
+
+	// Dynamic state
+	VkViewport viewport;
+	viewport.x = 0.0f;
+	viewport.y = (float) vulkan_context.framebuffer_height;
+	viewport.width = (float) vulkan_context.framebuffer_width;
+	viewport.height = -(float) vulkan_context.framebuffer_height;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+
+	// Scissor
+	VkRect2D scissor;
+	scissor.offset.x = scissor.offset.y = 0;
+	scissor.extent.width = vulkan_context.framebuffer_width;
+	scissor.extent.height = vulkan_context.framebuffer_height;
+
+	vkCmdSetViewport(command_buffer->handle, 0, 1, &viewport);
+	vkCmdSetScissor(command_buffer->handle, 0, 1, &scissor);
+
+	lise_render_pass_begin(
+		command_buffer,
+		&vulkan_context.render_pass,
+		vulkan_context.swapchain.framebuffers[vulkan_context.current_image_index].handle
+	);
+
+	return true;
+}
+
+bool lise_vulkan_end_frame(float delta_time)
+{
+	lise_command_buffer* command_buffer = &vulkan_context.graphics_command_buffers[vulkan_context.current_image_index];
+
+	// End render pass
+	lise_render_pass_end(command_buffer, &vulkan_context.render_pass);
+
+	lise_command_buffer_end(command_buffer);
+
+	// Wait if a previous frame is still using this image
+	if (vulkan_context.images_in_flight[vulkan_context.current_image_index] != NULL)
+	{
+		lise_fence_wait(
+			vulkan_context.device.logical_device,
+			vulkan_context.images_in_flight[vulkan_context.current_image_index],
+			UINT64_MAX
+		);
+	}
+
+	// Mark fence as being in use by this image
+	vulkan_context.images_in_flight[vulkan_context.current_image_index] = 
+		&vulkan_context.in_flight_fences[vulkan_context.swapchain.current_frame];
+
+	// Reset the fence
+	lise_fence_reset(
+		vulkan_context.device.logical_device,
+		&vulkan_context.in_flight_fences[vulkan_context.swapchain.current_frame]
+	);
+
+	// Submit queue
+	VkSubmitInfo submit_info = {};
+	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+	submit_info.commandBufferCount = 1;
+	submit_info.pCommandBuffers = &command_buffer->handle;
+
+	// Semaphores to be signaled when the queue is completed
+	submit_info.signalSemaphoreCount = 1;
+	submit_info.pSignalSemaphores = &vulkan_context.queue_complete_semaphores[vulkan_context.swapchain.current_frame];
+
+	// Wait before queue execution until image is available (image available semaphore is signaled)
+	submit_info.waitSemaphoreCount = 1;
+	submit_info.pWaitSemaphores = &vulkan_context.image_available_semaphores[vulkan_context.swapchain.current_frame];
+
+	// Wait destination
+	VkPipelineStageFlags stage_flags[1] = {
+		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+	};
+
+	submit_info.pWaitDstStageMask = stage_flags;
+
+	if (vkQueueSubmit(
+		vulkan_context.device.graphics_queue,
+		1,
+		&submit_info,
+		vulkan_context.in_flight_fences[vulkan_context.swapchain.current_frame].handle) != VK_SUCCESS
+	)
+	{
+		LERROR("Failed to submit queue.");
+		return false;
+	}
+
+	lise_command_buffer_update_submitted(command_buffer);
+
+	// Give images back to the swapchain
+	if (!lise_swapchain_present(
+		&vulkan_context.device,
+		&vulkan_context.swapchain,
+		vulkan_context.queue_complete_semaphores[vulkan_context.swapchain.current_frame],
+		vulkan_context.current_image_index
+		) && !vulkan_context.swapchain.swapchain_out_of_date
+	)
+	{
+		// Swapchain is not out of date, so the return value indicates a failure.
+		LFATAL("Failed to present swap chain image.");
+		return false;
+	}
+
+	return true;
 }
 
 // Static helper functions
@@ -311,19 +474,42 @@ void create_command_buffers()
 	}
 }
 
+static bool recreate_swapchain()
+{
+	// Wait for the device to idle
+	vkDeviceWaitIdle(vulkan_context.device.logical_device);
+
+	lise_swapchain_info new_info = lise_swapchain_query_info(
+		&vulkan_context.device,
+		(VkExtent2D) { vulkan_context.framebuffer_width, vulkan_context.framebuffer_height }
+	);
+
+	lise_render_pass_recreate(
+		&vulkan_context.device,
+		new_info.image_format.format,
+		new_info.depth_format,
+		0, 0, new_info.swapchain_extent.width, new_info.swapchain_extent.height,
+		1.0f, 0.0f, 0.0f, 0.0f,
+		1.0f,
+		0,
+		&vulkan_context.render_pass
+	);
+
+	lise_swapchain_recreate(
+		&vulkan_context.device,
+		vulkan_context.surface,
+		new_info,
+		&vulkan_context.render_pass,
+		&vulkan_context.swapchain
+	);
+}
+
 // Event definitions
 void on_window_resized(uint16_t event_code, lise_event_context ctx)
 {
 	vulkan_context.framebuffer_width = ctx.data.u32[0];
 	vulkan_context.framebuffer_height = ctx.data.u32[1];
-}
 
-bool lise_vulkan_begin_frame(float delta_time)
-{
-	
-}
-
-bool lise_vulkan_end_frame(float delta_time)
-{
-
+	// Do not recreate the swapchain if the render system of capable of doing so.
+	if (!has_looped) recreate_swapchain();
 }
