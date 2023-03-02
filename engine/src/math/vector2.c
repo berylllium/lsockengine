@@ -1,4 +1,4 @@
-#include "container/vector2.h"
+#include "math/vector2.h"
 
 bool lise_vector2i_equals(lise_vector2i l, lise_vector2i r)
 {

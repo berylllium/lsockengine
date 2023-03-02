@@ -2,7 +2,7 @@
 
 #include "definitions.h"
 
-#include "container/vector2.h"
+#include "math/vector2.h"
 
 typedef enum lise_mouse_buttons
 {

@@ -1,12 +1,12 @@
 
 set(LISE_HEADERS
 	container/darray.h
-	container/vector2.h
 	core/application.h
 	core/clock.h
 	core/event.h
 	core/input.h
 	core/logger.h
+	math/vector2.h
 	platform/platform.h
 	renderer/command_buffer.h
 	renderer/device.h
@@ -25,12 +25,12 @@ list(TRANSFORM LISE_HEADERS PREPEND "include/")
 
 set(LISE_SOURCES
 	container/darray.c
-	container/vector2.c
 	core/application.c
 	core/clock.c
 	core/event.c
 	core/input.c
 	core/logger.c
+	math/vector2.c
 	platform/platform_linux.c
 	platform/platform_win32.c
 	renderer/command_buffer.c

@@ -3,7 +3,7 @@
 #include <vulkan/vulkan.h>
 
 #include "definitions.h"
-#include "container/vector2.h"
+#include "math/vector2.h"
 #include "renderer/command_buffer.h"
 #include "renderer/device.h"
 #include "renderer/render_pass.h"
