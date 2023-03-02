@@ -256,11 +256,12 @@ bool lise_swapchain_present(
 	return true;
 }
 
-lise_swapchain_info lise_swapchain_query_info(lise_device* device, VkExtent2D window_extent)
+lise_swapchain_info lise_swapchain_query_info(lise_device* device, VkSurfaceKHR surface)
 {
 	lise_swapchain_info info = {};
 
-	lise_device_swap_chain_support_info swap_chain_support_info = device->device_swapchain_support_info;
+	lise_device_swap_chain_support_info swap_chain_support_info = //device->device_swapchain_support_info;
+		lise_device_query_swap_chain_support(device->physical_device, surface);
 	
 	// Choose swap surface format
 	VkSurfaceFormatKHR surface_format = swap_chain_support_info.surface_formats[0]; // Default, first surface format.
@@ -292,7 +293,7 @@ lise_swapchain_info lise_swapchain_query_info(lise_device* device, VkExtent2D wi
 	info.present_mode = surface_present_mode;
 
 	// Choose swap extent
-	VkExtent2D actual_extent = window_extent;
+	//VkExtent2D actual_extent = window_extent;
 
 //	actual_extent.width = lise_clamp(
 //		actual_extent.width,
@@ -306,7 +307,7 @@ lise_swapchain_info lise_swapchain_query_info(lise_device* device, VkExtent2D wi
 //		swap_chain_support_info.surface_capabilities.maxImageExtent.height
 //	);
 
-	info.swapchain_extent = actual_extent;
+	info.swapchain_extent = swap_chain_support_info.surface_capabilities.currentExtent;
 
 	uint32_t swap_chain_image_count = swap_chain_support_info.surface_capabilities.minImageCount + 1;
 

@@ -73,4 +73,4 @@ bool lise_swapchain_present(
 	uint32_t present_image_index
 );
 
-lise_swapchain_info lise_swapchain_query_info(lise_device* device, VkExtent2D window_extent);
+lise_swapchain_info lise_swapchain_query_info(lise_device* device, VkSurfaceKHR surface);

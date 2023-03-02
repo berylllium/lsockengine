@@ -26,19 +26,12 @@ static const char* device_extensions[] = {
 };
 static const uint32_t device_extension_count = 1;
 
-// This boolean defines whether the renderer has looped at least once, and is thus capable of detecting Surface size
-// changes on its own.
-static bool has_looped = false;
-
 static lise_vulkan_context vulkan_context;
 
 // Static helper functions
 static bool check_validation_layer_support();
 static void create_command_buffers();
 static bool recreate_swapchain();
-
-// Events
-void on_window_resized(uint16_t event_code, lise_event_context ctx);
 
 bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application_name)
 {
@@ -118,7 +111,7 @@ bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application
 	// Get swapchain info
 	lise_swapchain_info swapchain_info = lise_swapchain_query_info(
 		&vulkan_context.device,
-		(VkExtent2D) { window_extent.x, window_extent.y }
+		vulkan_context.surface
 	);
 	
 	// Create the render pass
@@ -126,7 +119,7 @@ bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application
 		&vulkan_context.device,
 		swapchain_info.image_format.format,
 		swapchain_info.depth_format,
-		0, 0, window_extent.x, window_extent.y,
+		0, 0, swapchain_info.swapchain_extent.width, swapchain_info.swapchain_extent.height,
 		0.0f, 0.0f, 0.0f, 0.0f,
 		1.0f,
 		0,
@@ -185,9 +178,6 @@ bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application
 	}
 
 	vulkan_context.images_in_flight = calloc(vulkan_context.swapchain.image_count, sizeof(lise_fence*));
-
-	// Register events
-	lise_event_add_listener(LISE_EVENT_ON_WINDOW_RESIZE, on_window_resized);
 
 	LINFO("Successfully initialized the vulkan backend.");
 
@@ -254,9 +244,6 @@ void lise_vulkan_shutdown()
 
 bool lise_vulkan_begin_frame(float delta_time)
 {
-	// Indicate that the render system has looped at least once.
-	has_looped = true;
-
 	if (vulkan_context.swapchain.swapchain_out_of_date)
 	{
 		recreate_swapchain();
@@ -479,9 +466,11 @@ static bool recreate_swapchain()
 	// Wait for the device to idle
 	vkDeviceWaitIdle(vulkan_context.device.logical_device);
 
+	memset(vulkan_context.images_in_flight, 0, sizeof(lise_fence*) * vulkan_context.swapchain.image_count);
+
 	lise_swapchain_info new_info = lise_swapchain_query_info(
 		&vulkan_context.device,
-		(VkExtent2D) { vulkan_context.framebuffer_width, vulkan_context.framebuffer_height }
+		vulkan_context.surface
 	);
 
 	lise_render_pass_recreate(
@@ -502,14 +491,4 @@ static bool recreate_swapchain()
 		&vulkan_context.render_pass,
 		&vulkan_context.swapchain
 	);
-}
-
-// Event definitions
-void on_window_resized(uint16_t event_code, lise_event_context ctx)
-{
-	vulkan_context.framebuffer_width = ctx.data.u32[0];
-	vulkan_context.framebuffer_height = ctx.data.u32[1];
-
-	// Do not recreate the swapchain if the render system of capable of doing so.
-	if (!has_looped) recreate_swapchain();
 }
