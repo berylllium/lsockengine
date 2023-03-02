@@ -3,7 +3,7 @@ A PS1-style game engine.
 
 ## Support
 
-LiSE provides native support for Windows and GNU/Linux systems using the Xorg window system. Support for MacOs is not planned.
+LiSE provides native support for Windows and GNU/Linux systems using the Xorg window system. Support for the Wayland display system is planned, while support for MacOs is not.
 
 ### Windows
 
