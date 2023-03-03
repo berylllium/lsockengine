@@ -159,9 +159,9 @@ LAPI bool lise_input_is_mouse_button_down(lise_mouse_buttons button);
 LAPI bool lise_input_is_mouse_button_up(lise_mouse_buttons button);
 LAPI bool lise_input_was_mouse_button_down(lise_mouse_buttons button);
 LAPI bool lise_input_was_mouse_button_up(lise_mouse_buttons button);
-LAPI lise_vector2i lise_input_get_mouse_position();
-LAPI lise_vector2i lise_input_get_previous_mouse_position();
+LAPI lise_vec2i lise_input_get_mouse_position();
+LAPI lise_vec2i lise_input_get_previous_mouse_position();
 
 void lise_input_process_button(lise_mouse_buttons button, bool down);
-void lise_input_process_mouse_move(lise_vector2i pos);
+void lise_input_process_mouse_move(lise_vec2i pos);
 void lise_input_process_mouse_wheel(int8_t dz);

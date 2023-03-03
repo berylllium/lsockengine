@@ -215,7 +215,7 @@ LRESULT CALLBACK win32_process_message(HWND hwnd, uint32_t msg, WPARAM w_param, 
 			int32_t x_position = GET_X_LPARAM(l_param);
 			int32_t y_position = GET_Y_LPARAM(l_param);
 		
-			lise_input_process_mouse_move((lise_vector2i) { x_position, y_position });
+			lise_input_process_mouse_move((lise_vec2i) { x_position, y_position });
 		} break;
 		case WM_MOUSEWHEEL:
 		{

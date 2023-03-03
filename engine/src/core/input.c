@@ -4,7 +4,7 @@
 
 typedef struct mouse_state
 {
-	lise_vector2i pos;
+	lise_vec2i pos;
 	bool buttons[LISE_MOUSE_MAX_MOUSE_BUTTONS];
 } mouse_state;
 
@@ -52,9 +52,9 @@ void lise_input_process_button(lise_mouse_buttons button, bool down)
 	}
 }
 
-void lise_input_process_mouse_move(lise_vector2i pos)
+void lise_input_process_mouse_move(lise_vec2i pos)
 {
-	if (!lise_vector2i_equals(mouse_current.pos, pos))
+	if (!lise_vec2_equals(mouse_current.pos, pos))
 	{
 		mouse_current.pos = pos;
 
@@ -118,12 +118,12 @@ bool lise_input_was_mouse_button_up(lise_mouse_buttons button)
 	return !mouse_previous.buttons[button];
 }
 
-lise_vector2i lise_input_get_mouse_position()
+lise_vec2i lise_input_get_mouse_position()
 {
 	return mouse_current.pos;
 }
 
-lise_vector2i lise_input_get_previous_mouse_position()
+lise_vec2i lise_input_get_previous_mouse_position()
 {
 	return mouse_previous.pos;
 }

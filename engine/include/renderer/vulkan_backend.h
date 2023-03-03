@@ -38,7 +38,7 @@ typedef struct lise_vulkan_context
 	uint32_t current_image_index;
 } lise_vulkan_context;
 
-bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application_name);
+bool lise_vulkan_initialize(lise_vec2i window_extent, const char* application_name);
 
 void lise_vulkan_shutdown();
 

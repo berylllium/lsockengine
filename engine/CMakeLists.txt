@@ -6,7 +6,11 @@ set(LISE_HEADERS
 	core/event.h
 	core/input.h
 	core/logger.h
+	math/mat4x4.h
+	math/math.h
 	math/vector2.h
+	math/vector3.h
+	math/vector4.h
 	platform/platform.h
 	renderer/command_buffer.h
 	renderer/device.h
@@ -30,7 +34,7 @@ set(LISE_SOURCES
 	core/event.c
 	core/input.c
 	core/logger.c
-	math/vector2.c
+	math/math.c
 	platform/platform_linux.c
 	platform/platform_win32.c
 	renderer/command_buffer.c
@@ -51,6 +55,8 @@ add_library(lise SHARED ${LISE_SOURCES} ${LISE_HEADERS})
 target_include_directories(lise PUBLIC include/)
 target_compile_definitions(lise PRIVATE L_EXPORT)
 target_compile_options(lise PRIVATE -fvisibility=hidden)
+
+target_link_libraries(lise m) # Link math
 
 #if (CMAKE_BUILD_TYPE MATCHES "Release")
 #	target_link_libraries (lise -static-libgcc -static)

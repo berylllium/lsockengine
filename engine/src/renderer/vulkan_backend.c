@@ -33,7 +33,7 @@ static bool check_validation_layer_support();
 static void create_command_buffers();
 static bool recreate_swapchain();
 
-bool lise_vulkan_initialize(lise_vector2i window_extent, const char* application_name)
+bool lise_vulkan_initialize(lise_vec2i window_extent, const char* application_name)
 {
 	if (enable_validation_layers && !check_validation_layer_support())
 	{

@@ -23,3 +23,11 @@
 		#define LAPI 
 	#endif
 #endif
+
+#ifdef L_ISWIN
+	#define LINLINE __forceinline
+	#define LNOINLINE __declspec(noinline)
+#else
+	#define LINLINE static inline
+	#define LNOINLINE
+#endif

@@ -1,24 +1,57 @@
 #pragma once
 
 #include "definitions.h"
+#include "math/math.h"
 
-typedef struct lise_vector2i
+// vec2i
+typedef struct lise_vec2i
 {
-	int32_t x, y;	
-} lise_vector2i;
+	uint32_t x, y;
+} lise_vec2i;
 
-typedef struct lise_vector2f
+#define lise_vec2_equals(l, r) ((l).x == (r).x && (l).y == (r).y)
+
+// vec2
+typedef struct lise_vec2
 {
-	float x, y;
-} lise_vector2f;
+	union { float x, s, u; };
+	union { float y, t, v; };
+} lise_vec2;
 
-typedef struct lise_vector2d
+#define LVEC2_ZERO ((lise_vec2) { 0, 0 })
+#define LVEC2_ONE ((lise_vec2) { 1, 1 })
+
+#define LVEC2_UP ((lise_vec2) { 0, 1 })
+#define LVEC2_DOWN ((lise_vec2) { 0, -1 })
+#define LVEC2_LEFT ((lise_vec2) { -1, 0 })
+#define LVEC2_RIGHT ((lise_vec2) { 1, 0 })
+
+#define lise_vec2_add(l, r) ((lise_vec2) { (l).x + (r).x, (l).y + (r).y })
+#define lise_vec2_sub(l, r) ((lise_vec2) { (l).x - (r).x, (l).y - (r).y })
+#define lise_vec2_mul(l, r) ((lise_vec2) { (l).x * (r).x, (l).y * (r).y })
+#define lise_vec2_div(l, r) ((lise_vec2) { (l).x / (r).x, (l).y / (r).y })
+
+#define lise_vec2_length_squared(v) ((v).x * (v).x + (v).y * (v).y)
+
+#define lise_vec2_length(v) lsqrt(lise_vec2_length_squared(v))
+
+LINLINE void lise_vec2_normalize(lise_vec2* v)
 {
-	double x, y;
-} lise_vector2d;
+	float len = lise_vec2_length(*v);
+	v->x /= len;
+	v->y /= len;
+}
 
-LAPI bool lise_vector2i_equals(lise_vector2i l, lise_vector2i r);
+LINLINE lise_vec2 lise_vec2_normalized(lise_vec2 v)
+{
+	lise_vec2_normalize(&v);
 
-LAPI bool lise_vector2f_equals(lise_vector2f l, lise_vector2f r);
+	return v;
+}
 
-LAPI bool lise_vector2d_equals(lise_vector2d l, lise_vector2d r);
+LINLINE float lise_vec2_distance(lise_vec2 l, lise_vec2 r)
+{
+	lise_vec2 l_to_r = lise_vec2_sub(r, l);
+
+	return lise_vec2_length(l_to_r);
+}

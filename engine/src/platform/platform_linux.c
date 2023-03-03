@@ -248,7 +248,7 @@ bool lise_platform_poll_messages()
 				xcb_motion_notify_event_t *move_event = (xcb_motion_notify_event_t *)event;
 
 				// Pass over to the input subsystem.
-				lise_input_process_mouse_move((lise_vector2i) { move_event->event_x, move_event->event_y });
+				lise_input_process_mouse_move((lise_vec2i) { move_event->event_x, move_event->event_y });
 				break;
 			case XCB_CONFIGURE_NOTIFY:
 			{
