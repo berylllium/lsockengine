@@ -8,6 +8,7 @@ set(LISE_HEADERS
 	core/logger.h
 	math/mat4x4.h
 	math/math.h
+	math/quat.h
 	math/vector2.h
 	math/vector3.h
 	math/vector4.h
