@@ -23,6 +23,8 @@ typedef struct lise_swapchain
 {
 	VkSwapchainKHR swapchain_handle;
 
+	lise_swapchain_info swapchain_info;
+
 	VkSurfaceFormatKHR image_format;
 	uint32_t image_count;
 	VkImage* images;

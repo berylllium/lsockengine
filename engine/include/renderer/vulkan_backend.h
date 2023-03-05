@@ -9,14 +9,13 @@
 #include "renderer/render_pass.h"
 #include "renderer/swapchain.h"
 #include "renderer/fence.h"
+#include "renderer/shader/object_shader.h"
 
 typedef struct lise_vulkan_context
 {
 	VkInstance instance;
 
 	VkSurfaceKHR surface;
-	uint32_t framebuffer_width;
-	uint32_t framebuffer_height;
 
 	lise_device device;
 
@@ -36,9 +35,11 @@ typedef struct lise_vulkan_context
 	lise_fence** images_in_flight;
 
 	uint32_t current_image_index;
+
+	lise_object_shader object_shader;
 } lise_vulkan_context;
 
-bool lise_vulkan_initialize(lise_vec2i window_extent, const char* application_name);
+bool lise_vulkan_initialize(const char* application_name);
 
 void lise_vulkan_shutdown();
 

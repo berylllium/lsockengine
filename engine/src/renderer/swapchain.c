@@ -15,6 +15,7 @@ bool lise_swapchain_create(
 {
 	out_swapchain->swapchain_out_of_date = false;
 	out_swapchain->max_frames_in_flight = swapchain_info.image_count - 1;
+	out_swapchain->swapchain_info = swapchain_info;
 
 	VkSwapchainCreateInfoKHR swap_chain_ci = {};
 	swap_chain_ci.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;

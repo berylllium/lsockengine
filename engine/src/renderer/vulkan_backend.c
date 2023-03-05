@@ -33,16 +33,13 @@ static bool check_validation_layer_support();
 static void create_command_buffers();
 static bool recreate_swapchain();
 
-bool lise_vulkan_initialize(lise_vec2i window_extent, const char* application_name)
+bool lise_vulkan_initialize(const char* application_name)
 {
 	if (enable_validation_layers && !check_validation_layer_support())
 	{
 		LFATAL("One or more requested validation layers do not exist.");
 		return false;
 	}
-
-	vulkan_context.framebuffer_width = window_extent.x;
-	vulkan_context.framebuffer_height = window_extent.y;
 
 	// Vulkan Instance 
 	VkApplicationInfo app_info = {};
@@ -143,6 +140,8 @@ bool lise_vulkan_initialize(lise_vec2i window_extent, const char* application_na
 		return false;
 	}
 
+
+
 	// Create the graphics command buffers
 	create_command_buffers();
 
@@ -179,6 +178,18 @@ bool lise_vulkan_initialize(lise_vec2i window_extent, const char* application_na
 
 	vulkan_context.images_in_flight = calloc(vulkan_context.swapchain.image_count, sizeof(lise_fence*));
 
+	if (!lise_object_shader_create(
+		vulkan_context.device.logical_device,
+		&vulkan_context.render_pass,
+		vulkan_context.swapchain.swapchain_info.swapchain_extent.width,
+		vulkan_context.swapchain.swapchain_info.swapchain_extent.height,
+		&vulkan_context.object_shader
+	))
+	{
+		LFATAL("Failed to create the object shader.");
+		return false;
+	}
+
 	LINFO("Successfully initialized the vulkan backend.");
 
 	return true;
@@ -187,6 +198,8 @@ bool lise_vulkan_initialize(lise_vec2i window_extent, const char* application_na
 void lise_vulkan_shutdown()
 {
 	vkDeviceWaitIdle(vulkan_context.device.logical_device);
+
+	lise_object_shader_destroy(vulkan_context.device.logical_device, &vulkan_context.object_shader);
 
 	for (uint32_t i = 0; i < vulkan_context.swapchain.max_frames_in_flight; i++)
 	{
@@ -284,17 +297,17 @@ bool lise_vulkan_begin_frame(float delta_time)
 	// Dynamic state
 	VkViewport viewport;
 	viewport.x = 0.0f;
-	viewport.y = (float) vulkan_context.framebuffer_height;
-	viewport.width = (float) vulkan_context.framebuffer_width;
-	viewport.height = -(float) vulkan_context.framebuffer_height;
+	viewport.y = (float) vulkan_context.swapchain.swapchain_info.swapchain_extent.height;
+	viewport.width = (float) vulkan_context.swapchain.swapchain_info.swapchain_extent.width;
+	viewport.height = -(float) vulkan_context.swapchain.swapchain_info.swapchain_extent.height;
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
 	// Scissor
 	VkRect2D scissor;
 	scissor.offset.x = scissor.offset.y = 0;
-	scissor.extent.width = vulkan_context.framebuffer_width;
-	scissor.extent.height = vulkan_context.framebuffer_height;
+	scissor.extent.width = vulkan_context.swapchain.swapchain_info.swapchain_extent.width;
+	scissor.extent.height = vulkan_context.swapchain.swapchain_info.swapchain_extent.height;
 
 	vkCmdSetViewport(command_buffer->handle, 0, 1, &viewport);
 	vkCmdSetScissor(command_buffer->handle, 0, 1, &scissor);

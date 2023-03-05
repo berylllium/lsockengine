@@ -62,7 +62,7 @@ bool lise_application_create(lise_application_create_info app_create_info)
 
 	lise_clock_reset(&app_state.delta_clock);
 
-	if (!lise_renderer_initialize((lise_vec2i) { app_state.width, app_state.height }, app_create_info.window_name))
+	if (!lise_renderer_initialize(app_create_info.window_name))
 	{
 		LFATAL("Failed to initialize renderer submodule.");
 		return false;

@@ -12,14 +12,18 @@ set(LISE_HEADERS
 	math/vector2.h
 	math/vector3.h
 	math/vector4.h
+	math/vertex.h
 	platform/filesystem.h
 	platform/platform.h
+	renderer/shader/object_shader.h
 	renderer/command_buffer.h
 	renderer/device.h
 	renderer/fence.h
 	renderer/framebuffer.h
+	renderer/pipeline.h
 	renderer/render_pass.h
 	renderer/renderer.h
+	renderer/shader_stage.h
 	renderer/swapchain.h
 	renderer/vulkan_backend.h
 	renderer/vulkan_image.h
@@ -40,12 +44,15 @@ set(LISE_SOURCES
 	platform/filesystem.c
 	platform/platform_linux.c
 	platform/platform_win32.c
+	renderer/shader/object_shader.c
 	renderer/command_buffer.c
 	renderer/device.c
 	renderer/fence.c
 	renderer/framebuffer.c
+	renderer/pipeline.c
 	renderer/render_pass.c
 	renderer/renderer.c
+	renderer/shader_stage.c
 	renderer/swapchain.c
 	renderer/vulkan_backend.c
 	renderer/vulkan_image.c
@@ -86,16 +93,17 @@ if (WIN32)
 	target_include_directories(lise PUBLIC ${VULKAN_PATH}/Include)
 	target_link_libraries(lise ${VULKAN_PATH}/Lib/vulkan-1.lib)
 
-		if(NOT EXISTS "${CMAKE_BINARY_DIR}/assets")
-			message(STATUS "Creating symlink for assets.")
+	# Create symlink to assets folder in build path
+	if(NOT EXISTS "${CMAKE_BINARY_DIR}/assets")
+		message(STATUS "Creating symlink for assets.")
 	
-			file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}/assets" SYM_SHADER_LINK)
-			file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}/assets" SYM_SHADER_TARGET)
-		
-			execute_process(
-				COMMAND cmd.exe /c mklink /J "${SYM_SHADER_LINK}" "${SYM_SHADER_TARGET}"
-			)
-		endif()
+		file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}/assets" SYM_SHADER_LINK)
+		file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}/assets" SYM_SHADER_TARGET)
+	
+		execute_process(
+			COMMAND cmd.exe /c mklink /J "${SYM_SHADER_LINK}" "${SYM_SHADER_TARGET}"
+		)
+	endif()
 
 endif(WIN32)
 if (UNIX)
@@ -106,15 +114,15 @@ if (UNIX)
 
 	target_link_libraries(lise vulkan xcb X11-xcb X11)
 	
-
-		if(NOT EXISTS "${CMAKE_BINARY_DIR}/assets")
-			message(STATUS "Creating symlink for assets.")
+	# Create symlink to assets folder in build path
+	if(NOT EXISTS "${CMAKE_BINARY_DIR}/assets")
+		message(STATUS "Creating symlink for assets.")
 	
-			target_link_libraries(lise vulkan)
+		target_link_libraries(lise vulkan)
 	
-			execute_process(
-				COMMAND ln -s ${CMAKE_SOURCE_DIR}/assets ${CMAKE_BINARY_DIR}/assets
-			)
-		endif()
+		execute_process(
+			COMMAND ln -s ${CMAKE_SOURCE_DIR}/assets ${CMAKE_BINARY_DIR}/assets
+		)
+	endif()
 
 endif (UNIX)
