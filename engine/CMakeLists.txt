@@ -12,6 +12,7 @@ set(LISE_HEADERS
 	math/vector2.h
 	math/vector3.h
 	math/vector4.h
+	platform/filesystem.h
 	platform/platform.h
 	renderer/command_buffer.h
 	renderer/device.h
@@ -36,6 +37,7 @@ set(LISE_SOURCES
 	core/input.c
 	core/logger.c
 	math/math.c
+	platform/filesystem.c
 	platform/platform_linux.c
 	platform/platform_win32.c
 	renderer/command_buffer.c
