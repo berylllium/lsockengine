@@ -1,2 +1,2 @@
-glslc -fshader-stage=frag builtin.object_shader.frag.glsl -o builtin.object_shader.frag.spv
-glslc -fshader-stage=vert builtin.object_shader.vert.glsl -o builtin.object_shader.vert.spv
+glslc builtin.object_shader.frag -o builtin.object_shader.frag.spv
+glslc builtin.object_shader.vert -o builtin.object_shader.vert.spv
