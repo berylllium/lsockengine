@@ -15,10 +15,10 @@
 #define LSQRT_ONE_OVER_THREE 0.57735026918962576450f
 
 // A large number, should be bigger than any valid number used in the program.
-#define INFINITY 1e30f;
+#define LINFINITY 1e30f;
 
 // Smallest positive number where 1.0 + FLOAT_EPSILON != 0
-#define FLOAT_EPISILON 1.192092896e-07f
+#define LFLOAT_EPISILON 1.192092896e-07f
 
 // General math functions
 float lsin(float x);
