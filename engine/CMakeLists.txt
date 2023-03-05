@@ -86,16 +86,16 @@ if (WIN32)
 	target_include_directories(lise PUBLIC ${VULKAN_PATH}/Include)
 	target_link_libraries(lise ${VULKAN_PATH}/Lib/vulkan-1.lib)
 
-	#	if(NOT EXISTS "${CMAKE_BINARY_DIR}/resources")
-	#		message(STATUS "Creating symlink for resources.")
-	#
-	#		file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}/resources" SYM_SHADER_LINK)
-	#		file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}/resources" SYM_SHADER_TARGET)
-	#	
-	#		execute_process(
-	#			COMMAND cmd.exe /c mklink /J "${SYM_SHADER_LINK}" "${SYM_SHADER_TARGET}"
-	#		)
-	#	endif()
+		if(NOT EXISTS "${CMAKE_BINARY_DIR}/assets")
+			message(STATUS "Creating symlink for assets.")
+	
+			file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}/assets" SYM_SHADER_LINK)
+			file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}/assets" SYM_SHADER_TARGET)
+		
+			execute_process(
+				COMMAND cmd.exe /c mklink /J "${SYM_SHADER_LINK}" "${SYM_SHADER_TARGET}"
+			)
+		endif()
 
 endif(WIN32)
 if (UNIX)
@@ -107,14 +107,14 @@ if (UNIX)
 	target_link_libraries(lise vulkan xcb X11-xcb X11)
 	
 
-	#	if(NOT EXISTS "${CMAKE_BINARY_DIR}/resources")
-	#		message(STATUS "Creating symlink for resources.")
-	#
-	#		target_link_libraries(lise vulkan)
-	#
-	#		execute_process(
-	#			COMMAND ln -s ${CMAKE_SOURCE_DIR}/resources ${CMAKE_BINARY_DIR}/resources
-	#		)
-	#	endif()
+		if(NOT EXISTS "${CMAKE_BINARY_DIR}/assets")
+			message(STATUS "Creating symlink for assets.")
+	
+			target_link_libraries(lise vulkan)
+	
+			execute_process(
+				COMMAND ln -s ${CMAKE_SOURCE_DIR}/assets ${CMAKE_BINARY_DIR}/assets
+			)
+		endif()
 
 endif (UNIX)
