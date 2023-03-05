@@ -217,7 +217,7 @@ LINLINE lise_mat4x4 lise_mat4x4_scale(lise_vec3 scale)
 	return out_matrix;
 }
 
-LINLINE lise_mat4x4 mat4_euler_x(float angle_radians)
+LINLINE lise_mat4x4 lise_mat4x4_euler_x(float angle_radians)
 {
 	lise_mat4x4 out_matrix = LMAT4X4_IDENTITY;
 
@@ -232,7 +232,7 @@ LINLINE lise_mat4x4 mat4_euler_x(float angle_radians)
 	return out_matrix;
 }
 
-LINLINE lise_mat4x4 mat4_euler_y(float angle_radians)
+LINLINE lise_mat4x4 lise_mat4x4_euler_y(float angle_radians)
 {
 	lise_mat4x4 out_matrix = LMAT4X4_IDENTITY;
 
@@ -247,7 +247,7 @@ LINLINE lise_mat4x4 mat4_euler_y(float angle_radians)
 	return out_matrix;
 }
 
-LINLINE lise_mat4x4 mat4_euler_z(float angle_radians)
+LINLINE lise_mat4x4 lise_mat4x4_euler_z(float angle_radians)
 {
 	lise_mat4x4 out_matrix = LMAT4X4_IDENTITY;
 
@@ -264,9 +264,9 @@ LINLINE lise_mat4x4 mat4_euler_z(float angle_radians)
 
 LINLINE lise_mat4x4 lise_mat4x4_euler_xyz(float x_radians, float y_radians, float z_radians)
 {
-	lise_mat4x4 rx = mat4_euler_x(x_radians);
-	lise_mat4x4 ry = mat4_euler_y(y_radians);
-	lise_mat4x4 rz = mat4_euler_z(z_radians);
+	lise_mat4x4 rx = lise_mat4x4_euler_x(x_radians);
+	lise_mat4x4 ry = lise_mat4x4_euler_y(y_radians);
+	lise_mat4x4 rz = lise_mat4x4_euler_z(z_radians);
 
 	lise_mat4x4 out_matrix = lise_mat4x4_mul(rx, ry);
 	out_matrix = lise_mat4x4_mul(out_matrix, rz);
@@ -274,7 +274,7 @@ LINLINE lise_mat4x4 lise_mat4x4_euler_xyz(float x_radians, float y_radians, floa
 	return out_matrix;
 }
 
-LINLINE lise_vec3 mat4_forward(lise_mat4x4 matrix)
+LINLINE lise_vec3 lise_mat4x4_forward(lise_mat4x4 matrix)
 {
 	lise_vec3 forward;
 
@@ -287,7 +287,7 @@ LINLINE lise_vec3 mat4_forward(lise_mat4x4 matrix)
 	return forward;
 }
 
-LINLINE lise_vec3 mat4_backward(lise_mat4x4 matrix)
+LINLINE lise_vec3 lise_mat4x4_backward(lise_mat4x4 matrix)
 {
 	lise_vec3 backward;
 
@@ -300,7 +300,7 @@ LINLINE lise_vec3 mat4_backward(lise_mat4x4 matrix)
 	return backward;
 }
 
-LINLINE lise_vec3 mat4_up(lise_mat4x4 matrix)
+LINLINE lise_vec3 lise_mat4x4_up(lise_mat4x4 matrix)
 {
 	lise_vec3 up;
 
@@ -313,7 +313,7 @@ LINLINE lise_vec3 mat4_up(lise_mat4x4 matrix)
 	return up;
 }
 
-LINLINE lise_vec3 mat4_down(lise_mat4x4 matrix)
+LINLINE lise_vec3 lise_mat4x4_down(lise_mat4x4 matrix)
 {
 	lise_vec3 down;
 
@@ -326,7 +326,7 @@ LINLINE lise_vec3 mat4_down(lise_mat4x4 matrix)
 	return down;
 }
 
-LINLINE lise_vec3 mat4_left(lise_mat4x4 matrix)
+LINLINE lise_vec3 lise_mat4x4_left(lise_mat4x4 matrix)
 {
 	lise_vec3 right;
 
@@ -339,7 +339,7 @@ LINLINE lise_vec3 mat4_left(lise_mat4x4 matrix)
 	return right;
 }
 
-LINLINE lise_vec3 mat4_right(lise_mat4x4 matrix)
+LINLINE lise_vec3 lise_mat4x4_right(lise_mat4x4 matrix)
 {
 	lise_vec3 left;
 
