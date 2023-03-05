@@ -16,19 +16,27 @@ bool lise_object_shader_create(
 {
 	lise_shader_stage shader_stages[LOBJECT_SHADER_STAGE_COUNT];
 
-	lise_shader_stage_create(
+	if (!lise_shader_stage_create(
 		device,
 		"assets/shaders/builtin.object_shader.vert.spv",
 		VK_SHADER_STAGE_VERTEX_BIT,
 		&shader_stages[0]
-	);
+	))
+	{
+		LERROR("Failed to open the vertex shader binary file for the object_shader");
+		return false;
+	}
 
-	lise_shader_stage_create(
+	if (!lise_shader_stage_create(
 		device,
 		"assets/shaders/builtin.object_shader.frag.spv",
 		VK_SHADER_STAGE_FRAGMENT_BIT,
 		&shader_stages[1]
-	);
+	))
+	{
+		LERROR("Failed to open the fragment shader binary file for the object_shader");
+		return false;
+	}
 
 	VkPipelineShaderStageCreateInfo shader_stage_create_infos[LOBJECT_SHADER_STAGE_COUNT] = {
 		shader_stages[0].shader_stage_create_info,
