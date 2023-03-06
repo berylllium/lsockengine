@@ -14,13 +14,12 @@ bool lise_swapchain_create(
 )
 {
 	out_swapchain->swapchain_out_of_date = false;
-	out_swapchain->max_frames_in_flight = swapchain_info.image_count - 1;
 	out_swapchain->swapchain_info = swapchain_info;
 
 	VkSwapchainCreateInfoKHR swap_chain_ci = {};
 	swap_chain_ci.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	swap_chain_ci.surface = surface;
-	swap_chain_ci.minImageCount = swapchain_info.image_count;
+	swap_chain_ci.minImageCount = swapchain_info.min_image_count;
 	swap_chain_ci.imageFormat = swapchain_info.image_format.format;
 	swap_chain_ci.imageColorSpace = swapchain_info.image_format.colorSpace;
 	swap_chain_ci.imageExtent = swapchain_info.swapchain_extent;
@@ -65,6 +64,8 @@ bool lise_swapchain_create(
 	{
 		out_swapchain->images = malloc(sizeof(VkImage) * out_swapchain->image_count);
 	}
+
+	out_swapchain->max_frames_in_flight = out_swapchain->image_count - 1;
 
 	vkGetSwapchainImagesKHR(
 		device->logical_device,
@@ -305,7 +306,7 @@ lise_swapchain_info lise_swapchain_query_info(lise_device* device, VkSurfaceKHR 
 		swap_chain_image_count = swap_chain_support_info.surface_capabilities.maxImageCount;
 	}
 
-	info.image_count = swap_chain_image_count;
+	info.min_image_count = swap_chain_image_count;
 
 	// Check if device supports depth format
 	const uint32_t candidate_count = 3;

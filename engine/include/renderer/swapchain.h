@@ -16,7 +16,7 @@ typedef struct lise_swapchain_info
 
 	VkFormat depth_format;
 
-	uint32_t image_count;
+	uint32_t min_image_count;
 } lise_swapchain_info;
 
 typedef struct lise_swapchain

@@ -221,7 +221,7 @@ bool lise_vulkan_initialize(const char* application_name)
 		&vulkan_context.render_pass,
 		vulkan_context.swapchain.swapchain_info.swapchain_extent.width,
 		vulkan_context.swapchain.swapchain_info.swapchain_extent.height,
-		vulkan_context.swapchain.swapchain_info.image_count,
+		vulkan_context.swapchain.image_count,
 		&vulkan_context.object_shader
 	))
 	{
