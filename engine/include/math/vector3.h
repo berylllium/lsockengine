@@ -17,6 +17,9 @@ typedef struct lise_vec3
 #define LVEC3_DOWN ((lise_vec3) { 0, -1, 0 })
 #define LVEC3_LEFT ((lise_vec3) { -1, 0, 0 })
 #define LVEC3_RIGHT ((lise_vec3) { 1, 0, 0 })
+#define LVEC3_FORWARD ((lise_vec3) { 0, 0, -1 })
+#define LVEC3_BACKWARD ((lise_vec3) { 0, 0, 1 })
+
 
 #define lise_vec3_add(l, r) ((lise_vec3) { (l).x + (r).x, (l).y + (r).y, (l).z + (r).z})
 #define lise_vec3_sub(l, r) ((lise_vec3) { (l).x - (r).x, (l).y - (r).y, (l).z - (r).z})

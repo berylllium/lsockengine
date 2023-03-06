@@ -28,4 +28,4 @@ bool lise_pipeline_create(
 
 void lise_pipeline_destroy(VkDevice device, lise_pipeline* pipeline);
 
-void lise_pipeline_bind(lise_command_buffer* command_buffer, VkPipelineBindPoint bind_point, lise_pipeline* pipeline);
+void lise_pipeline_bind(VkCommandBuffer command_buffer, VkPipelineBindPoint bind_point, lise_pipeline* pipeline);

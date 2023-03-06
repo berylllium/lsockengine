@@ -8,6 +8,7 @@
 #include "platform/platform.h"
 #include "renderer/vulkan_platform.h"
 #include "math/vertex.h"
+#include "math/quat.h"
 
 #ifdef NDEBUG
 	static const bool enable_validation_layers = false;
@@ -216,9 +217,11 @@ bool lise_vulkan_initialize(const char* application_name)
 
 	if (!lise_object_shader_create(
 		vulkan_context.device.logical_device,
+		vulkan_context.device.physical_device_memory_properties,
 		&vulkan_context.render_pass,
 		vulkan_context.swapchain.swapchain_info.swapchain_extent.width,
 		vulkan_context.swapchain.swapchain_info.swapchain_extent.height,
+		vulkan_context.swapchain.swapchain_info.image_count,
 		&vulkan_context.object_shader
 	))
 	{
@@ -415,8 +418,38 @@ bool lise_vulkan_begin_frame(float delta_time)
 	);
 
 	// -------- TEMP
+	lise_vec2i framebuffer_size = lise_vulkan_get_framebuffer_size();
 
-	lise_object_shader_use(command_buffer, &vulkan_context.object_shader);
+	static float z = 1.0f;
+	z += 0.05 * delta_time;
+
+	lise_object_shader_global_ubo new_global_ubo = {};
+
+	new_global_ubo.projection =
+		lise_mat4x4_perspective(LQUARTER_PI, (float) framebuffer_size.x / (float) framebuffer_size.y, 0.1f, 1000.0f);
+		
+	new_global_ubo.view = lise_mat4x4_inverse(lise_mat4x4_translation((lise_vec3) {0, 0, z}));
+
+	static float angle = 0.01f;
+	angle += 0.1f * delta_time;
+
+	lise_quat rot = lise_quat_from_axis_angle(LVEC3_FORWARD, angle, false);
+	lise_mat4x4 model = lise_quat_to_rotation_matrix(rot, LVEC3_ZERO);
+
+	vkCmdPushConstants(command_buffer->handle, vulkan_context.object_shader.pipeline.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &model);
+
+	lise_object_shader_set_global_ubo(new_global_ubo, &vulkan_context.object_shader);
+
+	if (!vulkan_context.object_shader.global_descriptor_sets_updated[vulkan_context.current_image_index])
+	{
+		lise_object_shader_update_global_state(
+			vulkan_context.device.logical_device,
+			&vulkan_context.object_shader,
+			vulkan_context.current_image_index
+		);
+	}
+
+	lise_object_shader_use(vulkan_context.current_image_index, command_buffer->handle, &vulkan_context.object_shader);
 
 	// Bind vertex
 	VkDeviceSize offsets[1] = {0};
@@ -616,4 +649,13 @@ static bool recreate_swapchain()
 		&vulkan_context.render_pass,
 		&vulkan_context.swapchain
 	);
+}
+
+lise_vec2i lise_vulkan_get_framebuffer_size()
+{
+	return (lise_vec2i) 
+	{
+		vulkan_context.swapchain.swapchain_info.swapchain_extent.width,
+		vulkan_context.swapchain.swapchain_info.swapchain_extent.height
+	};
 }

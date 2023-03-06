@@ -43,7 +43,7 @@ LINLINE lise_vec4 lise_vec4_normalized(lise_vec4 v)
 	return v;
 }
 
-LINLINE float lise_vec3_distance(lise_vec4 l, lise_vec4 r)
+LINLINE float lise_vec4_distance(lise_vec4 l, lise_vec4 r)
 {
 	lise_vec4 l_to_r = lise_vec4_sub(r, l);
 

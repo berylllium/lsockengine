@@ -114,6 +114,15 @@ bool lise_pipeline_create(
 	VkPipelineLayoutCreateInfo pipeline_layout_create_info = {};
 	pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
+	// Push constants
+	VkPushConstantRange push_constant = {};
+	push_constant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	push_constant.offset = 0;
+	push_constant.size = 64; // TODO: Make this non-constant, represents lise_mat4x4 size
+
+	pipeline_layout_create_info.pushConstantRangeCount = 1;
+	pipeline_layout_create_info.pPushConstantRanges = &push_constant;
+
 	// Descriptor set layouts
 	pipeline_layout_create_info.setLayoutCount = descriptor_set_layout_count;
 	pipeline_layout_create_info.pSetLayouts = descriptor_set_layouts;
@@ -186,7 +195,7 @@ void lise_pipeline_destroy(VkDevice device, lise_pipeline* pipeline)
 	}
 }
 
-void lise_pipeline_bind(lise_command_buffer* command_buffer, VkPipelineBindPoint bind_point, lise_pipeline* pipeline)
+void lise_pipeline_bind(VkCommandBuffer command_buffer, VkPipelineBindPoint bind_point, lise_pipeline* pipeline)
 {
-	vkCmdBindPipeline(command_buffer->handle, bind_point, pipeline->handle);
+	vkCmdBindPipeline(command_buffer, bind_point, pipeline->handle);
 }

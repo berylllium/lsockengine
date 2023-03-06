@@ -50,3 +50,5 @@ void lise_vulkan_shutdown();
 bool lise_vulkan_begin_frame(float delta_time);
 
 bool lise_vulkan_end_frame(float delta_time);
+
+lise_vec2i lise_vulkan_get_framebuffer_size();
