@@ -108,7 +108,7 @@ void lise_object_shader_destroy(VkDevice device, lise_object_shader* object_shad
 	lise_pipeline_destroy(device, &object_shader->pipeline);
 }
 
-void lise_object_shader_use(VkDevice device, lise_object_shader* object_shader)
+void lise_object_shader_use(lise_command_buffer* command_buffer, lise_object_shader* object_shader)
 {
-
+	lise_pipeline_bind(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, &object_shader->pipeline);
 }

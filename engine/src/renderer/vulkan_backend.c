@@ -7,6 +7,7 @@
 #include "core/logger.h"
 #include "platform/platform.h"
 #include "renderer/vulkan_platform.h"
+#include "math/vertex.h"
 
 #ifdef NDEBUG
 	static const bool enable_validation_layers = false;
@@ -32,6 +33,43 @@ static lise_vulkan_context vulkan_context;
 static bool check_validation_layer_support();
 static void create_command_buffers();
 static bool recreate_swapchain();
+
+// TODO: Temp function
+void upload_data_range(lise_vulkan_buffer* buffer, uint64_t offset, uint64_t size, void* data)
+{
+    // Create a host-visible staging buffer to upload to. Mark it as the source of the transfer.
+    VkBufferUsageFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    lise_vulkan_buffer staging;
+    lise_vulkan_buffer_create(
+		vulkan_context.device.logical_device,
+		vulkan_context.device.physical_device_memory_properties,
+		size,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		flags,
+		true,
+		&staging
+	);
+
+    // Load the data into the staging buffer.
+    lise_vulkan_buffer_load_data(vulkan_context.device.logical_device, &staging, 0, size, 0, data);
+
+    // Perform the copy from staging to the device local buffer.
+    lise_vulkan_buffer_copy_to(
+		vulkan_context.device.logical_device,
+		vulkan_context.device.graphics_command_pool,
+		0,
+		vulkan_context.device.graphics_queue,
+		staging.handle,
+		0,
+		buffer->handle,
+		offset,
+		size
+	);
+
+    // Clean up the staging buffer.
+    lise_vulkan_buffer_destroy(vulkan_context.device.logical_device, &staging);
+}
 
 bool lise_vulkan_initialize(const char* application_name)
 {
@@ -117,7 +155,7 @@ bool lise_vulkan_initialize(const char* application_name)
 		swapchain_info.image_format.format,
 		swapchain_info.depth_format,
 		0, 0, swapchain_info.swapchain_extent.width, swapchain_info.swapchain_extent.height,
-		0.0f, 0.0f, 0.0f, 0.0f,
+		0.4f, 0.5f, 0.6f, 0.0f,
 		1.0f,
 		0,
 		&vulkan_context.render_pass
@@ -139,8 +177,6 @@ bool lise_vulkan_initialize(const char* application_name)
 		LFATAL("Failed to create the swapchain.");
 		return false;
 	}
-
-
 
 	// Create the graphics command buffers
 	create_command_buffers();
@@ -190,6 +226,63 @@ bool lise_vulkan_initialize(const char* application_name)
 		return false;
 	}
 
+	// -------- TEMP
+	// Create the vertex and index buffers
+	VkMemoryPropertyFlagBits mem_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+	const uint64_t vertex_buffer_size = sizeof(lise_vertex) * 4;
+	if (!lise_vulkan_buffer_create(
+		vulkan_context.device.logical_device,
+		vulkan_context.device.physical_device_memory_properties,
+		vertex_buffer_size,
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		mem_flags,
+		true,
+		&vulkan_context.object_vertex_buffer
+	))
+	{
+		LFATAL("Failed to create the vertex buffer.");
+	}
+	
+	const uint64_t index_buffer_size = sizeof(uint32_t) * 6;
+	if (!lise_vulkan_buffer_create(
+		vulkan_context.device.logical_device,
+		vulkan_context.device.physical_device_memory_properties,
+		index_buffer_size,
+		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		mem_flags,
+		true,
+		&vulkan_context.object_index_buffer
+	))
+	{
+		LFATAL("Failed to create the index buffer.");
+	}
+
+	const uint32_t vert_count = 4;
+	lise_vertex verts[4];
+
+	memset(verts, 0, sizeof(lise_vertex) * vert_count);
+
+	verts[0].position.x = 0.0;
+	verts[0].position.y = -0.5;
+
+	verts[1].position.x = 0.5;
+	verts[1].position.y = 0.5;
+
+	verts[2].position.x = 0;
+	verts[2].position.y = 0.5;
+
+	verts[3].position.x = 0.5;
+	verts[3].position.y = -0.5;
+
+	const uint32_t index_count = 6;
+    uint32_t indices[6] = {0, 1, 2, 0, 3, 1};
+
+	upload_data_range(&vulkan_context.object_vertex_buffer, 0, sizeof(lise_vertex) * vert_count, verts);
+	upload_data_range(&vulkan_context.object_index_buffer, 0, sizeof(uint32_t) * index_count, indices);
+
+	// --------- ENDTEMP
+
 	LINFO("Successfully initialized the vulkan backend.");
 
 	return true;
@@ -198,6 +291,9 @@ bool lise_vulkan_initialize(const char* application_name)
 void lise_vulkan_shutdown()
 {
 	vkDeviceWaitIdle(vulkan_context.device.logical_device);
+
+	lise_vulkan_buffer_destroy(vulkan_context.device.logical_device, &vulkan_context.object_index_buffer);
+	lise_vulkan_buffer_destroy(vulkan_context.device.logical_device, &vulkan_context.object_vertex_buffer);
 
 	lise_object_shader_destroy(vulkan_context.device.logical_device, &vulkan_context.object_shader);
 
@@ -317,6 +413,22 @@ bool lise_vulkan_begin_frame(float delta_time)
 		&vulkan_context.render_pass,
 		vulkan_context.swapchain.framebuffers[vulkan_context.current_image_index].handle
 	);
+
+	// -------- TEMP
+
+	lise_object_shader_use(command_buffer, &vulkan_context.object_shader);
+
+	// Bind vertex
+	VkDeviceSize offsets[1] = {0};
+    vkCmdBindVertexBuffers(command_buffer->handle, 0, 1, &vulkan_context.object_vertex_buffer.handle, (VkDeviceSize*) offsets);
+
+	// Bind index
+	vkCmdBindIndexBuffer(command_buffer->handle, vulkan_context.object_index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
+
+	// Issue draw call
+	vkCmdDrawIndexed(command_buffer->handle, 6, 1, 0, 0, 0);
+
+	// -------- ENDTEMP
 
 	return true;
 }
@@ -491,7 +603,7 @@ static bool recreate_swapchain()
 		new_info.image_format.format,
 		new_info.depth_format,
 		0, 0, new_info.swapchain_extent.width, new_info.swapchain_extent.height,
-		1.0f, 0.0f, 0.0f, 0.0f,
+		0.4f, 0.5f, 0.6f, 0.0f,
 		1.0f,
 		0,
 		&vulkan_context.render_pass

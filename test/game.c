@@ -41,7 +41,7 @@ bool game_initialize()
 
 	lise_event_add_listener(LISE_EVENT_ON_KEY_UP, on_event);
 
-	lise_event_add_listener(LISE_EVENT_ON_MOUSE_MOVE, on_event);
+	//lise_event_add_listener(LISE_EVENT_ON_MOUSE_MOVE, on_event);
 
 	lise_event_add_listener(LISE_EVENT_ON_MOUSE_WHEEL_MOVE, on_event);
 

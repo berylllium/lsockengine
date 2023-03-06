@@ -70,9 +70,9 @@ target_compile_options(lise PRIVATE -fvisibility=hidden)
 
 target_link_libraries(lise m) # Link math
 
-#if (CMAKE_BUILD_TYPE MATCHES "Release")
-#	target_link_libraries (lise -static-libgcc -static)
-#endif (CMAKE_BUILD_TYPE MATCHES "Release")
+if (CMAKE_BUILD_TYPE MATCHES "Release")
+	target_link_libraries (lise -static-libgcc -static)
+endif (CMAKE_BUILD_TYPE MATCHES "Release")
 
 if (WIN32)
 

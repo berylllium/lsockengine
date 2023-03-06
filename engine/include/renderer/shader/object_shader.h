@@ -21,4 +21,4 @@ bool lise_object_shader_create(
 
 void lise_object_shader_destroy(VkDevice device, lise_object_shader* object_shader);
 
-void lise_object_shader_use(VkDevice device, lise_object_shader* object_shader);
+void lise_object_shader_use(lise_command_buffer* command_buffer, lise_object_shader* object_shader);

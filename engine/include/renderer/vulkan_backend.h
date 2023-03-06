@@ -10,6 +10,7 @@
 #include "renderer/swapchain.h"
 #include "renderer/fence.h"
 #include "renderer/shader/object_shader.h"
+#include "renderer/vulkan_buffer.h"
 
 typedef struct lise_vulkan_context
 {
@@ -37,6 +38,9 @@ typedef struct lise_vulkan_context
 	uint32_t current_image_index;
 
 	lise_object_shader object_shader;
+
+	lise_vulkan_buffer object_vertex_buffer;
+	lise_vulkan_buffer object_index_buffer;
 } lise_vulkan_context;
 
 bool lise_vulkan_initialize(const char* application_name);
