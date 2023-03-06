@@ -26,6 +26,7 @@ set(LISE_HEADERS
 	renderer/shader_stage.h
 	renderer/swapchain.h
 	renderer/vulkan_backend.h
+	renderer/vulkan_buffer.h
 	renderer/vulkan_image.h
 	renderer/vulkan_platform.h
 	util/math_utils.h
@@ -55,6 +56,7 @@ set(LISE_SOURCES
 	renderer/shader_stage.c
 	renderer/swapchain.c
 	renderer/vulkan_backend.c
+	renderer/vulkan_buffer.c
 	renderer/vulkan_image.c
 	util/math_utils.c
 	util/string_utils.c
