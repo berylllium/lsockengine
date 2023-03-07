@@ -21,12 +21,19 @@
 #define LFLOAT_EPISILON 1.192092896e-07f
 
 // General math functions
-float lsin(float x);
-float lcos(float x);
-float ltan(float x);
-float lacos(float x);
-float lsqrt(float x);
-float labsolute(float x);
+LAPI float lsin(float x);
+LAPI float lcos(float x);
+LAPI float ltan(float x);
+LAPI float lacos(float x);
+LAPI float lsqrt(float x);
+LAPI float labsolute(float x);
+
+#define lise_min(x, y) (x < y ? x : y)
+
+#define lise_max(x, y) (x > y ? x : y)
+
+#define lise_clamp(x, lo, hi) lise_min(hi, lise_max(lo, x))
+
 
 LINLINE bool lise_is_power_of_two(uint64_t val)
 {

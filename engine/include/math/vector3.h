@@ -26,9 +26,20 @@ typedef struct lise_vec3
 #define lise_vec3_mul(l, r) ((lise_vec3) { (l).x * (r).x, (l).y * (r).y, (l).z * (r).z})
 #define lise_vec3_div(l, r) ((lise_vec3) { (l).x / (r).x, (l).y / (r).y, (l).z / (r).z})
 
-#define lise_vec3_length_squared(v) ((v).x * (v).x + (v).y * (v).y + (v).z * (v).z)
+LINLINE lise_vec3 lise_vec3_mul_scalar(float scalar, lise_vec3 vector) 
+{
+	return ((lise_vec3) { scalar * vector.x, scalar * vector.y, scalar * vector.z });
+}
 
-#define lise_vec3_length(v) lsqrt(lise_vec3_length_squared(v))
+LINLINE float lise_vec3_length_squared(lise_vec3 v)
+{
+	return ((v).x * (v).x + (v).y * (v).y + (v).z * (v).z);
+}
+
+LINLINE float lise_vec3_length(lise_vec3 v)
+{
+	return lsqrt(lise_vec3_length_squared(v));
+}
 
 LINLINE void lise_vec3_normalize(lise_vec3* v)
 {
@@ -70,4 +81,24 @@ LINLINE lise_vec3 lise_vec3_cross(lise_vec3 l, lise_vec3 r)
 		l.z * r.x - l.x * r.z,
 		l.x * r.y - l.y * r.x
 	};
+}
+
+LINLINE bool lise_vec3_compare(lise_vec3 l, lise_vec3 r, float tolerance)
+{
+    if (labsolute(l.x - r.x) > tolerance)
+	{
+        return false;
+    }
+
+    if (labsolute(l.y - r.y) > tolerance)
+	{
+        return false;
+    }
+
+    if (labsolute(l.z - r.z) > tolerance)
+	{
+        return false;
+    }
+
+    return true;
 }

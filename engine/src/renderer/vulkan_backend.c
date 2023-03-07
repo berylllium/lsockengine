@@ -72,6 +72,9 @@ void upload_data_range(lise_vulkan_buffer* buffer, uint64_t offset, uint64_t siz
     lise_vulkan_buffer_destroy(vulkan_context.device.logical_device, &staging);
 }
 
+// TODO: temp static
+static lise_mat4x4 view_matrix = LMAT4X4_IDENTITY;
+
 bool lise_vulkan_initialize(const char* application_name)
 {
 	if (enable_validation_layers && !check_validation_layer_support())
@@ -420,21 +423,14 @@ bool lise_vulkan_begin_frame(float delta_time)
 	// -------- TEMP
 	lise_vec2i framebuffer_size = lise_vulkan_get_framebuffer_size();
 
-	static float z = 1.0f;
-	z += 0.05 * delta_time;
-
 	lise_object_shader_global_ubo new_global_ubo = {};
 
 	new_global_ubo.projection =
 		lise_mat4x4_perspective(LQUARTER_PI, (float) framebuffer_size.x / (float) framebuffer_size.y, 0.1f, 1000.0f);
 		
-	new_global_ubo.view = lise_mat4x4_inverse(lise_mat4x4_translation((lise_vec3) {0, 0, z}));
+	new_global_ubo.view = view_matrix;
 
-	static float angle = 0.01f;
-	angle += 0.1f * delta_time;
-
-	lise_quat rot = lise_quat_from_axis_angle(LVEC3_FORWARD, angle, false);
-	lise_mat4x4 model = lise_quat_to_rotation_matrix(rot, LVEC3_ZERO);
+	lise_mat4x4 model = LMAT4X4_IDENTITY;
 
 	vkCmdPushConstants(command_buffer->handle, vulkan_context.object_shader.pipeline.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &model);
 
@@ -658,4 +654,10 @@ lise_vec2i lise_vulkan_get_framebuffer_size()
 		vulkan_context.swapchain.swapchain_info.swapchain_extent.width,
 		vulkan_context.swapchain.swapchain_info.swapchain_extent.height
 	};
+}
+
+// TODO: temp hack
+void lise_vulkan_set_view_matrix_temp(lise_mat4x4 view)
+{
+	view_matrix = view;
 }

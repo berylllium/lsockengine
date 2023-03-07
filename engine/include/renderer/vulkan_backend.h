@@ -52,3 +52,6 @@ bool lise_vulkan_begin_frame(float delta_time);
 bool lise_vulkan_end_frame(float delta_time);
 
 lise_vec2i lise_vulkan_get_framebuffer_size();
+
+// TODO: temp hack
+LAPI void lise_vulkan_set_view_matrix_temp(lise_mat4x4 view);
