@@ -4,9 +4,7 @@
 
 #include "core/logger.h"
 #include "renderer/pipeline.h"
-#include "math/vector3.h"
-
-#define ATTRIBUTE_COUNT 1
+#include "math/vertex.h"
 
 bool lise_object_shader_create(
 	VkDevice device,
@@ -104,14 +102,17 @@ bool lise_object_shader_create(
 
 	// Attributes
 	uint32_t offset = 0;
+#define ATTRIBUTE_COUNT 2
 	VkVertexInputAttributeDescription attribute_descriptions[ATTRIBUTE_COUNT];
 
 	// Position
 	VkFormat formats[ATTRIBUTE_COUNT] = {
-		VK_FORMAT_R32G32B32_SFLOAT
+		VK_FORMAT_R32G32B32_SFLOAT,
+		VK_FORMAT_R32G32_SFLOAT
 	};
 	uint64_t sizes[ATTRIBUTE_COUNT] = {
-		sizeof(lise_vec3)
+		sizeof(lise_vec3),
+		sizeof(lise_vec2)
 	};
 	for (uint32_t i = 0; i < ATTRIBUTE_COUNT; ++i)
 	{

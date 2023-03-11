@@ -40,11 +40,11 @@ static bool recreate_swapchain();
 // TODO: Temp function
 void upload_data_range(lise_vulkan_buffer* buffer, uint64_t offset, uint64_t size, void* data)
 {
-    // Create a host-visible staging buffer to upload to. Mark it as the source of the transfer.
-    VkBufferUsageFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	// Create a host-visible staging buffer to upload to. Mark it as the source of the transfer.
+	VkBufferUsageFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
-    lise_vulkan_buffer staging;
-    lise_vulkan_buffer_create(
+	lise_vulkan_buffer staging;
+	lise_vulkan_buffer_create(
 		vulkan_context.device.logical_device,
 		vulkan_context.device.physical_device_memory_properties,
 		size,
@@ -54,11 +54,11 @@ void upload_data_range(lise_vulkan_buffer* buffer, uint64_t offset, uint64_t siz
 		&staging
 	);
 
-    // Load the data into the staging buffer.
-    lise_vulkan_buffer_load_data(vulkan_context.device.logical_device, &staging, 0, size, 0, data);
+	// Load the data into the staging buffer.
+	lise_vulkan_buffer_load_data(vulkan_context.device.logical_device, &staging, 0, size, 0, data);
 
-    // Perform the copy from staging to the device local buffer.
-    lise_vulkan_buffer_copy_to(
+	// Perform the copy from staging to the device local buffer.
+	lise_vulkan_buffer_copy_to(
 		vulkan_context.device.logical_device,
 		vulkan_context.device.graphics_command_pool,
 		0,
@@ -70,8 +70,8 @@ void upload_data_range(lise_vulkan_buffer* buffer, uint64_t offset, uint64_t siz
 		size
 	);
 
-    // Clean up the staging buffer.
-    lise_vulkan_buffer_destroy(vulkan_context.device.logical_device, &staging);
+	// Clean up the staging buffer.
+	lise_vulkan_buffer_destroy(vulkan_context.device.logical_device, &staging);
 }
 
 // TODO: temp static
@@ -277,20 +277,28 @@ bool lise_vulkan_initialize(const char* application_name)
 
 	memset(verts, 0, sizeof(lise_vertex) * vert_count);
 
-	verts[0].position.x = 0.0;
+	verts[0].position.x = -0.5;
 	verts[0].position.y = -0.5;
+	verts[0].tex_coord.x = 0.0f;
+	verts[0].tex_coord.y = 0.0f;
 
-	verts[1].position.x = 0.5;
 	verts[1].position.y = 0.5;
+	verts[1].position.x = 0.5;
+	verts[1].tex_coord.x = 1.0f;
+	verts[1].tex_coord.y = 1.0f;
 
-	verts[2].position.x = 0;
+	verts[2].position.x = -0.5;
 	verts[2].position.y = 0.5;
+	verts[2].tex_coord.x = 0.0f;
+	verts[2].tex_coord.y = 1.0f;
 
 	verts[3].position.x = 0.5;
 	verts[3].position.y = -0.5;
+	verts[3].tex_coord.x = 1.0f;
+	verts[3].tex_coord.y = 0.0f;
 
 	const uint32_t index_count = 6;
-    uint32_t indices[6] = {0, 1, 2, 0, 3, 1};
+	uint32_t indices[6] = {0, 1, 2, 0, 3, 1};
 
 	upload_data_range(&vulkan_context.object_vertex_buffer, 0, sizeof(lise_vertex) * vert_count, verts);
 	upload_data_range(&vulkan_context.object_index_buffer, 0, sizeof(uint32_t) * index_count, indices);
@@ -459,7 +467,7 @@ bool lise_vulkan_begin_frame(float delta_time)
 
 	// Bind vertex
 	VkDeviceSize offsets[1] = {0};
-    vkCmdBindVertexBuffers(command_buffer->handle, 0, 1, &vulkan_context.object_vertex_buffer.handle, (VkDeviceSize*) offsets);
+	vkCmdBindVertexBuffers(command_buffer->handle, 0, 1, &vulkan_context.object_vertex_buffer.handle, (VkDeviceSize*) offsets);
 
 	// Bind index
 	vkCmdBindIndexBuffer(command_buffer->handle, vulkan_context.object_index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
