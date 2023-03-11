@@ -1,6 +1,5 @@
 
 set(LISE_HEADERS
-	container/darray.h
 	core/application.h
 	core/clock.h
 	core/event.h
@@ -35,7 +34,6 @@ set(LISE_HEADERS
 list(TRANSFORM LISE_HEADERS PREPEND "include/")
 
 set(LISE_SOURCES
-	container/darray.c
 	core/application.c
 	core/clock.c
 	core/event.c
@@ -64,11 +62,11 @@ set(LISE_SOURCES
 list(TRANSFORM LISE_SOURCES PREPEND "src/")
 
 add_library(lise SHARED ${LISE_SOURCES} ${LISE_HEADERS})
-target_include_directories(lise PUBLIC include/)
+target_include_directories(lise PUBLIC include/ ../deps/blib/include)
 target_compile_definitions(lise PRIVATE L_EXPORT)
 target_compile_options(lise PRIVATE -fvisibility=hidden)
 
-target_link_libraries(lise m) # Link math
+target_link_libraries(lise blib m) # Link blib, math
 
 if (CMAKE_BUILD_TYPE MATCHES "Release")
 	target_link_libraries (lise -static-libgcc -static)
