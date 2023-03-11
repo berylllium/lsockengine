@@ -14,7 +14,6 @@ static bool create_default_texture(const lise_device* device);
 
 bool lise_texture_system_initialize(const lise_device* device)
 {
-	LINFO("Initializing the renderer texture subsystem.");
 
 	// Initialize the loaded textures hashmap.
 	loaded_textures = blib_hashmap_create();
@@ -25,6 +24,8 @@ bool lise_texture_system_initialize(const lise_device* device)
 		LFATAL("Failed to create the default texture.");
 		return false;
 	}
+	
+	LINFO("Successfully initialized the renderer texture subsystem.");
 
 	return true;
 }

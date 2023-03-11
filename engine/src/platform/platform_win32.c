@@ -118,7 +118,7 @@ void lise_platform_shutdown()
 		state.hwnd = 0;
 	}
 
-	LINFO("Sucessfully shut down the windows platform subsystem.");
+	LINFO("Successfully shut down the windows platform subsystem.");
 }
 
 bool lise_platform_poll_messages()

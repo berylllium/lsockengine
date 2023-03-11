@@ -364,7 +364,7 @@ void lise_vulkan_shutdown()
 	
 	vkDestroyInstance(vulkan_context.instance, NULL);
 
-	LINFO("Successfully shut the vulkan backend down.");
+	LINFO("Successfully shut down the vulkan backend.");
 }
 
 bool lise_vulkan_begin_frame(float delta_time)
