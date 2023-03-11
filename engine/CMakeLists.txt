@@ -14,6 +14,7 @@ set(LISE_HEADERS
 	math/vertex.h
 	platform/filesystem.h
 	platform/platform.h
+	renderer/resource/texture.h
 	renderer/shader/object_shader.h
 	renderer/command_buffer.h
 	renderer/device.h
@@ -43,6 +44,7 @@ set(LISE_SOURCES
 	platform/filesystem.c
 	platform/platform_linux.c
 	platform/platform_win32.c
+	renderer/resource/texture.c
 	renderer/shader/object_shader.c
 	renderer/command_buffer.c
 	renderer/device.c
@@ -62,7 +64,7 @@ set(LISE_SOURCES
 list(TRANSFORM LISE_SOURCES PREPEND "src/")
 
 add_library(lise SHARED ${LISE_SOURCES} ${LISE_HEADERS})
-target_include_directories(lise PUBLIC include/ ../deps/blib/include)
+target_include_directories(lise PUBLIC include/ ../deps/blib/include ../deps/stb)
 target_compile_definitions(lise PRIVATE L_EXPORT)
 target_compile_options(lise PRIVATE -fvisibility=hidden)
 

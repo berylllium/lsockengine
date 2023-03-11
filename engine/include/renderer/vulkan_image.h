@@ -4,6 +4,7 @@
 
 #include "definitions.h"
 #include "renderer/device.h"
+#include "renderer/command_buffer.h"
 
 typedef struct lise_vulkan_image
 {
@@ -16,7 +17,7 @@ typedef struct lise_vulkan_image
 } lise_vulkan_image;
 
 bool lise_vulkan_image_create(
-	lise_device* device,
+	const lise_device* device,
 	VkImageType image_type,
 	uint32_t width,
 	uint32_t height,
@@ -30,4 +31,14 @@ bool lise_vulkan_image_create(
 );
 
 void lise_vulkan_image_destroy(VkDevice device, lise_vulkan_image* image);
+
+void lise_vulkan_image_transition_layout(
+	lise_command_buffer* command_buffer,
+	lise_vulkan_image* image,
+	VkFormat format,
+	VkImageLayout old_layout,
+	VkImageLayout new_layout
+);
+
+void lise_vulkan_image_copy_from_buffer(lise_command_buffer* command_buffer, VkBuffer buffer, lise_vulkan_image* image);
 	
