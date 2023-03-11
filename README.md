@@ -22,6 +22,8 @@ The following instructions apply to Arch Linux. Other distributions have differe
 
 ## Notice
 
-LiSE uses `= {}` struct initialization. At the time of writing, this is a GCC extension. C23 will include this as standard in the future.
+LiSE uses `= {}` struct initialization. At the time of writing, this is a GNU C extension. C23 will include this as standard in the future.
+
+LiSE uses the `__VA_OPT__` function macro. At the time of writing, this is a GNU C extension. C23 will include this as standard in the future.
 
 Xorg does not support disabling key-repeats for specific windows. This means that when one wants to disable key-repeats they have to do so for the entire window system. Meaning LiSE will disable key-repeats for the entire system and reenable it when closing down. This also means that key-repeats will remain disabled if the program closes without successfully going through the shutdown procedure; this may occur on crashes.
