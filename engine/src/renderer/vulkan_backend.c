@@ -10,6 +10,8 @@
 #include "math/vertex.h"
 #include "math/quat.h"
 
+#include "renderer/system/texture_system.h"
+
 #ifdef NDEBUG
 	static const bool enable_validation_layers = false;
 #else
@@ -218,6 +220,12 @@ bool lise_vulkan_initialize(const char* application_name)
 
 	vulkan_context.images_in_flight = calloc(vulkan_context.swapchain.image_count, sizeof(lise_fence*));
 
+	if (!lise_texture_system_initialize(&vulkan_context.device))
+	{
+		LFATAL("Failed to initialize the vulkan renderer texture subsystem.");
+		return false;
+	}
+
 	if (!lise_object_shader_create(
 		vulkan_context.device.logical_device,
 		vulkan_context.device.physical_device_memory_properties,
@@ -302,6 +310,8 @@ void lise_vulkan_shutdown()
 	lise_vulkan_buffer_destroy(vulkan_context.device.logical_device, &vulkan_context.object_vertex_buffer);
 
 	lise_object_shader_destroy(vulkan_context.device.logical_device, &vulkan_context.object_shader);
+
+	lise_texture_system_shutdown(vulkan_context.device.logical_device);
 
 	for (uint32_t i = 0; i < vulkan_context.swapchain.max_frames_in_flight; i++)
 	{

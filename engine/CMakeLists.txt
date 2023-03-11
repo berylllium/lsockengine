@@ -16,6 +16,7 @@ set(LISE_HEADERS
 	platform/platform.h
 	renderer/resource/texture.h
 	renderer/shader/object_shader.h
+	renderer/system/texture_system.h
 	renderer/command_buffer.h
 	renderer/device.h
 	renderer/fence.h
@@ -46,6 +47,7 @@ set(LISE_SOURCES
 	platform/platform_win32.c
 	renderer/resource/texture.c
 	renderer/shader/object_shader.c
+	renderer/system/texture_system.c
 	renderer/command_buffer.c
 	renderer/device.c
 	renderer/fence.c
