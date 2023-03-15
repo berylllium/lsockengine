@@ -19,7 +19,7 @@ bool lise_texture_create_from_path(const lise_device* device, const char* path, 
 	uint32_t channel_count = 0;
 	const uint32_t required_channel_count = 4;
 
-	uint8_t* data = stbi_load(path, (int*) &width, (int*) &height, (int*) &channel_count, required_channel_count);
+	uint8_t* data = stbi_load(path, (int*) &width, (int*) &height, (int*) &channel_count, STBI_rgb_alpha);
 
 	if (!data)
 	{
@@ -32,21 +32,30 @@ bool lise_texture_create_from_path(const lise_device* device, const char* path, 
 		return false;
 	}
 
-	uint64_t size = width * height * channel_count;
+	uint64_t size = width * height * required_channel_count;
 
 	// Check for transparency.
 	bool has_transparency = false;
 
 	for (uint64_t i = 0 ; i < size; i += required_channel_count)
 	{
-		if (data[i + 3] < 255)
+		if (data[i + 4] < 255)
 		{
 			has_transparency = true;
 			break;
 		}
 	}
 
-	bool ret = lise_texture_create(device, path, width, height, channel_count, data, has_transparency, out_texture);
+	bool ret = lise_texture_create(
+		device,
+		path,
+		width,
+		height,
+		required_channel_count,
+		data,
+		has_transparency,
+		out_texture
+	);
 
 	// Free up the stbi data as we no longer need it.
 	stbi_image_free(data);
