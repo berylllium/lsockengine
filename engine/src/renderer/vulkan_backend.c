@@ -78,6 +78,7 @@ void upload_data_range(lise_vulkan_buffer* buffer, uint64_t offset, uint64_t siz
 // TODO: temp statics
 static lise_mat4x4 view_matrix = LMAT4X4_IDENTITY;
 static lise_object_shader_object test_object;
+static lise_texture temp_texture;
 
 bool lise_vulkan_initialize(const char* application_name)
 {
@@ -305,7 +306,11 @@ bool lise_vulkan_initialize(const char* application_name)
 	upload_data_range(&vulkan_context.object_vertex_buffer, 0, sizeof(lise_vertex) * vert_count, verts);
 	upload_data_range(&vulkan_context.object_index_buffer, 0, sizeof(uint32_t) * index_count, indices);
 
+	lise_texture_system_load(&vulkan_context.device, "assets/texture/test_texture.png", &temp_texture);
+
 	lise_object_shader_register_object(&vulkan_context.object_shader, vulkan_context.device.logical_device, vulkan_context.swapchain.image_count, &test_object);
+
+	lise_object_shader_set_object_data(&test_object, NULL, &temp_texture);
 
 	// --------- ENDTEMP
 
