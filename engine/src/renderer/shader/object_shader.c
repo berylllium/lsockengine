@@ -1,10 +1,12 @@
 #include "renderer/shader/object_shader.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "core/logger.h"
 #include "renderer/pipeline.h"
 #include "math/vertex.h"
+#include "renderer/system/texture_system.h"
 
 bool lise_object_shader_create(
 	VkDevice device,
@@ -16,7 +18,7 @@ bool lise_object_shader_create(
 	lise_object_shader* out_object_shader
 )
 {
-	out_object_shader->global_descriptor_set_count = swapchain_image_count;
+	out_object_shader->descriptor_set_count = swapchain_image_count;
 
 	lise_shader_stage shader_stages[LOBJECT_SHADER_STAGE_COUNT];
 
@@ -64,7 +66,7 @@ bool lise_object_shader_create(
 		!= VK_SUCCESS
 	)
 	{
-		LERROR("Failed to create descriptor set layout.");
+		LERROR("Failed to create global descriptor set layout.");
 		return false;
 	}
 
@@ -81,7 +83,64 @@ bool lise_object_shader_create(
 
 	if (vkCreateDescriptorPool(device, &global_pool_ci, NULL, &out_object_shader->global_descriptor_pool) != VK_SUCCESS)
 	{
-		LERROR("Failed to create descriptor pool.");
+		LERROR("Failed to create global descriptor pool.");
+		return false;
+	}
+
+	// Object descriptors.
+	VkDescriptorType local_descriptor_types[LOBJECT_SHADER_LOCAL_DESCRIPTOR_COUNT] = {
+		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+	};
+
+	VkDescriptorSetLayoutBinding local_bindings[LOBJECT_SHADER_LOCAL_DESCRIPTOR_COUNT] = { 0 };
+
+	for (uint32_t i = 0; i < LOBJECT_SHADER_LOCAL_DESCRIPTOR_COUNT; i++)
+	{
+		local_bindings[i].binding = i;
+		local_bindings[i].descriptorCount = 1;
+		local_bindings[i].descriptorType = local_descriptor_types[i];
+		local_bindings[i].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	}
+
+	VkDescriptorSetLayoutCreateInfo local_descriptor_set_layout_ci = {};
+	local_descriptor_set_layout_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	local_descriptor_set_layout_ci.bindingCount = LOBJECT_SHADER_LOCAL_DESCRIPTOR_COUNT;
+	local_descriptor_set_layout_ci.pBindings = local_bindings;
+
+	if (vkCreateDescriptorSetLayout(
+			device,
+			&local_descriptor_set_layout_ci,
+			NULL,
+			&out_object_shader->object_descriptor_set_layout
+		) != VK_SUCCESS
+	)
+	{
+		LERROR("Failed to create object descriptor set layout.");
+		return false;
+	}
+
+	// Local descriptor pool.
+	VkDescriptorPoolSize object_descriptor_pool_sizes[LOBJECT_SHADER_LOCAL_DESCRIPTOR_COUNT];
+	// Uniform buffers
+	object_descriptor_pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	object_descriptor_pool_sizes[0].descriptorCount = LOBJECT_SHADER_MAX_OBJECT_COUNT;
+	// Image samplers
+	object_descriptor_pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	object_descriptor_pool_sizes[1].descriptorCount =
+		LOBJECT_SHADER_SAMPLER_PER_OBJECT_COUNT * LOBJECT_SHADER_MAX_OBJECT_COUNT;
+
+	VkDescriptorPoolCreateInfo object_descriptor_pool_ci = {};
+	object_descriptor_pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	object_descriptor_pool_ci.poolSizeCount = LOBJECT_SHADER_LOCAL_DESCRIPTOR_COUNT;
+	object_descriptor_pool_ci.pPoolSizes = object_descriptor_pool_sizes;
+	object_descriptor_pool_ci.maxSets = LOBJECT_SHADER_MAX_OBJECT_COUNT;
+
+	if (vkCreateDescriptorPool(device, &object_descriptor_pool_ci, NULL, &out_object_shader->object_descriptor_pool)
+		!= VK_SUCCESS
+	)
+	{
+		LERROR("Failed to create object descriptor pool.");
 		return false;
 	}
 
@@ -123,9 +182,10 @@ bool lise_object_shader_create(
 		offset += sizes[i];
 	}
 
-	const int32_t descriptor_set_layout_count = 1;
-	VkDescriptorSetLayout layouts[1] = {
-		out_object_shader->global_descriptor_set_layout
+	const int32_t descriptor_set_layout_count = 2;
+	VkDescriptorSetLayout layouts[2] = {
+		out_object_shader->global_descriptor_set_layout,
+		out_object_shader->object_descriptor_set_layout
 	};
 
 	if (!lise_pipeline_create(
@@ -147,7 +207,7 @@ bool lise_object_shader_create(
 		return false;
 	}
 
-	// Create the uniform buffer
+	// Create the global uniform buffer
 	if (!lise_vulkan_buffer_create(
 		device,
 		memory_properties,
@@ -182,6 +242,22 @@ bool lise_object_shader_create(
 		LERROR("Failed to allocate descriptor sets.");
 		return false;
 	}
+
+	// Create the object uniform buffer.
+	if (!lise_vulkan_buffer_create(
+		device,
+		memory_properties,
+		sizeof(lise_object_shader_object_ubo) * LOBJECT_SHADER_MAX_OBJECT_COUNT,
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		true,
+		&out_object_shader->object_uniform_buffer
+	))
+	{
+		LERROR("Failed to create the object unbiform buffer.");
+		return false;
+	}
 	
 	// Free the layouts
 	free(global_layouts);
@@ -198,9 +274,13 @@ bool lise_object_shader_create(
 
 void lise_object_shader_destroy(VkDevice device, lise_object_shader* object_shader)
 {
+	lise_vulkan_buffer_destroy(device, &object_shader->object_uniform_buffer);
 	lise_vulkan_buffer_destroy(device, &object_shader->global_uniform_buffer);
 
 	lise_pipeline_destroy(device, &object_shader->pipeline);
+
+	vkDestroyDescriptorPool(device, object_shader->object_descriptor_pool, NULL);
+	vkDestroyDescriptorSetLayout(device, object_shader->object_descriptor_set_layout, NULL);
 
 	vkDestroyDescriptorPool(device, object_shader->global_descriptor_pool, NULL);
 	free(object_shader->global_descriptor_sets);
@@ -229,7 +309,7 @@ void lise_object_shader_set_global_ubo(lise_object_shader_global_ubo new_global_
 {
 	object_shader->global_ubo = new_global_ubo;
 	
-	for (uint32_t i = 0; i < object_shader->global_descriptor_set_count; i++)
+	for (uint32_t i = 0; i < object_shader->descriptor_set_count; i++)
 	{
 		object_shader->global_descriptor_sets_updated[i] = false;
 	}
@@ -273,4 +353,175 @@ void lise_object_shader_update_global_state(
 	vkUpdateDescriptorSets(device, 1, &descriptor_write, 0, 0);
 
 	object_shader->global_descriptor_sets_updated[image_index] = true;
+}
+
+bool lise_object_shader_register_object(
+	lise_object_shader* object_shader, 
+	VkDevice device,
+	uint32_t swapchain_image_count,
+	lise_object_shader_object* out_object
+)
+{
+	lise_object_shader_object object = {};
+
+	object.ub_index = object_shader->current_uniform_buffer_index++;
+
+	object.descriptor_sets = malloc(swapchain_image_count * sizeof(VkDescriptorSet));
+	object.is_descriptor_dirty = malloc(LOBJECT_SHADER_LOCAL_DESCRIPTOR_COUNT * swapchain_image_count * sizeof(bool));
+
+	object.descriptor_set_count = swapchain_image_count;
+
+	// Set all descriptors to be dirty.
+	for (uint32_t i = 0; i < LOBJECT_SHADER_LOCAL_DESCRIPTOR_COUNT * swapchain_image_count; i++)
+	{
+		object.is_descriptor_dirty[i] = true;
+	}
+
+	// Allocate descriptor sets.
+	VkDescriptorSetLayout* layouts = malloc(swapchain_image_count * sizeof(VkDescriptorSetLayout));
+
+	for (uint32_t i = 0; i < swapchain_image_count; i++)
+	{
+		layouts[i] = object_shader->object_descriptor_set_layout;
+	}
+
+	VkDescriptorSetAllocateInfo allocate_info = {};
+	allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocate_info.descriptorPool = object_shader->object_descriptor_pool;
+	allocate_info.descriptorSetCount = swapchain_image_count;
+	allocate_info.pSetLayouts = layouts;
+
+	VkResult r = vkAllocateDescriptorSets(device, &allocate_info, object.descriptor_sets);
+
+	free(layouts);
+
+	if (r != VK_SUCCESS)
+	{
+		LERROR("Failed to allocate object descriptor sets.");
+		free(object.descriptor_sets);
+		free(object.is_descriptor_dirty);
+		return false;
+	}
+	
+	object.diffuse_texture = lise_texture_system_get_default_texture();
+
+	*out_object = object;
+
+	return true;
+}
+
+bool lise_object_shader_free_object(
+	VkDevice device,
+	lise_object_shader* object_shader,
+	lise_object_shader_object* object
+)
+{
+	vkFreeDescriptorSets(device, object_shader->object_descriptor_pool, 2, object->descriptor_sets);
+
+	free(object->descriptor_sets);
+	free(object->is_descriptor_dirty);
+
+	object_shader->current_uniform_buffer_index--;
+}
+
+void lise_object_shader_set_object_data(
+	lise_object_shader_object* object,
+	lise_object_shader_object_ubo* object_ubo,
+	lise_texture* diffuse_texture
+)
+{
+	if (object_ubo)
+	{
+		object->object_ubo = *object_ubo;
+
+		for (uint32_t i = 0; i < object->descriptor_set_count; i++)
+		{
+			
+			object->is_descriptor_dirty[LOBJECT_SHADER_LOCAL_DESCRIPTOR_COUNT * i + 0] = true;
+		}
+	}
+
+	if (diffuse_texture)
+	{
+		object->diffuse_texture = diffuse_texture;
+
+		for (uint32_t i = 0; i < object->descriptor_set_count; i++)
+		{
+			object->is_descriptor_dirty[LOBJECT_SHADER_LOCAL_DESCRIPTOR_COUNT * i + 1] = true;
+		}
+	}
+}
+
+void lise_object_shader_update_object(
+	lise_object_shader_object* object,
+	lise_object_shader* object_shader,
+	VkCommandBuffer command_buffer,
+	VkDevice device,
+	uint32_t swapchain_image_index
+)
+{
+	VkWriteDescriptorSet descriptor_writes[LOBJECT_SHADER_LOCAL_DESCRIPTOR_COUNT];
+	uint32_t descriptor_write_count = 0;
+
+	// Uniform buffer.
+	if (object->is_descriptor_dirty[swapchain_image_index * LOBJECT_SHADER_LOCAL_DESCRIPTOR_COUNT + 0])
+	{
+		// Upload to buffer.
+		lise_vulkan_buffer_load_data(
+			device,
+			&object_shader->object_uniform_buffer,
+			object->ub_index * sizeof(lise_object_shader_object_ubo),
+			sizeof(lise_object_shader_object_ubo),
+			0,
+			&object->object_ubo
+		);
+
+		// Uniform buffer is out of date; update.
+		VkDescriptorBufferInfo* buffer_info = alloca(sizeof(VkDescriptorBufferInfo));
+		buffer_info->buffer = object_shader->object_uniform_buffer.handle;
+		buffer_info->offset = sizeof(lise_object_shader_object_ubo) * object->ub_index;
+		buffer_info->range = sizeof(lise_object_shader_object_ubo);
+
+		VkWriteDescriptorSet ubo_write = {};
+		ubo_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		ubo_write.dstSet = object->descriptor_sets[swapchain_image_index];
+		ubo_write.dstBinding = 0;
+		ubo_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		ubo_write.descriptorCount = 1;
+		ubo_write.pBufferInfo = buffer_info;
+
+		descriptor_writes[0] = ubo_write;
+		descriptor_write_count++;
+
+		// Set dirty to false.
+		object->is_descriptor_dirty[swapchain_image_index * LOBJECT_SHADER_LOCAL_DESCRIPTOR_COUNT + 0] = false;
+	}
+
+	// Texture sampler.
+	if (object->is_descriptor_dirty[swapchain_image_index * LOBJECT_SHADER_LOCAL_DESCRIPTOR_COUNT + 1])
+	{
+		VkDescriptorImageInfo* image_info = alloca(sizeof(VkDescriptorImageInfo));
+		image_info->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		image_info->imageView = object->diffuse_texture->image.image_view;
+		image_info->sampler = object->diffuse_texture->sampler;
+
+		VkWriteDescriptorSet d_write = {};
+		d_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		d_write.dstSet = object->descriptor_sets[swapchain_image_index];
+		d_write.dstBinding = 1;
+		d_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		d_write.descriptorCount = 1;
+		d_write.pImageInfo = image_info;
+
+		descriptor_writes[1] = d_write;
+		descriptor_write_count++;
+
+		// Set dirty to false.
+		object->is_descriptor_dirty[swapchain_image_index * LOBJECT_SHADER_LOCAL_DESCRIPTOR_COUNT + 1] = false;
+	}
+
+	if (descriptor_write_count > 0)
+	{
+		vkUpdateDescriptorSets(device, descriptor_write_count, descriptor_writes, 0, NULL);
+	}
 }

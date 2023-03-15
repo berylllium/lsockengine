@@ -15,7 +15,14 @@ layout(push_constant) uniform u_push_constants
 	mat4 model;
 } push_constants;
 
+layout(location = 0) out struct dto
+{
+	vec2 tex_coord;
+} out_dto;
+
 void main()
 {
 	gl_Position = global_ubo.projection * global_ubo.view * push_constants.model * vec4(in_position, 1.0);
+
+	out_dto.tex_coord = in_tex_coord;
 }

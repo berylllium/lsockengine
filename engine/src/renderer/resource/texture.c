@@ -152,7 +152,7 @@ bool lise_texture_create(
 	sampler_ci.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 	sampler_ci.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 	sampler_ci.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	sampler_ci.anisotropyEnable = VK_TRUE;
+	sampler_ci.anisotropyEnable = VK_FALSE;
 	sampler_ci.maxAnisotropy = 16;
 	sampler_ci.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
 	sampler_ci.unnormalizedCoordinates = VK_FALSE;

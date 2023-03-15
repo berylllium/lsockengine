@@ -8,7 +8,7 @@
 static blib_hashmap loaded_textures;
 
 static const char* default_texture_path = "__lise_default_texture_path__";
-static lise_texture* default_texture;
+static lise_texture default_texture;
 
 static bool create_default_texture(const lise_device* device);
 
@@ -48,14 +48,14 @@ void lise_texture_system_shutdown(VkDevice device)
 	blib_hashmap_free(&loaded_textures);
 
 	// Destroy the default texture.
-	lise_texture_free(device, default_texture);
+	lise_texture_free(device, &default_texture);
 
 	LINFO("Successfully shut down the renderer texture subsystem.");
 }
 
 const lise_texture* lise_texture_system_get_default_texture()
 {
-	return default_texture;
+	return &default_texture;
 }
 
 bool lise_texture_system_load(const lise_device* device, const char* path, lise_texture* out_texture)
@@ -97,7 +97,7 @@ bool lise_texture_system_get(const lise_device* device, const char* path, lise_t
 	{
 		LWARN("Texture with path `%s` has not been loaded yet. Providing default texture.", path);
 
-		*out_texture = *default_texture;
+		*out_texture = default_texture;
 
 		return false;
 	}
@@ -166,8 +166,6 @@ static bool create_default_texture(const lise_device* device)
 		}
 	}
 
-	default_texture = malloc(sizeof(lise_texture));
-
 	if (!lise_texture_create(
 		device,
 		default_texture_path,
@@ -176,12 +174,11 @@ static bool create_default_texture(const lise_device* device)
 		channels,
 		data,
 		false,
-		default_texture
+		&default_texture
 	))
 	{
 		LERROR("Failed to create texture object for the default texture");
 
-		free(default_texture);
 		free(data);
 
 		return false;

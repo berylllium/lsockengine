@@ -9,6 +9,7 @@
 #include "renderer/vulkan_platform.h"
 #include "math/vertex.h"
 #include "math/quat.h"
+#include "math/math.h"
 
 #include "renderer/system/texture_system.h"
 
@@ -74,8 +75,9 @@ void upload_data_range(lise_vulkan_buffer* buffer, uint64_t offset, uint64_t siz
 	lise_vulkan_buffer_destroy(vulkan_context.device.logical_device, &staging);
 }
 
-// TODO: temp static
+// TODO: temp statics
 static lise_mat4x4 view_matrix = LMAT4X4_IDENTITY;
+static lise_object_shader_object test_object;
 
 bool lise_vulkan_initialize(const char* application_name)
 {
@@ -277,13 +279,13 @@ bool lise_vulkan_initialize(const char* application_name)
 
 	memset(verts, 0, sizeof(lise_vertex) * vert_count);
 
-	verts[0].position.x = -0.5;
+	verts[0].position.x = -0.75;
 	verts[0].position.y = -0.5;
 	verts[0].tex_coord.x = 0.0f;
 	verts[0].tex_coord.y = 0.0f;
 
 	verts[1].position.y = 0.5;
-	verts[1].position.x = 0.5;
+	verts[1].position.x = 0.75;
 	verts[1].tex_coord.x = 1.0f;
 	verts[1].tex_coord.y = 1.0f;
 
@@ -302,6 +304,8 @@ bool lise_vulkan_initialize(const char* application_name)
 
 	upload_data_range(&vulkan_context.object_vertex_buffer, 0, sizeof(lise_vertex) * vert_count, verts);
 	upload_data_range(&vulkan_context.object_index_buffer, 0, sizeof(uint32_t) * index_count, indices);
+
+	lise_object_shader_register_object(&vulkan_context.object_shader, vulkan_context.device.logical_device, vulkan_context.swapchain.image_count, &test_object);
 
 	// --------- ENDTEMP
 
@@ -462,6 +466,29 @@ bool lise_vulkan_begin_frame(float delta_time)
 			vulkan_context.current_image_index
 		);
 	}
+
+	// Bind uniform and sampler object descriptors.
+	lise_object_shader_object_ubo object_uniform = {};
+
+	static float accumulator = 0.0f;
+    accumulator += delta_time;
+    float s = (lsin(accumulator) + 1.0f) / 2.0f;
+
+	object_uniform.diffuse_color = (lise_vec4) { s, s, s, 1.0f };
+
+	lise_object_shader_set_object_data(&test_object, &object_uniform, NULL);
+	lise_object_shader_update_object(&test_object, &vulkan_context.object_shader, command_buffer->handle, vulkan_context.device.logical_device, vulkan_context.current_image_index);
+
+	vkCmdBindDescriptorSets(
+		command_buffer->handle,
+		VK_PIPELINE_BIND_POINT_GRAPHICS,
+		vulkan_context.object_shader.pipeline.pipeline_layout,
+		1,
+		1,
+		&test_object.descriptor_sets[vulkan_context.current_image_index],
+		0,
+		0
+	);
 
 	lise_object_shader_use(vulkan_context.current_image_index, command_buffer->handle, &vulkan_context.object_shader);
 
