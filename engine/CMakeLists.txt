@@ -18,7 +18,6 @@ set(LISE_HEADERS
 	platform/platform.h
 	renderer/resource/mesh.h
 	renderer/resource/texture.h
-	renderer/shader/object_shader.h
 	renderer/system/shader_system.h
 	renderer/system/texture_system.h
 	renderer/command_buffer.h
@@ -54,7 +53,6 @@ set(LISE_SOURCES
 	platform/platform_win32.c
 	renderer/resource/mesh.c
 	renderer/resource/texture.c
-	renderer/shader/object_shader.c
 	renderer/system/shader_system.c
 	renderer/system/texture_system.c
 	renderer/command_buffer.c

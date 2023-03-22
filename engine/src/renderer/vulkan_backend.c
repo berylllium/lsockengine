@@ -256,20 +256,6 @@ bool lise_vulkan_initialize(const char* application_name)
 		return false;
 	}
 
-//	if (!lise_object_shader_create(
-//		vulkan_context.device.logical_device,
-//		vulkan_context.device.physical_device_memory_properties,
-//		&vulkan_context.render_pass,
-//		vulkan_context.swapchain.swapchain_info.swapchain_extent.width,
-//		vulkan_context.swapchain.swapchain_info.swapchain_extent.height,
-//		vulkan_context.swapchain.image_count,
-//		&vulkan_context.object_shader
-//	))
-//	{
-//		LFATAL("Failed to create the object shader.");
-//		return false;
-//	}
-
 	// Load default shaders.
 	lise_shader_system_load("assets/shaders/builtin.object_shader.scfg", &obj_shader);
 
@@ -342,10 +328,6 @@ bool lise_vulkan_initialize(const char* application_name)
 
 	lise_shader_set_instance_sampler(vulkan_context.device.logical_device, obj_shader, 0, &temp_texture, &test_object);
 
-//	lise_object_shader_register_object(&vulkan_context.object_shader, vulkan_context.device.logical_device, vulkan_context.swapchain.image_count, &test_object);
-//
-//	lise_object_shader_set_object_data(&test_object, NULL, &temp_texture);
-
 	// --------- ENDTEMP
 
 	LINFO("Successfully initialized the vulkan backend.");
@@ -359,8 +341,6 @@ void lise_vulkan_shutdown()
 
 	lise_vulkan_buffer_destroy(vulkan_context.device.logical_device, &vulkan_context.object_index_buffer);
 	lise_vulkan_buffer_destroy(vulkan_context.device.logical_device, &vulkan_context.object_vertex_buffer);
-
-//	lise_object_shader_destroy(vulkan_context.device.logical_device, &vulkan_context.object_shader);
 
 	lise_shader_system_shutdown();
 
@@ -486,13 +466,6 @@ bool lise_vulkan_begin_frame(float delta_time)
 	// -------- TEMP
 	lise_vec2i framebuffer_size = lise_vulkan_get_framebuffer_size();
 
-//	lise_object_shader_global_ubo new_global_ubo = {};
-//
-//	new_global_ubo.projection =
-//		lise_mat4x4_perspective(LQUARTER_PI, (float) framebuffer_size.x / (float) framebuffer_size.y, 0.1f, 1000.0f);
-//		
-//	new_global_ubo.view = view_matrix;
-
 	global_ubo gubo = {};
 	gubo.projection = 
 		lise_mat4x4_perspective(LQUARTER_PI, (float) framebuffer_size.x / (float) framebuffer_size.y, 0.1f, 1000.0f);
@@ -503,32 +476,14 @@ bool lise_vulkan_begin_frame(float delta_time)
 
 	vkCmdPushConstants(command_buffer->handle, obj_shader->pipeline.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &model);
 
-//	lise_object_shader_set_global_ubo(new_global_ubo, &vulkan_context.object_shader);
-
 	lise_shader_set_global_ubo(vulkan_context.device.logical_device, obj_shader, &gubo);
-
-//	if (!vulkan_context.object_shader.global_descriptor_sets_updated[vulkan_context.current_image_index])
-//	{
-//		lise_object_shader_update_global_state(
-//			vulkan_context.device.logical_device,
-//			&vulkan_context.object_shader,
-//			vulkan_context.current_image_index
-//		);
-//	}
 
 	lise_shader_update_global_uniforms(vulkan_context.device.logical_device, obj_shader, vulkan_context.current_image_index, &test_object);
 
 	// Bind uniform and sampler object descriptors.
-//	lise_object_shader_object_ubo object_uniform = {};
-//
 	static float accumulator = 0.0f;
 	accumulator += delta_time;
 	float s = (lsin(accumulator) + 1.0f) / 2.0f;
-//
-//	object_uniform.diffuse_color = (lise_vec4) { s, s, s, 1.0f };
-//
-//	lise_object_shader_set_object_data(&test_object, &object_uniform, NULL);
-//	lise_object_shader_update_object(&test_object, &vulkan_context.object_shader, command_buffer->handle, vulkan_context.device.logical_device, vulkan_context.current_image_index);
 
 	instance_ubo iubo = {};
 

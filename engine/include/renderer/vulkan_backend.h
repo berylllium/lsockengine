@@ -9,8 +9,8 @@
 #include "renderer/render_pass.h"
 #include "renderer/swapchain.h"
 #include "renderer/fence.h"
-#include "renderer/shader/object_shader.h"
 #include "renderer/vulkan_buffer.h"
+#include "math/mat4x4.h"
 
 typedef struct lise_vulkan_context
 {
@@ -36,8 +36,6 @@ typedef struct lise_vulkan_context
 	lise_fence** images_in_flight;
 
 	uint32_t current_image_index;
-
-	lise_object_shader object_shader;
 
 	lise_vulkan_buffer object_vertex_buffer;
 	lise_vulkan_buffer object_index_buffer;
