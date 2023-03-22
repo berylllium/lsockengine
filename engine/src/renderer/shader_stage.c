@@ -61,7 +61,10 @@ bool lise_shader_stage_create(
 
 bool lise_shader_stage_destroy(VkDevice device, lise_shader_stage* shader_stage)
 {
-	vkDestroyShaderModule(device, shader_stage->module_handle, NULL);
+	if (shader_stage->module_handle)
+	{
+		vkDestroyShaderModule(device, shader_stage->module_handle, NULL);
+	}
 
 	shader_stage->module_handle = NULL;
 }

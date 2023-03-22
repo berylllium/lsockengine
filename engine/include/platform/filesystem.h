@@ -38,7 +38,7 @@ LAPI bool lise_filesystem_open(const char* path, lise_file_modes mode, bool bina
 
 LAPI void lise_filesystem_close(lise_file_handle* file_handle);
 
-LAPI bool lise_filesystem_read_line(lise_file_handle* file_handle, uint64_t* out_read_bytes, char** out_line_buff);
+LAPI bool lise_filesystem_read_line(lise_file_handle* file_handle, uint64_t* out_read_bytes, char* out_line_buff);
 
 LAPI bool lise_filesystem_write_line(lise_file_handle* file_handle, char* s);
 

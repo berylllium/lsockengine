@@ -11,7 +11,9 @@
 #include "math/quat.h"
 #include "math/math.h"
 
+// Renderer subsystems.
 #include "renderer/system/texture_system.h"
+#include "renderer/system/shader_system.h"
 
 #ifdef NDEBUG
 	static const bool enable_validation_layers = false;
@@ -77,8 +79,21 @@ void upload_data_range(lise_vulkan_buffer* buffer, uint64_t offset, uint64_t siz
 
 // TODO: temp statics
 static lise_mat4x4 view_matrix = LMAT4X4_IDENTITY;
-static lise_object_shader_object test_object;
+static lise_shader_instance test_object;
 static lise_texture temp_texture;
+
+static lise_shader* obj_shader;
+
+typedef struct global_ubo
+{
+	lise_mat4x4 projection;
+	lise_mat4x4 view;
+} global_ubo;
+
+typedef struct instance_ubo
+{
+	lise_vec4 diffuse_color;
+} instance_ubo;
 
 bool lise_vulkan_initialize(const char* application_name)
 {
@@ -229,19 +244,34 @@ bool lise_vulkan_initialize(const char* application_name)
 		return false;
 	}
 
-	if (!lise_object_shader_create(
-		vulkan_context.device.logical_device,
-		vulkan_context.device.physical_device_memory_properties,
+	if (!lise_shader_system_initialize(
+		&vulkan_context.device,
 		&vulkan_context.render_pass,
-		vulkan_context.swapchain.swapchain_info.swapchain_extent.width,
-		vulkan_context.swapchain.swapchain_info.swapchain_extent.height,
-		vulkan_context.swapchain.image_count,
-		&vulkan_context.object_shader
+		&vulkan_context.swapchain.swapchain_info.swapchain_extent.width,
+		&vulkan_context.swapchain.swapchain_info.swapchain_extent.height,
+		&vulkan_context.swapchain.image_count
 	))
 	{
-		LFATAL("Failed to create the object shader.");
+		LFATAL("Failed to initialize the vulkan renderer shader subsystem.");
 		return false;
 	}
+
+//	if (!lise_object_shader_create(
+//		vulkan_context.device.logical_device,
+//		vulkan_context.device.physical_device_memory_properties,
+//		&vulkan_context.render_pass,
+//		vulkan_context.swapchain.swapchain_info.swapchain_extent.width,
+//		vulkan_context.swapchain.swapchain_info.swapchain_extent.height,
+//		vulkan_context.swapchain.image_count,
+//		&vulkan_context.object_shader
+//	))
+//	{
+//		LFATAL("Failed to create the object shader.");
+//		return false;
+//	}
+
+	// Load default shaders.
+	lise_shader_system_load("assets/shaders/builtin.object_shader.scfg", &obj_shader);
 
 	// -------- TEMP
 	// Create the vertex and index buffers
@@ -308,9 +338,13 @@ bool lise_vulkan_initialize(const char* application_name)
 
 	lise_texture_system_load(&vulkan_context.device, "assets/texture/test_texture.png", &temp_texture);
 
-	lise_object_shader_register_object(&vulkan_context.object_shader, vulkan_context.device.logical_device, vulkan_context.swapchain.image_count, &test_object);
+	lise_shader_allocate_instance(vulkan_context.device.logical_device, obj_shader, &test_object);
 
-	lise_object_shader_set_object_data(&test_object, NULL, &temp_texture);
+	lise_shader_set_instance_sampler(vulkan_context.device.logical_device, obj_shader, 0, &temp_texture, &test_object);
+
+//	lise_object_shader_register_object(&vulkan_context.object_shader, vulkan_context.device.logical_device, vulkan_context.swapchain.image_count, &test_object);
+//
+//	lise_object_shader_set_object_data(&test_object, NULL, &temp_texture);
 
 	// --------- ENDTEMP
 
@@ -326,7 +360,9 @@ void lise_vulkan_shutdown()
 	lise_vulkan_buffer_destroy(vulkan_context.device.logical_device, &vulkan_context.object_index_buffer);
 	lise_vulkan_buffer_destroy(vulkan_context.device.logical_device, &vulkan_context.object_vertex_buffer);
 
-	lise_object_shader_destroy(vulkan_context.device.logical_device, &vulkan_context.object_shader);
+//	lise_object_shader_destroy(vulkan_context.device.logical_device, &vulkan_context.object_shader);
+
+	lise_shader_system_shutdown();
 
 	lise_texture_system_shutdown(vulkan_context.device.logical_device);
 
@@ -450,44 +486,61 @@ bool lise_vulkan_begin_frame(float delta_time)
 	// -------- TEMP
 	lise_vec2i framebuffer_size = lise_vulkan_get_framebuffer_size();
 
-	lise_object_shader_global_ubo new_global_ubo = {};
+//	lise_object_shader_global_ubo new_global_ubo = {};
+//
+//	new_global_ubo.projection =
+//		lise_mat4x4_perspective(LQUARTER_PI, (float) framebuffer_size.x / (float) framebuffer_size.y, 0.1f, 1000.0f);
+//		
+//	new_global_ubo.view = view_matrix;
 
-	new_global_ubo.projection =
+	global_ubo gubo = {};
+	gubo.projection = 
 		lise_mat4x4_perspective(LQUARTER_PI, (float) framebuffer_size.x / (float) framebuffer_size.y, 0.1f, 1000.0f);
-		
-	new_global_ubo.view = view_matrix;
+	
+	gubo.view = view_matrix;
 
 	lise_mat4x4 model = LMAT4X4_IDENTITY;
 
-	vkCmdPushConstants(command_buffer->handle, vulkan_context.object_shader.pipeline.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &model);
+	vkCmdPushConstants(command_buffer->handle, obj_shader->pipeline.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &model);
 
-	lise_object_shader_set_global_ubo(new_global_ubo, &vulkan_context.object_shader);
+//	lise_object_shader_set_global_ubo(new_global_ubo, &vulkan_context.object_shader);
 
-	if (!vulkan_context.object_shader.global_descriptor_sets_updated[vulkan_context.current_image_index])
-	{
-		lise_object_shader_update_global_state(
-			vulkan_context.device.logical_device,
-			&vulkan_context.object_shader,
-			vulkan_context.current_image_index
-		);
-	}
+	lise_shader_set_global_ubo(vulkan_context.device.logical_device, obj_shader, &gubo);
+
+//	if (!vulkan_context.object_shader.global_descriptor_sets_updated[vulkan_context.current_image_index])
+//	{
+//		lise_object_shader_update_global_state(
+//			vulkan_context.device.logical_device,
+//			&vulkan_context.object_shader,
+//			vulkan_context.current_image_index
+//		);
+//	}
+
+	lise_shader_update_global_uniforms(vulkan_context.device.logical_device, obj_shader, vulkan_context.current_image_index, &test_object);
 
 	// Bind uniform and sampler object descriptors.
-	lise_object_shader_object_ubo object_uniform = {};
-
+//	lise_object_shader_object_ubo object_uniform = {};
+//
 	static float accumulator = 0.0f;
-    accumulator += delta_time;
-    float s = (lsin(accumulator) + 1.0f) / 2.0f;
+	accumulator += delta_time;
+	float s = (lsin(accumulator) + 1.0f) / 2.0f;
+//
+//	object_uniform.diffuse_color = (lise_vec4) { s, s, s, 1.0f };
+//
+//	lise_object_shader_set_object_data(&test_object, &object_uniform, NULL);
+//	lise_object_shader_update_object(&test_object, &vulkan_context.object_shader, command_buffer->handle, vulkan_context.device.logical_device, vulkan_context.current_image_index);
 
-	object_uniform.diffuse_color = (lise_vec4) { s, s, s, 1.0f };
+	instance_ubo iubo = {};
 
-	lise_object_shader_set_object_data(&test_object, &object_uniform, NULL);
-	lise_object_shader_update_object(&test_object, &vulkan_context.object_shader, command_buffer->handle, vulkan_context.device.logical_device, vulkan_context.current_image_index);
+	iubo.diffuse_color = (lise_vec4) { s, s, s, 1.0f };
+
+	lise_shader_set_instance_ubo(vulkan_context.device.logical_device, obj_shader, &iubo, &test_object);
+	lise_shader_update_instance_ubo(vulkan_context.device.logical_device, obj_shader, vulkan_context.current_image_index, &test_object);
 
 	vkCmdBindDescriptorSets(
 		command_buffer->handle,
 		VK_PIPELINE_BIND_POINT_GRAPHICS,
-		vulkan_context.object_shader.pipeline.pipeline_layout,
+		obj_shader->pipeline.pipeline_layout,
 		1,
 		1,
 		&test_object.descriptor_sets[vulkan_context.current_image_index],
@@ -495,7 +548,8 @@ bool lise_vulkan_begin_frame(float delta_time)
 		0
 	);
 
-	lise_object_shader_use(vulkan_context.current_image_index, command_buffer->handle, &vulkan_context.object_shader);
+//	lise_object_shader_use(vulkan_context.current_image_index, command_buffer->handle, &vulkan_context.object_shader);
+	lise_shader_use(obj_shader, command_buffer->handle, vulkan_context.current_image_index);
 
 	// Bind vertex
 	VkDeviceSize offsets[1] = {0};

@@ -5,13 +5,15 @@
 
 bool lise_pipeline_create(
 	VkDevice device,
-	lise_render_pass* render_pass,
+	const lise_render_pass* render_pass,
 	uint32_t attribute_count,
 	VkVertexInputAttributeDescription* attributes,
 	uint32_t descriptor_set_layout_count,
 	VkDescriptorSetLayout* descriptor_set_layouts,
 	uint32_t shader_stage_count,
 	VkPipelineShaderStageCreateInfo* shader_stages,
+	uint32_t push_constant_count,
+	VkPushConstantRange* push_constant_ranges,
 	VkViewport viewport,
 	VkRect2D scissor,
 	bool is_wireframe,
@@ -115,13 +117,8 @@ bool lise_pipeline_create(
 	pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
 	// Push constants
-	VkPushConstantRange push_constant = {};
-	push_constant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	push_constant.offset = 0;
-	push_constant.size = 64; // TODO: Make this non-constant, represents lise_mat4x4 size
-
-	pipeline_layout_create_info.pushConstantRangeCount = 1;
-	pipeline_layout_create_info.pPushConstantRanges = &push_constant;
+	pipeline_layout_create_info.pushConstantRangeCount = push_constant_count;
+	pipeline_layout_create_info.pPushConstantRanges = push_constant_ranges;
 
 	// Descriptor set layouts
 	pipeline_layout_create_info.setLayoutCount = descriptor_set_layout_count;

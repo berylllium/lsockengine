@@ -73,7 +73,7 @@ bool lise_object_shader_create(
 	// Global descriptor pool
 	VkDescriptorPoolSize global_pool_size = {};
 	global_pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	global_pool_size.descriptorCount = swapchain_image_count;
+	global_pool_size.descriptorCount = swapchain_image_count * swapchain_image_count;
 
 	VkDescriptorPoolCreateInfo global_pool_ci = {};
 	global_pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -188,6 +188,11 @@ bool lise_object_shader_create(
 		out_object_shader->object_descriptor_set_layout
 	};
 
+	VkPushConstantRange pr = {};
+	pr.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	pr.size = 64;
+	pr.offset = 0;
+
 	if (!lise_pipeline_create(
 		device,
 		render_pass,
@@ -197,6 +202,8 @@ bool lise_object_shader_create(
 		layouts,
 		LOBJECT_SHADER_STAGE_COUNT,
 		shader_stage_create_infos,
+		1,
+		&pr,
 		viewport,
 		scissor,
 		false,

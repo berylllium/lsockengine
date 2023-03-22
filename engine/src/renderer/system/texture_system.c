@@ -2,8 +2,9 @@
 
 #include <stdlib.h>
 
+#include <container/hashmap.h>
+
 #include "core/logger.h"
-#include "container/hashmap.h"
 
 static blib_hashmap loaded_textures;
 

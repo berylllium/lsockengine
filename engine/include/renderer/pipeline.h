@@ -13,13 +13,15 @@ typedef struct lise_pipeline
 
 bool lise_pipeline_create(
 	VkDevice device,
-	lise_render_pass* render_pass,
+	const lise_render_pass* render_pass,
 	uint32_t attribute_count,
 	VkVertexInputAttributeDescription* attributes,
 	uint32_t descriptor_set_layout_count,
 	VkDescriptorSetLayout* descriptor_set_layouts,
 	uint32_t shader_stage_count,
 	VkPipelineShaderStageCreateInfo* shader_stages,
+	uint32_t push_constant_count,
+	VkPushConstantRange* push_constant_ranges,
 	VkViewport viewport,
 	VkRect2D scissor,
 	bool is_wireframe,

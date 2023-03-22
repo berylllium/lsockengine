@@ -5,6 +5,8 @@ set(LISE_HEADERS
 	core/event.h
 	core/input.h
 	core/logger.h
+	loader/obj_format_loader.h
+	loader/shader_config_loader.h
 	math/mat4x4.h
 	math/math.h
 	math/quat.h
@@ -14,8 +16,10 @@ set(LISE_HEADERS
 	math/vertex.h
 	platform/filesystem.h
 	platform/platform.h
+	renderer/resource/mesh.h
 	renderer/resource/texture.h
 	renderer/shader/object_shader.h
+	renderer/system/shader_system.h
 	renderer/system/texture_system.h
 	renderer/command_buffer.h
 	renderer/device.h
@@ -25,6 +29,7 @@ set(LISE_HEADERS
 	renderer/render_pass.h
 	renderer/renderer.h
 	renderer/shader_stage.h
+	renderer/shader.h
 	renderer/swapchain.h
 	renderer/vulkan_backend.h
 	renderer/vulkan_buffer.h
@@ -41,12 +46,16 @@ set(LISE_SOURCES
 	core/event.c
 	core/input.c
 	core/logger.c
+	loader/obj_format_loader.c
+	loader/shader_config_loader.c
 	math/math.c
 	platform/filesystem.c
 	platform/platform_linux.c
 	platform/platform_win32.c
+	renderer/resource/mesh.c
 	renderer/resource/texture.c
 	renderer/shader/object_shader.c
+	renderer/system/shader_system.c
 	renderer/system/texture_system.c
 	renderer/command_buffer.c
 	renderer/device.c
@@ -56,6 +65,7 @@ set(LISE_SOURCES
 	renderer/render_pass.c
 	renderer/renderer.c
 	renderer/shader_stage.c
+	renderer/shader.c
 	renderer/swapchain.c
 	renderer/vulkan_backend.c
 	renderer/vulkan_buffer.c
