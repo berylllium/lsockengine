@@ -52,6 +52,8 @@ bool lise_shader_config_load(const char* path, lise_shader_config* out_config)
 
 	out_config->name = strdup(found_lines[0]->tokens[0]);
 
+	free(found_lines);
+
 	// Get the render pass name.
 	lise_obj_format_get_line(&loaded_format, "render_pass", &found_line_count, &found_lines);
 
@@ -82,6 +84,8 @@ bool lise_shader_config_load(const char* path, lise_shader_config* out_config)
 	}
 
 	out_config->render_pass_name = strdup(found_lines[0]->tokens[0]);
+
+	free(found_lines);
 
 	// Load stage names.
 	lise_obj_format_get_line(&loaded_format, "stages", &found_line_count, &found_lines);
@@ -118,6 +122,8 @@ bool lise_shader_config_load(const char* path, lise_shader_config* out_config)
 	{
 		out_config->stage_names[i] = strdup(found_lines[0]->tokens[i]);
 	}
+
+	free(found_lines);
 
 	// Load stage file paths.
 	lise_obj_format_get_line(&loaded_format, "stage_files", &found_line_count, &found_lines);
@@ -166,6 +172,8 @@ bool lise_shader_config_load(const char* path, lise_shader_config* out_config)
 		out_config->stage_file_names[i] = strdup(found_lines[0]->tokens[i]);
 	}
 
+	free(found_lines);
+
 	// Load attributes
 	lise_obj_format_get_line(&loaded_format, "attribute", &found_line_count, &found_lines);
 
@@ -209,6 +217,8 @@ bool lise_shader_config_load(const char* path, lise_shader_config* out_config)
 	memcpy(out_config->attributes, blib_darray_get(&attributes, 0), attributes_size);
 
 	blib_darray_free(&attributes);
+
+	free(found_lines);
 
 	// Load uniforms
 	lise_obj_format_get_line(&loaded_format, "uniform", &found_line_count, &found_lines);
@@ -258,6 +268,8 @@ bool lise_shader_config_load(const char* path, lise_shader_config* out_config)
 
 	// Cleanup
 	lise_obj_format_free(&loaded_format);
+
+	free(found_lines);
 
 	return true;
 }
