@@ -7,6 +7,7 @@ stage_files 	assets/shaders/builtin.object_shader.vert.spv	assets/shaders/builti
 # Attributes
 attribute vec3 in_position
 attribute vec2 in_tex_coord
+attribute vec3 in_normal
 
 # Uniforms
 # 0: Global, 1: Instance, 2: Local

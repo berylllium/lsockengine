@@ -300,21 +300,29 @@ bool lise_vulkan_initialize(const char* application_name)
 	verts[0].position.y = -0.5;
 	verts[0].tex_coord.x = 0.0f;
 	verts[0].tex_coord.y = 0.0f;
+	verts[0].normal.x = 0.0f;
+	verts[0].normal.y = 0.0f;
 
 	verts[1].position.y = 0.5;
 	verts[1].position.x = 0.75;
 	verts[1].tex_coord.x = 1.0f;
 	verts[1].tex_coord.y = 1.0f;
+	verts[1].normal.x = 0.0f;
+	verts[1].normal.y = 0.0f;
 
 	verts[2].position.x = -0.5;
 	verts[2].position.y = 0.5;
 	verts[2].tex_coord.x = 0.0f;
 	verts[2].tex_coord.y = 1.0f;
+	verts[2].normal.x = 0.0f;
+	verts[2].normal.y = 0.0f;
 
 	verts[3].position.x = 0.5;
 	verts[3].position.y = -0.5;
 	verts[3].tex_coord.x = 1.0f;
 	verts[3].tex_coord.y = 0.0f;
+	verts[3].normal.x = 0.0f;
+	verts[3].normal.y = 0.0f;
 
 	const uint32_t index_count = 6;
 	uint32_t indices[6] = {0, 1, 2, 0, 3, 1};

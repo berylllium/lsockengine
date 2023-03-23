@@ -8,4 +8,5 @@ typedef struct lise_vertex
 {
 	lise_vec3 position;
 	lise_vec2 tex_coord;
+	lise_vec3 normal;
 } lise_vertex;
