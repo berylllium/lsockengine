@@ -44,11 +44,4 @@ LAPI bool lise_filesystem_write_line(lise_file_handle* file_handle, char* s);
 
 LAPI bool lise_filesystem_write(lise_file_handle* file_handle, char* s, uint64_t* out_bytes_written);
 
-LAPI bool lise_filesystem_read(
-	lise_file_handle* file_handle,
-	uint64_t data_size,
-	uint64_t* out_bytes_read,
-	char* out_data_buff
-);
-
 LAPI bool lise_filesystem_read_all(lise_file_handle* file_handle, uint64_t* out_read_bytes, char** out_data_buff);

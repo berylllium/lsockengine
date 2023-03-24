@@ -62,43 +62,6 @@ LAPI void lise_filesystem_close(lise_file_handle* file_handle)
 	}
 }
 
-LAPI bool lise_filesystem_read_line(lise_file_handle* file_handle, uint64_t* out_read_bytes, char* out_line_buff)
-{
-	uint64_t begin_pos = ftell(file_handle->handle);
-
-	// Figure out of long the line is
-	uint64_t line_length = 0;
-
-	while (true)
-	{
-		char c = fgetc(file_handle->handle);
-		line_length++;
-
-		if (c == EOF)
-		{
-			if (line_length > 0) break;
-			else return false; // Return false if there are no more lines to read.
-		}
-
-		if (c == '\n') 
-		{
-			break;
-		}
-	}
-
-	fseek(file_handle->handle, -(line_length + 1), SEEK_CUR);
-
-	fread(out_line_buff, sizeof(char), line_length, file_handle->handle);
-
-	fgetc(file_handle->handle); // Advance the file position by one, so we bypass the newline character.
-
-	(out_line_buff)[line_length] = '\0';
-
-	*out_read_bytes = line_length;
-
-	return true;
-}
-
 LAPI bool lise_filesystem_write_line(lise_file_handle* file_handle, char* s)
 {
 	if (fputs(s, file_handle->handle) != EOF)
