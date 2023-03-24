@@ -565,7 +565,6 @@ bool lise_shader_allocate_instance(VkDevice device, lise_shader* shader, lise_sh
 	uint64_t id;
 
 	uint32_t q = 0;
-	LDEBUG("%d", q++);
 
 	for (uint64_t i = 0; i < LSHADER_MAX_INSTANCE_COUNT; i++)
 	{
@@ -577,38 +576,29 @@ bool lise_shader_allocate_instance(VkDevice device, lise_shader* shader, lise_sh
 		}
 	}
 
-	LDEBUG("%d", q++);
 	if (!slot_found)
 	{
 		LERROR("Failed to find a free slot in the instance uniform buffer of shader `%s`.", shader->name);
 		return false;
 	}
 
-	LDEBUG("%d", q++);
 	// Claim slot.
 	shader->instance_ubo_free_list[id] = false;
 	out_instance->id = id;
 
-	LDEBUG("%d", q++);
 	// Allocate arrays.
 	out_instance->descriptor_sets = malloc(shader->swapchain_image_count * sizeof(VkDescriptorSet));
 
-	LDEBUG("%d: %d", q++, shader->swapchain_image_count);
-//	out_instance->ubo = malloc(shader->instance_ubo_size * shader->swapchain_image_count);
 	out_instance->ubo_dirty = malloc(shader->swapchain_image_count * sizeof(bool));
 
-	LDEBUG("%d", q++);
 	if (shader->instance_sampler_count)
 	{
-	LDEBUG("%d", q++);
 		out_instance->samplers =
 			malloc(shader->swapchain_image_count * shader->instance_sampler_count * sizeof(lise_texture*));
-	LDEBUG("%d", q++);
 
 		out_instance->sampler_dirty =
 			malloc(shader->swapchain_image_count * shader->instance_sampler_count * sizeof(bool));
 
-	LDEBUG("%d", q++);
 		// Set samplers to default and dirty.
 		for (uint32_t i = 0; i < shader->instance_sampler_count; i++)
 		{
@@ -621,11 +611,9 @@ bool lise_shader_allocate_instance(VkDevice device, lise_shader* shader, lise_sh
 		}
 	}
 
-	LDEBUG("%d", q++);
 	// Set all uniform buffer objects to be dirty.
 	memset(out_instance->ubo_dirty, true, shader->swapchain_image_count * sizeof(bool));
 
-	LDEBUG("%d", q++);
 	// Allocate the descriptor sets.
 	VkDescriptorSetLayout* layouts = malloc(shader->swapchain_image_count * sizeof(VkDescriptorSetLayout));
 	for (uint32_t i = 0; i < shader->swapchain_image_count; i++)
@@ -639,7 +627,6 @@ bool lise_shader_allocate_instance(VkDevice device, lise_shader* shader, lise_sh
 	d_set_ai.descriptorSetCount = shader->swapchain_image_count;
 	d_set_ai.pSetLayouts = layouts;
 
-	LDEBUG("%d", q++);
 	VkResult r = vkAllocateDescriptorSets(device, &d_set_ai, out_instance->descriptor_sets);
 
 	free(layouts);
@@ -653,7 +640,6 @@ bool lise_shader_allocate_instance(VkDevice device, lise_shader* shader, lise_sh
 		return false;
 	}
 
-	LDEBUG("%d", q++);
 	// Point the descriptors to the corrosponding location in the uniform buffer.
 	VkDescriptorBufferInfo* instance_descriptor_buffer_infos =
 		malloc(shader->swapchain_image_count * sizeof(VkDescriptorBufferInfo));
@@ -676,10 +662,8 @@ bool lise_shader_allocate_instance(VkDevice device, lise_shader* shader, lise_sh
 		instance_descriptor_writes[i].pBufferInfo = &instance_descriptor_buffer_infos[i];
 	}
 
-	LDEBUG("%d", q++);
 	vkUpdateDescriptorSets(device, shader->swapchain_image_count, instance_descriptor_writes, 0, NULL);
 
-	LDEBUG("%d", q++);
 	free(instance_descriptor_buffer_infos);
 	free(instance_descriptor_writes);
 
@@ -764,7 +748,7 @@ void lise_shader_set_instance_sampler(
 
 	// Set samplers to be dirty.
 	memset(
-		instance->sampler_dirty + instance->id * shader->swapchain_image_count,
+		instance->sampler_dirty + sampler_index * shader->swapchain_image_count,
 		true,
 		shader->swapchain_image_count * sizeof(bool)
 	);
