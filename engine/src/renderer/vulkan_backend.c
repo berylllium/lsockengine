@@ -42,7 +42,7 @@ static void create_command_buffers();
 static bool recreate_swapchain();
 
 // TODO: Temp function
-void upload_data_range(lise_vulkan_buffer* buffer, uint64_t offset, uint64_t size, void* data)
+void static upload_data_range(lise_vulkan_buffer* buffer, uint64_t offset, uint64_t size, void* data)
 {
 	// Create a host-visible staging buffer to upload to. Mark it as the source of the transfer.
 	VkBufferUsageFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -81,7 +81,7 @@ void upload_data_range(lise_vulkan_buffer* buffer, uint64_t offset, uint64_t siz
 // TODO: temp statics
 static lise_mat4x4 view_matrix = LMAT4X4_IDENTITY;
 static lise_shader_instance test_object;
-static lise_texture temp_texture;
+static lise_texture* temp_texture;
 static lise_obj test_model;
 
 static lise_shader* obj_shader;
@@ -344,7 +344,7 @@ bool lise_vulkan_initialize(const char* application_name)
 
 	lise_shader_allocate_instance(vulkan_context.device.logical_device, obj_shader, &test_object);
 
-	lise_shader_set_instance_sampler(vulkan_context.device.logical_device, obj_shader, 0, &temp_texture, &test_object);
+	lise_shader_set_instance_sampler(vulkan_context.device.logical_device, obj_shader, 0, temp_texture, &test_object);
 
 	// --------- ENDTEMP
 

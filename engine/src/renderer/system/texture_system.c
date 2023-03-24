@@ -59,7 +59,7 @@ const lise_texture* lise_texture_system_get_default_texture()
 	return &default_texture;
 }
 
-bool lise_texture_system_load(const lise_device* device, const char* path, lise_texture* out_texture)
+bool lise_texture_system_load(const lise_device* device, const char* path, lise_texture** out_texture)
 {
 	if (blib_hashmap_get(&loaded_textures, path))
 	{
@@ -85,12 +85,12 @@ bool lise_texture_system_load(const lise_device* device, const char* path, lise_
 
 	blib_hashmap_set(&loaded_textures, path, new_texture);
 
-	*out_texture = *new_texture;
+	*out_texture = new_texture;
 
 	return true;
 }
 
-bool lise_texture_system_get(const lise_device* device, const char* path, lise_texture* out_texture)
+bool lise_texture_system_get(const lise_device* device, const char* path, lise_texture** out_texture)
 {
 	lise_texture* found_texture = blib_hashmap_get(&loaded_textures, path);
 
@@ -98,24 +98,24 @@ bool lise_texture_system_get(const lise_device* device, const char* path, lise_t
 	{
 		LWARN("Texture with path `%s` has not been loaded yet. Providing default texture.", path);
 
-		*out_texture = default_texture;
+		*out_texture = &default_texture;
 
 		return false;
 	}
 
-	*out_texture = *found_texture;
+	*out_texture = found_texture;
 
 	return true;
 }
 
-bool lise_texture_system_get_or_load(const lise_device* device, const char* path, lise_texture* out_texture)
+bool lise_texture_system_get_or_load(const lise_device* device, const char* path, lise_texture** out_texture)
 {
 	lise_texture* found_texture = blib_hashmap_get(&loaded_textures, path);
 
 	if (found_texture)
 	{
 		// Texture has already been loaded.
-		*out_texture = *found_texture;
+		*out_texture = found_texture;
 
 		return true;
 	}
