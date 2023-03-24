@@ -342,74 +342,74 @@ bool lise_obj_load(const char* path, lise_obj* out_obj)
 
 		free(found_lines);
 
+		// Position.
+		lise_obj_format_get_line(
+			&loaded_obj,
+			"v",
+			NULL,
+			NULL,
+			&found_line_count,
+			&found_lines
+		);
+
+		uint32_t position_count = found_line_count;
+		lise_vec3* positions = malloc(position_count * sizeof(lise_vec3));
+
+		for (uint64_t j = 0; j < found_line_count; j++)
+		{
+			positions[j].x = strtof(found_lines[j]->tokens[0], NULL);
+			positions[j].y = strtof(found_lines[j]->tokens[1], NULL);
+			positions[j].z = strtof(found_lines[j]->tokens[2], NULL);
+		}
+
+		free(found_lines);
+
+		// Texture coordinate.
+		lise_obj_format_get_line(
+			&loaded_obj,
+			"vt",
+			NULL,
+			NULL,
+			&found_line_count,
+			&found_lines
+		);
+
+		uint32_t texture_coordinate_count = found_line_count;
+		lise_vec2* texture_coordinates = malloc(texture_coordinate_count * sizeof(lise_vec2));
+
+		for (uint64_t j = 0; j < found_line_count; j++)
+		{
+			texture_coordinates[j].u = strtof(found_lines[j]->tokens[0], NULL);
+			texture_coordinates[j].v = strtof(found_lines[j]->tokens[1], NULL);
+		}
+
+		free(found_lines);
+
+		// Normal coordinate.
+		lise_obj_format_get_line(
+			&loaded_obj,
+			"vn",
+			NULL,
+			NULL,
+			&found_line_count,
+			&found_lines
+		);
+
+		uint32_t normal_count = found_line_count;
+		lise_vec3* normals = malloc(normal_count * sizeof(lise_vec3));
+
+		for (uint64_t j = 0; j < found_line_count; j++)
+		{
+			normals[j].x = strtof(found_lines[j]->tokens[0], NULL);
+			normals[j].y = strtof(found_lines[j]->tokens[1], NULL);
+			normals[j].z = strtof(found_lines[j]->tokens[2], NULL);
+		}
+
+		free(found_lines);
+
 		// Parse remaining mesh data.
 		for (uint32_t i = 0; i < out_obj->mesh_count; i++)
 		{
-			// Position.
-			lise_obj_format_get_line(
-				&loaded_obj,
-				"v",
-				"o",
-				out_obj->meshes[i].name,
-				&found_line_count,
-				&found_lines
-			);
-
-			uint32_t position_count = found_line_count;
-			lise_vec3* positions = malloc(position_count * sizeof(lise_vec3));
-
-			for (uint64_t j = 0; j < found_line_count; j++)
-			{
-				positions[j].x = strtof(found_lines[j]->tokens[0], NULL);
-				positions[j].y = strtof(found_lines[j]->tokens[1], NULL);
-				positions[j].z = strtof(found_lines[j]->tokens[2], NULL);
-			}
-
-			free(found_lines);
-
-			// Texture coordinate.
-			lise_obj_format_get_line(
-				&loaded_obj,
-				"vt",
-				"o",
-				out_obj->meshes[i].name,
-				&found_line_count,
-				&found_lines
-			);
-
-			uint32_t texture_coordinate_count = found_line_count;
-			lise_vec2* texture_coordinates = malloc(texture_coordinate_count * sizeof(lise_vec2));
-
-			for (uint64_t j = 0; j < found_line_count; j++)
-			{
-				texture_coordinates[j].u = strtof(found_lines[j]->tokens[0], NULL);
-				texture_coordinates[j].v = strtof(found_lines[j]->tokens[1], NULL);
-			}
-
-			free(found_lines);
-
-			// Normal coordinate.
-			lise_obj_format_get_line(
-				&loaded_obj,
-				"vn",
-				"o",
-				out_obj->meshes[i].name,
-				&found_line_count,
-				&found_lines
-			);
-
-			uint32_t normal_count = found_line_count;
-			lise_vec3* normals = malloc(normal_count * sizeof(lise_vec3));
-
-			for (uint64_t j = 0; j < found_line_count; j++)
-			{
-				normals[j].x = strtof(found_lines[j]->tokens[0], NULL);
-				normals[j].y = strtof(found_lines[j]->tokens[1], NULL);
-				normals[j].z = strtof(found_lines[j]->tokens[2], NULL);
-			}
-
-			free(found_lines);
-
 			// Faces.
 			lise_obj_format_get_line(
 				&loaded_obj,
@@ -483,11 +483,7 @@ bool lise_obj_load(const char* path, lise_obj* out_obj)
 
 			blib_darray_free(&unique_vertices);
 			blib_darray_free(&indices);
-			free(normals);
-			free(texture_coordinates);
-			free(positions);
-			free(found_lines);
-
+			
 			// Material.
 			lise_obj_format_get_line(
 				&loaded_obj,
@@ -514,6 +510,10 @@ bool lise_obj_load(const char* path, lise_obj* out_obj)
 
 			free(found_lines);
 		}
+
+		free(normals);
+		free(texture_coordinates);
+		free(positions);
 	}
 	else
 	{

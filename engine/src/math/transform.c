@@ -53,7 +53,10 @@ void lise_transform_recalculate_transformation_matrix(lise_transform* transform)
 	// Parent transform.
 	if (transform->parent)
 	{
-		lise_mat4x4_mul(transform->transformation_matrix, transform->parent->transformation_matrix);
+		transform->transformation_matrix =  lise_mat4x4_mul(
+			transform->transformation_matrix,
+			transform->parent->transformation_matrix
+		);
 	}
 }
 

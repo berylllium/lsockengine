@@ -42,52 +42,14 @@ static bool check_validation_layer_support();
 static void create_command_buffers();
 static bool recreate_swapchain();
 
-// TODO: Temp function
-void static upload_data_range(lise_vulkan_buffer* buffer, uint64_t offset, uint64_t size, void* data)
-{
-	// Create a host-visible staging buffer to upload to. Mark it as the source of the transfer.
-	VkBufferUsageFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-	lise_vulkan_buffer staging;
-	lise_vulkan_buffer_create(
-		vulkan_context.device.logical_device,
-		vulkan_context.device.physical_device_memory_properties,
-		size,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		flags,
-		true,
-		&staging
-	);
-
-	// Load the data into the staging buffer.
-	lise_vulkan_buffer_load_data(vulkan_context.device.logical_device, &staging, 0, size, 0, data);
-
-	// Perform the copy from staging to the device local buffer.
-	lise_vulkan_buffer_copy_to(
-		vulkan_context.device.logical_device,
-		vulkan_context.device.graphics_command_pool,
-		0,
-		vulkan_context.device.graphics_queue,
-		staging.handle,
-		0,
-		buffer->handle,
-		offset,
-		size
-	);
-
-	// Clean up the staging buffer.
-	lise_vulkan_buffer_destroy(vulkan_context.device.logical_device, &staging);
-}
-
 // TODO: temp statics
 static lise_mat4x4 view_matrix = LMAT4X4_IDENTITY;
-static lise_shader_instance test_object;
 static lise_texture* temp_texture;
-//static lise_obj test_model;
 
 static lise_shader* obj_shader;
 
 static lise_model test_model;
+static lise_model car_model;
 
 typedef struct global_ubo
 {
@@ -272,89 +234,19 @@ bool lise_vulkan_initialize(const char* application_name)
 		return false;
 	}
 
-//	// Test obj.
-//	if (!lise_obj_load("assets/models/obj/test_cube.obj", &test_model))
-//	{
-//		LFATAL("Failed to load test_cube.obj.");
-//		return false;
-//	}
-//
-//	// Create the vertex and index buffers
-//	VkMemoryPropertyFlagBits mem_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-//
-//	if (!lise_vulkan_buffer_create(
-//		vulkan_context.device.logical_device,
-//		vulkan_context.device.physical_device_memory_properties,
-//		sizeof(lise_vertex) * test_model.meshes[0].vertex_count,
-//		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-//		mem_flags,
-//		true,
-//		&vulkan_context.object_vertex_buffer
-//	))
-//	{
-//		LFATAL("Failed to create the vertex buffer.");
-//	}
-//	
-//	if (!lise_vulkan_buffer_create(
-//		vulkan_context.device.logical_device,
-//		vulkan_context.device.physical_device_memory_properties,
-//		sizeof(uint32_t) * test_model.meshes[0].index_count,
-//		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-//		mem_flags,
-//		true,
-//		&vulkan_context.object_index_buffer
-//	))
-//	{
-//		LFATAL("Failed to create the index buffer.");
-//	}
-//
-//	const uint32_t vert_count = 4;
-//	lise_vertex verts[4];
-//
-//	memset(verts, 0, sizeof(lise_vertex) * vert_count);
-//
-//	verts[0].position.x = -0.75;
-//	verts[0].position.y = -0.5;
-//	verts[0].tex_coord.x = 0.0f;
-//	verts[0].tex_coord.y = 0.0f;
-//	verts[0].normal.x = 0.0f;
-//	verts[0].normal.y = 0.0f;
-//
-//	verts[1].position.y = 0.5;
-//	verts[1].position.x = 0.75;
-//	verts[1].tex_coord.x = 1.0f;
-//	verts[1].tex_coord.y = 1.0f;
-//	verts[1].normal.x = 0.0f;
-//	verts[1].normal.y = 0.0f;
-//
-//	verts[2].position.x = -0.5;
-//	verts[2].position.y = 0.5;
-//	verts[2].tex_coord.x = 0.0f;
-//	verts[2].tex_coord.y = 1.0f;
-//	verts[2].normal.x = 0.0f;
-//	verts[2].normal.y = 0.0f;
-//
-//	verts[3].position.x = 0.5;
-//	verts[3].position.y = -0.5;
-//	verts[3].tex_coord.x = 1.0f;
-//	verts[3].tex_coord.y = 0.0f;
-//	verts[3].normal.x = 0.0f;
-//	verts[3].normal.y = 0.0f;
-//
-//	const uint32_t index_count = 6;
-//	uint32_t indices[6] = {0, 1, 2, 0, 3, 1};
-//
-////	upload_data_range(&vulkan_context.object_vertex_buffer, 0, sizeof(lise_vertex) * vert_count, verts);
-////	upload_data_range(&vulkan_context.object_index_buffer, 0, sizeof(uint32_t) * index_count, indices);
-//
-//	upload_data_range(&vulkan_context.object_vertex_buffer, 0, sizeof(lise_vertex) * test_model.meshes[0].vertex_count, test_model.meshes[0].vertices);
-//	upload_data_range(&vulkan_context.object_index_buffer, 0, sizeof(uint32_t) * test_model.meshes[0].index_count, test_model.meshes[0].indices);
-//
-//	lise_texture_system_load(&vulkan_context.device, "assets/texture/test_texture.png", &temp_texture);
-//
-//	lise_shader_allocate_instance(vulkan_context.device.logical_device, obj_shader, &test_object);
-//
-//	lise_shader_set_instance_sampler(vulkan_context.device.logical_device, obj_shader, 0, temp_texture, &test_object);
+	if (!lise_model_load(&vulkan_context.device, "assets/models/obj/car.obj", obj_shader, &car_model))
+	{
+		LFATAL("Failed to load car.obj.");
+
+		return false;
+	}
+
+	lise_transform_add_child(&test_model.transform, &car_model.transform);
+	test_model.transform.position.y = 2;
+
+	car_model.transform.position.z = 1;
+
+	lise_transform_update(&test_model.transform);
 
 	// --------- ENDTEMP
 
@@ -368,6 +260,7 @@ void lise_vulkan_shutdown()
 	vkDeviceWaitIdle(vulkan_context.device.logical_device);
 
 	lise_model_free(vulkan_context.device.logical_device, &test_model);
+	lise_model_free(vulkan_context.device.logical_device, &car_model);
 
 	lise_vulkan_buffer_destroy(vulkan_context.device.logical_device, &vulkan_context.object_index_buffer);
 	lise_vulkan_buffer_destroy(vulkan_context.device.logical_device, &vulkan_context.object_vertex_buffer);
@@ -502,50 +395,16 @@ bool lise_vulkan_begin_frame(float delta_time)
 	
 	gubo.view = view_matrix;
 
-//	lise_mat4x4 model = LMAT4X4_IDENTITY;
-//
-//	vkCmdPushConstants(command_buffer->handle, obj_shader->pipeline.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &model);
-
 	lise_shader_set_global_ubo(vulkan_context.device.logical_device, obj_shader, &gubo);
 
-	lise_shader_update_global_uniforms(vulkan_context.device.logical_device, obj_shader, vulkan_context.current_image_index, &test_object);
+	lise_shader_update_global_uniforms(vulkan_context.device.logical_device, obj_shader, vulkan_context.current_image_index);
+
+	test_model.transform.rotation.y += LQUARTER_PI * delta_time;
+	lise_transform_update(&test_model.transform);
 
 	lise_model_draw(&test_model, vulkan_context.device.logical_device, command_buffer->handle, vulkan_context.current_image_index);
-
-//	// Bind uniform and sampler object descriptors.
-//	static float accumulator = 0.0f;
-//	accumulator += delta_time;
-//	float s = (lsin(accumulator) + 1.0f) / 2.0f;
-//
-//	instance_ubo iubo = {};
-//
-//	iubo.diffuse_color = (lise_vec4) { s, s, s, 1.0f };
-//
-//	lise_shader_set_instance_ubo(vulkan_context.device.logical_device, obj_shader, &iubo, &test_object);
-//	lise_shader_update_instance_ubo(vulkan_context.device.logical_device, obj_shader, vulkan_context.current_image_index, &test_object);
-//
-//	vkCmdBindDescriptorSets(
-//		command_buffer->handle,
-//		VK_PIPELINE_BIND_POINT_GRAPHICS,
-//		obj_shader->pipeline.pipeline_layout,
-//		1,
-//		1,
-//		&test_object.descriptor_sets[vulkan_context.current_image_index],
-//		0,
-//		0
-//	);
-//
-//	lise_shader_use(obj_shader, command_buffer->handle, vulkan_context.current_image_index);
-//
-//	// Bind vertex
-//	VkDeviceSize offsets[1] = {0};
-//	vkCmdBindVertexBuffers(command_buffer->handle, 0, 1, &vulkan_context.object_vertex_buffer.handle, (VkDeviceSize*) offsets);
-//
-//	// Bind index
-//	vkCmdBindIndexBuffer(command_buffer->handle, vulkan_context.object_index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
-//
-//	// Issue draw call
-//	vkCmdDrawIndexed(command_buffer->handle, test_model.meshes[0].index_count, 1, 0, 0, 0);
+	
+	lise_model_draw(&car_model, vulkan_context.device.logical_device, command_buffer->handle, vulkan_context.current_image_index);
 
 	// -------- ENDTEMP
 

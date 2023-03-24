@@ -217,8 +217,7 @@ void lise_shader_set_global_ubo(VkDevice device, lise_shader* shader, void* data
 void lise_shader_update_global_uniforms(
 	VkDevice device,
 	lise_shader* shader,
-	uint32_t current_image,
-	lise_shader_instance* instance
+	uint32_t current_image
 );
 
 void lise_shader_set_instance_ubo(

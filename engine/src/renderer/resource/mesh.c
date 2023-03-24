@@ -55,6 +55,7 @@ bool lise_mesh_create(
 	// Copy over the diffuse texture pointer.
 	out_mesh->diffuse_texture = diffuse_texture;
 
+	
 	// Create the vertex buffer.
 	if (!lise_vulkan_buffer_create(
 		device,
@@ -113,7 +114,11 @@ bool lise_mesh_create(
 	);
 
 	// Create shader instance.
-	lise_shader_allocate_instance(device, shader, &out_mesh->shader_instance);
+	if (!lise_shader_allocate_instance(device, shader, &out_mesh->shader_instance))
+	{
+		LERROR("Failed to allocate a shader instance for mesh `%s`.", name);
+		return false;
+	}
 
 	// Populate ubo.
 	out_mesh->instance_ubo.diffuse_color = diffuse_color;

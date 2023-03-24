@@ -66,6 +66,10 @@ bool lise_model_load(lise_device* device, const char* path, lise_shader* shader,
 			return false;
 		}
 	}
+
+	lise_obj_free(&loaded_obj);
+
+	return true;
 }
 
 void lise_model_free(VkDevice device, lise_model* model)
