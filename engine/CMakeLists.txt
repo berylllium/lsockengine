@@ -17,7 +17,6 @@ set(LISE_HEADERS
 	math/vertex.h
 	platform/filesystem.h
 	platform/platform.h
-	renderer/resource/mesh.h
 	renderer/resource/texture.h
 	renderer/system/shader_system.h
 	renderer/system/texture_system.h
@@ -53,7 +52,6 @@ set(LISE_SOURCES
 	platform/filesystem.c
 	platform/platform_linux.c
 	platform/platform_win32.c
-	renderer/resource/mesh.c
 	renderer/resource/texture.c
 	renderer/system/shader_system.c
 	renderer/system/texture_system.c
