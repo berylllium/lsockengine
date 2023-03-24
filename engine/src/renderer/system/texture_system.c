@@ -78,6 +78,8 @@ bool lise_texture_system_load(const lise_device* device, const char* path, lise_
 	{
 		LERROR("Faild to load texture: `%s`.", path);
 
+		*out_texture = &default_texture;
+
 		free(new_texture);
 		
 		return false;

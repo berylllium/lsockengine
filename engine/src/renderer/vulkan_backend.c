@@ -11,6 +11,7 @@
 #include "math/quat.h"
 #include "math/math.h"
 #include "loader/obj_loader.h"
+#include "renderer/resource/model.h"
 
 // Renderer subsystems.
 #include "renderer/system/texture_system.h"
@@ -82,9 +83,11 @@ void static upload_data_range(lise_vulkan_buffer* buffer, uint64_t offset, uint6
 static lise_mat4x4 view_matrix = LMAT4X4_IDENTITY;
 static lise_shader_instance test_object;
 static lise_texture* temp_texture;
-static lise_obj test_model;
+//static lise_obj test_model;
 
 static lise_shader* obj_shader;
+
+static lise_model test_model;
 
 typedef struct global_ubo
 {
@@ -262,89 +265,96 @@ bool lise_vulkan_initialize(const char* application_name)
 	lise_shader_system_load("assets/shaders/builtin.object_shader.scfg", &obj_shader);
 
 	// -------- TEMP
-	// Test obj.
-	if (!lise_obj_load("assets/models/obj/test_cube.obj", &test_model))
+	if (!lise_model_load(&vulkan_context.device, "assets/models/obj/test_cube.obj", obj_shader, &test_model))
 	{
 		LFATAL("Failed to load test_cube.obj.");
+
 		return false;
 	}
 
-	// Create the vertex and index buffers
-	VkMemoryPropertyFlagBits mem_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-
-	if (!lise_vulkan_buffer_create(
-		vulkan_context.device.logical_device,
-		vulkan_context.device.physical_device_memory_properties,
-		sizeof(lise_vertex) * test_model.meshes[0].vertex_count,
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		mem_flags,
-		true,
-		&vulkan_context.object_vertex_buffer
-	))
-	{
-		LFATAL("Failed to create the vertex buffer.");
-	}
-	
-	if (!lise_vulkan_buffer_create(
-		vulkan_context.device.logical_device,
-		vulkan_context.device.physical_device_memory_properties,
-		sizeof(uint32_t) * test_model.meshes[0].index_count,
-		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		mem_flags,
-		true,
-		&vulkan_context.object_index_buffer
-	))
-	{
-		LFATAL("Failed to create the index buffer.");
-	}
-
-	const uint32_t vert_count = 4;
-	lise_vertex verts[4];
-
-	memset(verts, 0, sizeof(lise_vertex) * vert_count);
-
-	verts[0].position.x = -0.75;
-	verts[0].position.y = -0.5;
-	verts[0].tex_coord.x = 0.0f;
-	verts[0].tex_coord.y = 0.0f;
-	verts[0].normal.x = 0.0f;
-	verts[0].normal.y = 0.0f;
-
-	verts[1].position.y = 0.5;
-	verts[1].position.x = 0.75;
-	verts[1].tex_coord.x = 1.0f;
-	verts[1].tex_coord.y = 1.0f;
-	verts[1].normal.x = 0.0f;
-	verts[1].normal.y = 0.0f;
-
-	verts[2].position.x = -0.5;
-	verts[2].position.y = 0.5;
-	verts[2].tex_coord.x = 0.0f;
-	verts[2].tex_coord.y = 1.0f;
-	verts[2].normal.x = 0.0f;
-	verts[2].normal.y = 0.0f;
-
-	verts[3].position.x = 0.5;
-	verts[3].position.y = -0.5;
-	verts[3].tex_coord.x = 1.0f;
-	verts[3].tex_coord.y = 0.0f;
-	verts[3].normal.x = 0.0f;
-	verts[3].normal.y = 0.0f;
-
-	const uint32_t index_count = 6;
-	uint32_t indices[6] = {0, 1, 2, 0, 3, 1};
-
-//	upload_data_range(&vulkan_context.object_vertex_buffer, 0, sizeof(lise_vertex) * vert_count, verts);
-//	upload_data_range(&vulkan_context.object_index_buffer, 0, sizeof(uint32_t) * index_count, indices);
-
-	upload_data_range(&vulkan_context.object_vertex_buffer, 0, sizeof(lise_vertex) * test_model.meshes[0].vertex_count, test_model.meshes[0].vertices);
-	upload_data_range(&vulkan_context.object_index_buffer, 0, sizeof(uint32_t) * test_model.meshes[0].index_count, test_model.meshes[0].indices);
-
-	lise_texture_system_load(&vulkan_context.device, "assets/texture/test_texture.png", &temp_texture);
-
-	lise_shader_allocate_instance(vulkan_context.device.logical_device, obj_shader, &test_object);
-
-	lise_shader_set_instance_sampler(vulkan_context.device.logical_device, obj_shader, 0, temp_texture, &test_object);
+//	// Test obj.
+//	if (!lise_obj_load("assets/models/obj/test_cube.obj", &test_model))
+//	{
+//		LFATAL("Failed to load test_cube.obj.");
+//		return false;
+//	}
+//
+//	// Create the vertex and index buffers
+//	VkMemoryPropertyFlagBits mem_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+//
+//	if (!lise_vulkan_buffer_create(
+//		vulkan_context.device.logical_device,
+//		vulkan_context.device.physical_device_memory_properties,
+//		sizeof(lise_vertex) * test_model.meshes[0].vertex_count,
+//		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+//		mem_flags,
+//		true,
+//		&vulkan_context.object_vertex_buffer
+//	))
+//	{
+//		LFATAL("Failed to create the vertex buffer.");
+//	}
+//	
+//	if (!lise_vulkan_buffer_create(
+//		vulkan_context.device.logical_device,
+//		vulkan_context.device.physical_device_memory_properties,
+//		sizeof(uint32_t) * test_model.meshes[0].index_count,
+//		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+//		mem_flags,
+//		true,
+//		&vulkan_context.object_index_buffer
+//	))
+//	{
+//		LFATAL("Failed to create the index buffer.");
+//	}
+//
+//	const uint32_t vert_count = 4;
+//	lise_vertex verts[4];
+//
+//	memset(verts, 0, sizeof(lise_vertex) * vert_count);
+//
+//	verts[0].position.x = -0.75;
+//	verts[0].position.y = -0.5;
+//	verts[0].tex_coord.x = 0.0f;
+//	verts[0].tex_coord.y = 0.0f;
+//	verts[0].normal.x = 0.0f;
+//	verts[0].normal.y = 0.0f;
+//
+//	verts[1].position.y = 0.5;
+//	verts[1].position.x = 0.75;
+//	verts[1].tex_coord.x = 1.0f;
+//	verts[1].tex_coord.y = 1.0f;
+//	verts[1].normal.x = 0.0f;
+//	verts[1].normal.y = 0.0f;
+//
+//	verts[2].position.x = -0.5;
+//	verts[2].position.y = 0.5;
+//	verts[2].tex_coord.x = 0.0f;
+//	verts[2].tex_coord.y = 1.0f;
+//	verts[2].normal.x = 0.0f;
+//	verts[2].normal.y = 0.0f;
+//
+//	verts[3].position.x = 0.5;
+//	verts[3].position.y = -0.5;
+//	verts[3].tex_coord.x = 1.0f;
+//	verts[3].tex_coord.y = 0.0f;
+//	verts[3].normal.x = 0.0f;
+//	verts[3].normal.y = 0.0f;
+//
+//	const uint32_t index_count = 6;
+//	uint32_t indices[6] = {0, 1, 2, 0, 3, 1};
+//
+////	upload_data_range(&vulkan_context.object_vertex_buffer, 0, sizeof(lise_vertex) * vert_count, verts);
+////	upload_data_range(&vulkan_context.object_index_buffer, 0, sizeof(uint32_t) * index_count, indices);
+//
+//	upload_data_range(&vulkan_context.object_vertex_buffer, 0, sizeof(lise_vertex) * test_model.meshes[0].vertex_count, test_model.meshes[0].vertices);
+//	upload_data_range(&vulkan_context.object_index_buffer, 0, sizeof(uint32_t) * test_model.meshes[0].index_count, test_model.meshes[0].indices);
+//
+//	lise_texture_system_load(&vulkan_context.device, "assets/texture/test_texture.png", &temp_texture);
+//
+//	lise_shader_allocate_instance(vulkan_context.device.logical_device, obj_shader, &test_object);
+//
+//	lise_shader_set_instance_sampler(vulkan_context.device.logical_device, obj_shader, 0, temp_texture, &test_object);
 
 	// --------- ENDTEMP
 
@@ -356,6 +366,8 @@ bool lise_vulkan_initialize(const char* application_name)
 void lise_vulkan_shutdown()
 {
 	vkDeviceWaitIdle(vulkan_context.device.logical_device);
+
+	lise_model_free(vulkan_context.device.logical_device, &test_model);
 
 	lise_vulkan_buffer_destroy(vulkan_context.device.logical_device, &vulkan_context.object_index_buffer);
 	lise_vulkan_buffer_destroy(vulkan_context.device.logical_device, &vulkan_context.object_vertex_buffer);
@@ -490,49 +502,50 @@ bool lise_vulkan_begin_frame(float delta_time)
 	
 	gubo.view = view_matrix;
 
-	lise_mat4x4 model = LMAT4X4_IDENTITY;
-
-	vkCmdPushConstants(command_buffer->handle, obj_shader->pipeline.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &model);
+//	lise_mat4x4 model = LMAT4X4_IDENTITY;
+//
+//	vkCmdPushConstants(command_buffer->handle, obj_shader->pipeline.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &model);
 
 	lise_shader_set_global_ubo(vulkan_context.device.logical_device, obj_shader, &gubo);
 
 	lise_shader_update_global_uniforms(vulkan_context.device.logical_device, obj_shader, vulkan_context.current_image_index, &test_object);
 
-	// Bind uniform and sampler object descriptors.
-	static float accumulator = 0.0f;
-	accumulator += delta_time;
-	float s = (lsin(accumulator) + 1.0f) / 2.0f;
+	lise_model_draw(&test_model, vulkan_context.device.logical_device, command_buffer->handle, vulkan_context.current_image_index);
 
-	instance_ubo iubo = {};
-
-	iubo.diffuse_color = (lise_vec4) { s, s, s, 1.0f };
-
-	lise_shader_set_instance_ubo(vulkan_context.device.logical_device, obj_shader, &iubo, &test_object);
-	lise_shader_update_instance_ubo(vulkan_context.device.logical_device, obj_shader, vulkan_context.current_image_index, &test_object);
-
-	vkCmdBindDescriptorSets(
-		command_buffer->handle,
-		VK_PIPELINE_BIND_POINT_GRAPHICS,
-		obj_shader->pipeline.pipeline_layout,
-		1,
-		1,
-		&test_object.descriptor_sets[vulkan_context.current_image_index],
-		0,
-		0
-	);
-
-//	lise_object_shader_use(vulkan_context.current_image_index, command_buffer->handle, &vulkan_context.object_shader);
-	lise_shader_use(obj_shader, command_buffer->handle, vulkan_context.current_image_index);
-
-	// Bind vertex
-	VkDeviceSize offsets[1] = {0};
-	vkCmdBindVertexBuffers(command_buffer->handle, 0, 1, &vulkan_context.object_vertex_buffer.handle, (VkDeviceSize*) offsets);
-
-	// Bind index
-	vkCmdBindIndexBuffer(command_buffer->handle, vulkan_context.object_index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
-
-	// Issue draw call
-	vkCmdDrawIndexed(command_buffer->handle, test_model.meshes[0].index_count, 1, 0, 0, 0);
+//	// Bind uniform and sampler object descriptors.
+//	static float accumulator = 0.0f;
+//	accumulator += delta_time;
+//	float s = (lsin(accumulator) + 1.0f) / 2.0f;
+//
+//	instance_ubo iubo = {};
+//
+//	iubo.diffuse_color = (lise_vec4) { s, s, s, 1.0f };
+//
+//	lise_shader_set_instance_ubo(vulkan_context.device.logical_device, obj_shader, &iubo, &test_object);
+//	lise_shader_update_instance_ubo(vulkan_context.device.logical_device, obj_shader, vulkan_context.current_image_index, &test_object);
+//
+//	vkCmdBindDescriptorSets(
+//		command_buffer->handle,
+//		VK_PIPELINE_BIND_POINT_GRAPHICS,
+//		obj_shader->pipeline.pipeline_layout,
+//		1,
+//		1,
+//		&test_object.descriptor_sets[vulkan_context.current_image_index],
+//		0,
+//		0
+//	);
+//
+//	lise_shader_use(obj_shader, command_buffer->handle, vulkan_context.current_image_index);
+//
+//	// Bind vertex
+//	VkDeviceSize offsets[1] = {0};
+//	vkCmdBindVertexBuffers(command_buffer->handle, 0, 1, &vulkan_context.object_vertex_buffer.handle, (VkDeviceSize*) offsets);
+//
+//	// Bind index
+//	vkCmdBindIndexBuffer(command_buffer->handle, vulkan_context.object_index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
+//
+//	// Issue draw call
+//	vkCmdDrawIndexed(command_buffer->handle, test_model.meshes[0].index_count, 1, 0, 0, 0);
 
 	// -------- ENDTEMP
 

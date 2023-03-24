@@ -11,12 +11,15 @@ set(LISE_HEADERS
 	math/mat4x4.h
 	math/math.h
 	math/quat.h
+	math/transform.h
 	math/vector2.h
 	math/vector3.h
 	math/vector4.h
 	math/vertex.h
 	platform/filesystem.h
 	platform/platform.h
+	renderer/resource/mesh.h
+	renderer/resource/model.h
 	renderer/resource/texture.h
 	renderer/system/shader_system.h
 	renderer/system/texture_system.h
@@ -49,9 +52,12 @@ set(LISE_SOURCES
 	loader/obj_loader.c
 	loader/shader_config_loader.c
 	math/math.c
+	math/transform.c
 	platform/filesystem.c
 	platform/platform_linux.c
 	platform/platform_win32.c
+	renderer/resource/mesh.c
+	renderer/resource/model.c
 	renderer/resource/texture.c
 	renderer/system/shader_system.c
 	renderer/system/texture_system.c
