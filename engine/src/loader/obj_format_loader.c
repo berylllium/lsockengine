@@ -24,10 +24,22 @@ bool lise_obj_format_load(const char* path, lise_obj_format* out_obj_format)
 	// Create a temporary dynamic array to store all the obj_format_lines.
 	blib_darray tokenized_lines = blib_darray_create(lise_obj_format_line, 8);
 
-	uint64_t line_length;
 	char line[1024];
-	while (lise_filesystem_read_line(&fh, &line_length, line))
+	while (fgets(line, 1024, fh.handle))
 	{
+		uint64_t line_length;
+
+		// Remove newline at end if exists.
+		if (!feof(fh.handle))
+		{
+			line_length = strlen(line) - 1;
+			line[line_length] = '\0';
+		}
+		else
+		{
+			line_length = strlen(line);
+		}
+
 		bool is_comment_line = false;
 
 		// Empty line; skip.
@@ -141,11 +153,17 @@ void lise_obj_format_free(lise_obj_format* obj_format)
 bool lise_obj_format_get_line(
 	lise_obj_format* obj_format,
 	const char* type, 
+	const char* parent_type,
+	const char* parent_token,
 	uint64_t* out_found_line_count, 
 	lise_obj_format_line*** out_found_lines
 )
 {
 	blib_darray found_lines = blib_darray_create(lise_obj_format_line*);
+
+	bool check_for_preceding_parent = parent_type && parent_token;
+
+	bool parent_has_preceded = false;
 
 	// Iterate through all te lines.
 	for (uint64_t i = 0; i < obj_format->line_count; i++)
@@ -153,8 +171,35 @@ bool lise_obj_format_get_line(
 		if (strcmp(type, obj_format->lines[i].type) == 0)
 		{
 			// The types match.
+			if (check_for_preceding_parent && !parent_has_preceded) continue;
+
 			lise_obj_format_line* line_addr = &obj_format->lines[i];
 			blib_darray_push_back(&found_lines, &line_addr);
+		}
+		else if (check_for_preceding_parent)
+		{
+			// Parent type and token have both been provided. Check for preceding parents.
+			if (strcmp(parent_type, obj_format->lines[i].type) == 0)
+			{
+				if (parent_has_preceded)
+				{
+					// Parent has been succeeded by another line with the same parent type. This means that we are out
+					// of the parents scope, and there will no longer be any valid lines. Stop the iteration.
+					break;
+				}
+				else
+				{
+					// The parent candidate has no tokens. This invalidated the parent.
+					if (obj_format->lines[i].token_count == 0) continue;
+
+					if (strcmp(parent_token, obj_format->lines[i].tokens[0]) == 0)
+					{
+						// The token matches, and a previous parent type has not been preceded yet; meaning that any
+						// lines beyond this point, until the next parent type, are all within the parents scope.
+						parent_has_preceded = true;
+					}
+				}
+			}
 		}
 	}
 

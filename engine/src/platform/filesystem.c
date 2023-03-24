@@ -72,6 +72,7 @@ LAPI bool lise_filesystem_read_line(lise_file_handle* file_handle, uint64_t* out
 	while (true)
 	{
 		char c = fgetc(file_handle->handle);
+		line_length++;
 
 		if (c == EOF)
 		{
@@ -83,11 +84,9 @@ LAPI bool lise_filesystem_read_line(lise_file_handle* file_handle, uint64_t* out
 		{
 			break;
 		}
-
-		line_length++;
 	}
 
-	fseek(file_handle->handle, -(line_length + 2), SEEK_CUR);
+	fseek(file_handle->handle, -(line_length + 1), SEEK_CUR);
 
 	fread(out_line_buff, sizeof(char), line_length, file_handle->handle);
 

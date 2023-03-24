@@ -22,7 +22,7 @@ bool lise_shader_config_load(const char* path, lise_shader_config* out_config)
 	lise_obj_format_line** found_lines;
 
 	// Get the name.
-	lise_obj_format_get_line(&loaded_format, "name", &found_line_count, &found_lines);
+	lise_obj_format_get_line(&loaded_format, "name", NULL, NULL, &found_line_count, &found_lines);
 
 	if (found_line_count != 1)
 	{
@@ -55,7 +55,7 @@ bool lise_shader_config_load(const char* path, lise_shader_config* out_config)
 	free(found_lines);
 
 	// Get the render pass name.
-	lise_obj_format_get_line(&loaded_format, "render_pass", &found_line_count, &found_lines);
+	lise_obj_format_get_line(&loaded_format, "render_pass", NULL, NULL, &found_line_count, &found_lines);
 
 	if (found_line_count != 1)
 	{
@@ -88,7 +88,7 @@ bool lise_shader_config_load(const char* path, lise_shader_config* out_config)
 	free(found_lines);
 
 	// Load stage names.
-	lise_obj_format_get_line(&loaded_format, "stages", &found_line_count, &found_lines);
+	lise_obj_format_get_line(&loaded_format, "stages", NULL, NULL, &found_line_count, &found_lines);
 
 	if (found_line_count != 1)
 	{
@@ -126,7 +126,7 @@ bool lise_shader_config_load(const char* path, lise_shader_config* out_config)
 	free(found_lines);
 
 	// Load stage file paths.
-	lise_obj_format_get_line(&loaded_format, "stage_files", &found_line_count, &found_lines);
+	lise_obj_format_get_line(&loaded_format, "stage_files", NULL, NULL, &found_line_count, &found_lines);
 
 	if (found_line_count != 1)
 	{
@@ -175,7 +175,7 @@ bool lise_shader_config_load(const char* path, lise_shader_config* out_config)
 	free(found_lines);
 
 	// Load attributes
-	lise_obj_format_get_line(&loaded_format, "attribute", &found_line_count, &found_lines);
+	lise_obj_format_get_line(&loaded_format, "attribute", NULL, NULL, &found_line_count, &found_lines);
 
 	if (found_line_count == 0)
 	{
@@ -221,7 +221,7 @@ bool lise_shader_config_load(const char* path, lise_shader_config* out_config)
 	free(found_lines);
 
 	// Load uniforms
-	lise_obj_format_get_line(&loaded_format, "uniform", &found_line_count, &found_lines);
+	lise_obj_format_get_line(&loaded_format, "uniform", NULL, NULL, &found_line_count, &found_lines);
 
 	if (found_line_count == 0)
 	{

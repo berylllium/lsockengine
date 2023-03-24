@@ -7,6 +7,8 @@
 
 typedef struct lise_mesh
 {
+	char* name;
+
 	uint64_t* vertex_count;
 	lise_vertex* vertices;
 

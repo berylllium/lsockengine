@@ -6,6 +6,7 @@ set(LISE_HEADERS
 	core/input.h
 	core/logger.h
 	loader/obj_format_loader.h
+	loader/obj_loader.h
 	loader/shader_config_loader.h
 	math/mat4x4.h
 	math/math.h
@@ -46,6 +47,7 @@ set(LISE_SOURCES
 	core/input.c
 	core/logger.c
 	loader/obj_format_loader.c
+	loader/obj_loader.c
 	loader/shader_config_loader.c
 	math/math.c
 	platform/filesystem.c

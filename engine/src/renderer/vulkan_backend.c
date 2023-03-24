@@ -10,6 +10,7 @@
 #include "math/vertex.h"
 #include "math/quat.h"
 #include "math/math.h"
+#include "loader/obj_loader.h"
 
 // Renderer subsystems.
 #include "renderer/system/texture_system.h"
@@ -81,6 +82,7 @@ void upload_data_range(lise_vulkan_buffer* buffer, uint64_t offset, uint64_t siz
 static lise_mat4x4 view_matrix = LMAT4X4_IDENTITY;
 static lise_shader_instance test_object;
 static lise_texture temp_texture;
+static lise_obj test_model;
 
 static lise_shader* obj_shader;
 
@@ -260,14 +262,20 @@ bool lise_vulkan_initialize(const char* application_name)
 	lise_shader_system_load("assets/shaders/builtin.object_shader.scfg", &obj_shader);
 
 	// -------- TEMP
+	// Test obj.
+	if (!lise_obj_load("assets/models/obj/test_cube.obj", &test_model))
+	{
+		LFATAL("Failed to load test_cube.obj.");
+		return false;
+	}
+
 	// Create the vertex and index buffers
 	VkMemoryPropertyFlagBits mem_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-	const uint64_t vertex_buffer_size = sizeof(lise_vertex) * 4;
 	if (!lise_vulkan_buffer_create(
 		vulkan_context.device.logical_device,
 		vulkan_context.device.physical_device_memory_properties,
-		vertex_buffer_size,
+		sizeof(lise_vertex) * test_model.meshes[0].vertex_count,
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		mem_flags,
 		true,
@@ -277,11 +285,10 @@ bool lise_vulkan_initialize(const char* application_name)
 		LFATAL("Failed to create the vertex buffer.");
 	}
 	
-	const uint64_t index_buffer_size = sizeof(uint32_t) * 6;
 	if (!lise_vulkan_buffer_create(
 		vulkan_context.device.logical_device,
 		vulkan_context.device.physical_device_memory_properties,
-		index_buffer_size,
+		sizeof(uint32_t) * test_model.meshes[0].index_count,
 		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		mem_flags,
 		true,
@@ -327,8 +334,11 @@ bool lise_vulkan_initialize(const char* application_name)
 	const uint32_t index_count = 6;
 	uint32_t indices[6] = {0, 1, 2, 0, 3, 1};
 
-	upload_data_range(&vulkan_context.object_vertex_buffer, 0, sizeof(lise_vertex) * vert_count, verts);
-	upload_data_range(&vulkan_context.object_index_buffer, 0, sizeof(uint32_t) * index_count, indices);
+//	upload_data_range(&vulkan_context.object_vertex_buffer, 0, sizeof(lise_vertex) * vert_count, verts);
+//	upload_data_range(&vulkan_context.object_index_buffer, 0, sizeof(uint32_t) * index_count, indices);
+
+	upload_data_range(&vulkan_context.object_vertex_buffer, 0, sizeof(lise_vertex) * test_model.meshes[0].vertex_count, test_model.meshes[0].vertices);
+	upload_data_range(&vulkan_context.object_index_buffer, 0, sizeof(uint32_t) * test_model.meshes[0].index_count, test_model.meshes[0].indices);
 
 	lise_texture_system_load(&vulkan_context.device, "assets/texture/test_texture.png", &temp_texture);
 
@@ -522,7 +532,7 @@ bool lise_vulkan_begin_frame(float delta_time)
 	vkCmdBindIndexBuffer(command_buffer->handle, vulkan_context.object_index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
 
 	// Issue draw call
-	vkCmdDrawIndexed(command_buffer->handle, 6, 1, 0, 0, 0);
+	vkCmdDrawIndexed(command_buffer->handle, test_model.meshes[0].index_count, 1, 0, 0, 0);
 
 	// -------- ENDTEMP
 
