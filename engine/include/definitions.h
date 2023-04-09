@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h> // Define this for NULL access on GNU/Linux.
 
 // Define static assertions
 #if defined(__clang__) || defined(__gcc__)
