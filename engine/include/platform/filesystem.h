@@ -1,3 +1,7 @@
+/**
+ * @file filesystem.h
+ * @brief This header file contains definitions for structures and functions relating to the file system.
+ */
 #pragma once
 
 #include "definitions.h"
