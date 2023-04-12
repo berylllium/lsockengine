@@ -1,9 +1,16 @@
+/**
+ * @file input.h
+ * @brief This header file contains the definitions of structures and functions relating to user input.
+ */
 #pragma once
 
 #include "definitions.h"
 
 #include "math/vector2.h"
 
+/**
+ * @brief An enum of all the supported mouse buttons.
+ */
 typedef enum lise_mouse_buttons
 {
 	LISE_MOUSE_LEFT, LISE_MOUSE_RIGHT, LISE_MOUSE_MIDDLE,
@@ -11,6 +18,9 @@ typedef enum lise_mouse_buttons
 	LISE_MOUSE_MAX_MOUSE_BUTTONS
 } lise_mouse_buttons;
 
+/**
+ * @brief An enum of all the supported keys.
+ */
 typedef enum lise_keys {
 	LISE_KEY_BACKSPACE = 0x08,
 	LISE_KEY_ENTER = 0x0D,
@@ -142,24 +152,109 @@ typedef enum lise_keys {
 	LISE_KEY_MAX_KEYS
 } lise_keys;
 
+/**
+ * @brief Gets called by the engine every frame to update the input backend.
+ */
 void lise_input_update();
 
 // Keyboard input
 
+/**
+ * @brief Returns whether a key is down.
+ * 
+ * @param key The key to check.
+ * @return true if the key is down.
+ * @return false if the key is up
+ */
 LAPI bool lise_input_is_key_down(lise_keys key);
+
+/**
+ * @brief Returns whether a key is up.
+ * 
+ * @param key The key to check.
+ * @return true if the key is up.
+ * @return false if the key is down.
+ */
 LAPI bool lise_input_is_key_up(lise_keys key);
+
+/**
+ * @brief Returns whether a key was down the last frame.
+ * 
+ * @param key The key to check.
+ * @return true if the key was down.
+ * @return false if the key was up.
+ */
 LAPI bool lise_input_was_key_down(lise_keys key);
+
+/**
+ * @brief Returns whether a key was up the last frame.
+ * 
+ * @param key The key to check.
+ * @return true if the key was up
+ * @return false if the key was down.
+ */
 LAPI bool lise_input_was_key_up(lise_keys key);
 
+/**
+ * @brief Processes input from the platform backend.
+ * 
+ * Used only internally.
+ * 
+ * @param key The key to process.
+ * @param down Whether the key is up or down.
+ */
 void lise_input_process_keys(lise_keys key, bool down);
 
 // Mouse input
 
+/**
+ * @brief Checks whether the given mouse button is down.
+ * 
+ * @param button The mouse button to check.
+ * @return true if the mouse button is down.
+ * @return false if the mouse button is up.
+ */
 LAPI bool lise_input_is_mouse_button_down(lise_mouse_buttons button);
+
+/**
+ * @brief Checks whether the given mouse button is up.
+ * 
+ * @param button The mouse button to check.
+ * @return true if the mouse button is up.
+ * @return false if the mouse button is down.
+ */
 LAPI bool lise_input_is_mouse_button_up(lise_mouse_buttons button);
+
+/**
+ * @brief Checks whether the given mouse button was down in the last frame.
+ * 
+ * @param button The mouse button to check.
+ * @return true the mouse button was down in the last frame.
+ * @return false the mouse button was up in the last frame.
+ */
 LAPI bool lise_input_was_mouse_button_down(lise_mouse_buttons button);
+
+/**
+ * @brief Checks whether the given mouse button was up in the last frame.
+ * 
+ * @param button The mouse button to check.
+ * @return true the mouse button was up in the last frame.
+ * @return false the mouse button was down in the last frame.
+ */
 LAPI bool lise_input_was_mouse_button_up(lise_mouse_buttons button);
+
+/**
+ * @brief Returns the coordinates of the mouse on the screen in pixels.
+ * 
+ * @return lise_vec2i The coordinates of the mouse in pixels.
+ */
 LAPI lise_vec2i lise_input_get_mouse_position();
+
+/**
+ * @brief Returns the coordinates of the mouse on the screen in the last frame in pixels.
+ * 
+ * @return lise_vec2i The coordinates of the mouse in the last frame in pixels.
+ */
 LAPI lise_vec2i lise_input_get_previous_mouse_position();
 
 void lise_input_process_button(lise_mouse_buttons button, bool down);
