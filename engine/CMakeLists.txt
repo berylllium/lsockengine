@@ -116,7 +116,7 @@ if (WIN32)
 		message(STATUS "Creating symlink for assets.")
 	
 		file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}/assets" SYM_SHADER_LINK)
-		file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}/assets" SYM_SHADER_TARGET)
+		file(TO_NATIVE_PATH "${CMAKE_CURRENT_LIST_DIR}/../assets" SYM_SHADER_TARGET)
 	
 		execute_process(
 			COMMAND cmd.exe /c mklink /J "${SYM_SHADER_LINK}" "${SYM_SHADER_TARGET}"
@@ -139,7 +139,7 @@ if (UNIX)
 		target_link_libraries(lise vulkan)
 	
 		execute_process(
-			COMMAND ln -s ${CMAKE_SOURCE_DIR}/assets ${CMAKE_BINARY_DIR}/assets
+			COMMAND ln -s ${CMAKE_CURRENT_LIST_DIR}/../assets ${CMAKE_BINARY_DIR}/assets
 		)
 	endif()
 
