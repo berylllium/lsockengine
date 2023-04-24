@@ -53,7 +53,7 @@ typedef struct lise_node
 
 Each "node" type node stores a name, a reference to a parent, and a dynamic array of children.
 
-Now let's take a look at the implementation of the "mesh_renderer" type node.
+Now let's take a look at the implementation of the "spatial" type node.
 
 ```c
 typedef struct lise_node_spatial
