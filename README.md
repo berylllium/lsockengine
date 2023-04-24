@@ -27,7 +27,7 @@ A node is simply an object containing references to other nodes. To be specific;
 o node_0		(node)
 │
 ├ o node_1		(node)
-│ └ o node_2	(node)
+│ └ o node_2		(node)
 │
 └ o node_3	 	(node)
 ```
