@@ -64,7 +64,32 @@ typedef struct lise_node_spatial
 } lise_node_spatial;
 ```
 
-We can see that the "spatial" type node is an extention of the "node" type node. We can also see that the "spatial" type node contains a "transform". A transform representing an objects position and orientation in three-dimentional space.
+We can see that the "spatial" type node is an extention of the "node" type node. We can also see that the "spatial" type node contains a "transform". A transform representing an objects position, orientation and scale in three-dimentional space.
+
+Let's also take a look at the "mesh_renderer" node type. A "mesh_renderer" node type is a node type that holds information about a mesh, so that the renderer can render it. The "mesh_renderer" node type extends the "spatial" node type so that the mesh can be represented in three-dimentional space. Extending the "spatial" node type means also extending the "node" node type.
+
+```c
+typedef struct lise_node_mesh_renderer
+{
+	lise_node_spatial spatial;
+
+	lise_mesh* mesh;
+} lise_node_mesh_renderer;
+```
+
+We see that the "mesh_renderer" type node is indeed an extension of the "spatial" type node. A "mesh_renderer" type node also stores a reference to a mesh.
+
+Now that we understand a few node types, we can create an actual real-world example of a cube node.
+
+```
+o cube			(spatial)
+│
+├ o mesh		(mesh_renderer)
+└ o col			(mesh_collider)
+```
+
+This cube node has a mesh renderer and mesh collider as children. The renderer will render the mesh, and the collider will provide collisions for said mesh. Any changes to the cube node will propegate down to the children.
+
 
 ## Support
 
