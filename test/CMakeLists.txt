@@ -1,4 +1,3 @@
 
-add_executable(testing main.c game.c)
+add_executable(testing )
 target_link_libraries(testing lise)
-

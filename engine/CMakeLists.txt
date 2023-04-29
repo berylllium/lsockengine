@@ -1,85 +1,11 @@
 
 set(LISE_HEADERS
-	core/application.h
-	core/clock.h
-	core/event.h
-	core/input.h
-	core/logger.h
-	core/node.h
-	loader/node_loader.h
-	loader/obj_format_loader.h
-	loader/obj_loader.h
-	loader/shader_config_loader.h
-	math/mat4x4.h
-	math/math.h
-	math/quat.h
-	math/transform.h
-	math/vector2.h
-	math/vector3.h
-	math/vector4.h
-	math/vertex.h
-	platform/filesystem.h
-	platform/platform.h
-	renderer/resource/mesh.h
-	renderer/resource/model.h
-	renderer/resource/texture.h
-	renderer/system/shader_system.h
-	renderer/system/texture_system.h
-	renderer/command_buffer.h
-	renderer/device.h
-	renderer/fence.h
-	renderer/framebuffer.h
-	renderer/pipeline.h
-	renderer/render_pass.h
-	renderer/renderer.h
-	renderer/shader_stage.h
-	renderer/shader.h
-	renderer/swapchain.h
-	renderer/vulkan_backend.h
-	renderer/vulkan_buffer.h
-	renderer/vulkan_image.h
-	renderer/vulkan_platform.h
-	util/math_utils.h
-	util/string_utils.h
+
 )
 list(TRANSFORM LISE_HEADERS PREPEND "include/")
 
 set(LISE_SOURCES
-	core/application.c
-	core/clock.c
-	core/event.c
-	core/input.c
-	core/logger.c
-	core/node.c
-	loader/node_loader.c
-	loader/obj_format_loader.c
-	loader/obj_loader.c
-	loader/shader_config_loader.c
-	math/math.c
-	math/transform.c
-	platform/filesystem.c
-	platform/platform_linux.c
-	platform/platform_win32.c
-	renderer/resource/mesh.c
-	renderer/resource/model.c
-	renderer/resource/texture.c
-	renderer/system/shader_system.c
-	renderer/system/texture_system.c
-	renderer/command_buffer.c
-	renderer/device.c
-	renderer/fence.c
-	renderer/framebuffer.c
-	renderer/pipeline.c
-	renderer/render_pass.c
-	renderer/renderer.c
-	renderer/shader_stage.c
-	renderer/shader.c
-	renderer/swapchain.c
-	renderer/vulkan_backend.c
-	renderer/vulkan_buffer.c
-	renderer/vulkan_image.c
-	util/math_utils.c
-	util/string_utils.c
+
 )
 list(TRANSFORM LISE_SOURCES PREPEND "src/")
 
