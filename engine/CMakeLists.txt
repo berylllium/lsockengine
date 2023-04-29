@@ -5,6 +5,8 @@ set(LISE_HEADERS
 	core/event.h
 	core/input.h
 	core/logger.h
+	core/node.h
+	loader/node_loader.h
 	loader/obj_format_loader.h
 	loader/obj_loader.h
 	loader/shader_config_loader.h
@@ -48,6 +50,8 @@ set(LISE_SOURCES
 	core/event.c
 	core/input.c
 	core/logger.c
+	core/node.c
+	loader/node_loader.c
 	loader/obj_format_loader.c
 	loader/obj_loader.c
 	loader/shader_config_loader.c

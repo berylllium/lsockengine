@@ -1,0 +1,5 @@
+n cube spatial
+
+n mesh mesh_renderer
+p cube
+m models/obj/test_cube.obj

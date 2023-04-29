@@ -1,0 +1,24 @@
+n world spatial
+
+n nodes/builtin.cube.node
+p world
+
+n nodes/builtin.cube.node
+p cube1
+tp 1 0 1
+ts 0.5 0.5 0.5
+tr 0 r0.5p 90
+
+n testsec node
+p world
+
+n nodes/builtin.cube.node
+p testsec
+tp 10 0 0
+
+n nodes/builtin.cube.node
+p cube3
+tp 0 3 0
+
+n nodes/builtin.cube.node
+p testsec
