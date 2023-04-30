@@ -1,20 +1,32 @@
 
 set(LISE_HEADERS
-
+	core/clock.hpp
+	core/engine.hpp
+	core/event.hpp
+	core/input.hpp
+	core/logger.hpp
+	math/vector2.hpp
+	platform/platform.hpp
 )
 list(TRANSFORM LISE_HEADERS PREPEND "include/")
 
 set(LISE_SOURCES
-
+	core/clock.cpp
+	core/engine.cpp
+	core/event.cpp
+	core/input.cpp
+	core/logger.cpp
+	platform/platform_linux.cpp
+	platform/platform_win32.cpp
 )
 list(TRANSFORM LISE_SOURCES PREPEND "src/")
 
 add_library(lise SHARED ${LISE_SOURCES} ${LISE_HEADERS})
-target_include_directories(lise PUBLIC include/ ../deps/blib/include ../deps/stb)
+target_include_directories(lise PUBLIC include/ ../deps/stb)
 target_compile_definitions(lise PRIVATE L_EXPORT)
 target_compile_options(lise PRIVATE -fvisibility=hidden)
 
-target_link_libraries(lise blib m) # Link blib, math
+target_link_libraries(lise m) # Link math
 
 if (CMAKE_BUILD_TYPE MATCHES "Release")
 	target_link_libraries (lise -static-libgcc -static)
