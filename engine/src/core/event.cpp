@@ -49,7 +49,6 @@ void event_fire(uint16_t event_code, event_context ctx)
 	{
 		if (entry.event_code == event_code)
 		{
-			LDEBUG("%d", entry.listeners.size());
 			for (on_event_cb event_cb : entry.listeners)
 			{
 				(*event_cb)(event_code, ctx);
