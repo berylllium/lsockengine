@@ -621,6 +621,6 @@ keys translate_keycode(uint32_t x_keycode) {
 	}
 }
 
-#endif
-
 }
+
+#endif
