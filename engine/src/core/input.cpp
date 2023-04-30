@@ -13,7 +13,7 @@ struct mouse_state
 
 struct keyboard_state
 {
-	bool keys[static_cast<int>(keys::MAX_KEYS)];
+	bool keys_pressed[static_cast<int>(keys::MAX_KEYS)];
 };
 
 static mouse_state mouse_current;
@@ -31,9 +31,9 @@ void input_update()
 void input_process_keys(keys key, bool down)
 {
 	// Fire event if the state has changed
-	if (keyboard_current.keys[static_cast<int>(key)] != down)
+	if (keyboard_current.keys_pressed[static_cast<int>(key)] != down)
 	{
-		keyboard_current.keys[static_cast<int>(key)] = down;
+		keyboard_current.keys_pressed[static_cast<int>(key)] = down;
 
 		event_context ctx = {};
 		ctx.data.u32[0] = static_cast<uint32_t>(key);
@@ -83,22 +83,22 @@ void input_process_mouse_wheel(int8_t dz)
 
 bool input_is_key_down(keys key)
 {
-	return keyboard_current.keys[static_cast<uint32_t>(key)];
+	return keyboard_current.keys_pressed[static_cast<uint32_t>(key)];
 }
 
 bool input_is_key_up(keys key)
 {
-	return !keyboard_current.keys[static_cast<uint32_t>(key)];
+	return !keyboard_current.keys_pressed[static_cast<uint32_t>(key)];
 }
 
 bool input_was_key_down(keys key)
 {
-	return keyboard_previous.keys[static_cast<uint32_t>(key)];
+	return keyboard_previous.keys_pressed[static_cast<uint32_t>(key)];
 }
 
 bool input_was_key_up(keys key)
 {
-	return !keyboard_previous.keys[static_cast<uint32_t>(key)];
+	return !keyboard_previous.keys_pressed[static_cast<uint32_t>(key)];
 }
 
 bool input_is_mouse_button_down(mouse_buttons button)

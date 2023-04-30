@@ -25,11 +25,14 @@
 #include "core/event.hpp"
 #include "core/input.hpp"
 
-#include "renderer/vulkan_platform.h"
+//#include "renderer/vulkan_platform.h"
 
-#include <vulkan/vulkan_xcb.h>
+//#include <vulkan/vulkan_xcb.h>
 
-lise_keys translate_keycode(uint32_t x_keycode);
+namespace lise
+{
+
+keys translate_keycode(uint32_t x_keycode);
 
 typedef struct internal_state
 {
@@ -44,7 +47,7 @@ typedef struct internal_state
 
 static internal_state state;
 
-bool lise_platform_init(
+bool platform_init(
 	const char* application_name,
 	int32_t x, int32_t y,
 	int32_t width, int32_t height
@@ -168,14 +171,14 @@ bool lise_platform_init(
 	return true;
 }
 
-void lise_platform_shutdown()
+void platform_shutdown()
 {
 	XAutoRepeatOn(state.display);
 
 	xcb_destroy_window(state.connection, state.window);
 }
 
-bool lise_platform_poll_messages()
+bool platform_poll_messages()
 {
 	xcb_generic_event_t* event;
 	xcb_client_message_event_t* cm;
@@ -208,10 +211,10 @@ bool lise_platform_poll_messages()
 					code & ShiftMask ? 1 : 0
 				);
 
-				lise_keys key = translate_keycode(key_sym);
+				keys key = translate_keycode(key_sym);
 
 				// Pass to the input subsystem for processing.
-				lise_input_process_keys(key, pressed);
+				input_process_keys(key, pressed);
 			} break;
 			case XCB_BUTTON_PRESS:
 			case XCB_BUTTON_RELEASE:
@@ -219,47 +222,48 @@ bool lise_platform_poll_messages()
 				// TODO: Mouse button presses and releases
 				xcb_button_press_event_t *mouse_event = (xcb_button_press_event_t *)event;
 				bool pressed = event->response_type == XCB_BUTTON_PRESS;
-				lise_mouse_buttons mouse_button = LISE_MOUSE_MAX_MOUSE_BUTTONS;
+				mouse_buttons mouse_button = mouse_buttons::MAX_BUTTONS;
 
 				switch (mouse_event->detail)
 				{
 					case XCB_BUTTON_INDEX_1:
-						mouse_button = LISE_MOUSE_LEFT;
+						mouse_button = mouse_buttons::LEFT;
 						
 						break;
 					case XCB_BUTTON_INDEX_2:
-						mouse_button = LISE_MOUSE_MIDDLE;
+						mouse_button = mouse_buttons::MIDDLE;
 
 						break;
 					case XCB_BUTTON_INDEX_3:
-						mouse_button = LISE_MOUSE_RIGHT;
+						mouse_button = mouse_buttons::RIGHT;
 
 						break;
 				}
 
 				// Pass over to the input subsystem.
-				if (mouse_button != LISE_MOUSE_MAX_MOUSE_BUTTONS)
+				if (mouse_button != mouse_buttons::MAX_BUTTONS)
 				{
-					lise_input_process_button(mouse_button, pressed);
+					input_process_button(mouse_button, pressed);
 				}
 			} break;
 			case XCB_MOTION_NOTIFY:
+			{
 				// Mouse move
 				xcb_motion_notify_event_t *move_event = (xcb_motion_notify_event_t *)event;
 
 				// Pass over to the input subsystem.
-				lise_input_process_mouse_move((lise_vec2i) { move_event->event_x, move_event->event_y });
-				break;
+				input_process_mouse_move(vector2i { move_event->event_x, move_event->event_y });
+			} break;
 			case XCB_CONFIGURE_NOTIFY:
 			{
 				// Window resize. Also triggered by moving the window;
 				xcb_configure_notify_event_t *configure_event = (xcb_configure_notify_event_t *)event;
 
-				lise_event_context ctx = {};
+				event_context ctx = {};
 				ctx.data.u32[0] = configure_event->width;
 				ctx.data.u32[1] = configure_event->height;
 
-				lise_event_fire(LISE_EVENT_ON_WINDOW_RESIZE, ctx);
+				event_fire(event_codes::ON_WINDOW_RESIZE, ctx);
 			} break;
 			case XCB_CLIENT_MESSAGE:
 			{
@@ -268,7 +272,7 @@ bool lise_platform_poll_messages()
 				// Window close
 				if (cm->data.data32[0] == state.wm_delete_win)
 				{
-					lise_event_fire(LISE_EVENT_ON_WINDOW_CLOSE, (lise_event_context) {});
+					event_fire(event_codes::ON_WINDOW_CLOSE, event_context {});
 				}
 			} break;
 			default:
@@ -282,28 +286,28 @@ bool lise_platform_poll_messages()
 	return true;
 }
 
-void lise_platform_console_write(const char* message, uint8_t color)
+void platform_console_write(const char* message, uint8_t color)
 {
 	// FATAL,ERROR,WARN,INFO,DEBUG,TRACE
 	const char* colour_strings[] = {"0;41", "1;31", "1;33", "1;32", "1;34", "1;30"};
 	printf("\033[%sm%s\033[0m", colour_strings[color], message);
 }
 
-void lise_platform_console_write_error(const char* message, uint8_t color)
+void platform_console_write_error(const char* message, uint8_t color)
 {
 	// FATAL,ERROR,WARN,INFO,DEBUG,TRACE
 	const char* colour_strings[] = {"0;41", "1;31", "1;33", "1;32", "1;34", "1;30"};
 	printf("\033[%sm%s\033[0m", colour_strings[color], message);
 }
 
-double lise_platform_get_absolute_time()
+double platform_get_absolute_time()
 {
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
 	return now.tv_sec + now.tv_nsec * 0.000000001;
 }
 
-void lise_platform_sleep(uint64_t ms)
+void platform_sleep(uint64_t ms)
 {
 #if _POSIX_C_SOURCE >= 199309L
 	struct timespec ts;
@@ -320,7 +324,7 @@ void lise_platform_sleep(uint64_t ms)
 #endif
 }
 
-const char** lise_platform_get_required_instance_extensions(uint32_t* out_extension_count)
+const char** platform_get_required_instance_extensions(uint32_t* out_extension_count)
 {
 	static const char* required_instance_extensions[] = {
 		"VK_KHR_surface", "VK_KHR_xcb_surface"
@@ -331,290 +335,292 @@ const char** lise_platform_get_required_instance_extensions(uint32_t* out_extens
 	return required_instance_extensions;
 }
 
-bool lise_vulkan_platform_create_vulkan_surface(
-	VkInstance instance,
-	VkSurfaceKHR* out_surface
-)
-{
-	VkXcbSurfaceCreateInfoKHR create_info = {VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR};
-	create_info.connection = state.connection;
-	create_info.window = state.window;
-
-	if (vkCreateXcbSurfaceKHR(instance, &create_info, NULL, out_surface) != VK_SUCCESS)
-	{
-		LFATAL("Vulkan surface creation failed.");
-		return false;
-	}
-
-	return true;
-}
+//bool vulkan_platform_create_vulkan_surface(
+//	VkInstance instance,
+//	VkSurfaceKHR* out_surface
+//)
+//{
+//	VkXcbSurfaceCreateInfoKHR create_info = {VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR};
+//	create_info.connection = state.connection;
+//	create_info.window = state.window;
+//
+//	if (vkCreateXcbSurfaceKHR(instance, &create_info, NULL, out_surface) != VK_SUCCESS)
+//	{
+//		LFATAL("Vulkan surface creation failed.");
+//		return false;
+//	}
+//
+//	return true;
+//}
 
 // Key translation
-lise_keys translate_keycode(uint32_t x_keycode) {
+keys translate_keycode(uint32_t x_keycode) {
 	switch (x_keycode) {
 		case XK_BackSpace:
-			return LISE_KEY_BACKSPACE;
+			return keys::BACKSPACE;
 		case XK_Return:
-			return LISE_KEY_ENTER;
+			return keys::ENTER;
 		case XK_Tab:
-			return LISE_KEY_TAB;
-			//case XK_Shift: return LISE_KEY_SHIFT;
-			//case XK_Control: return LISE_KEY_CONTROL;
+			return keys::TAB;
+			//case XK_Shift: return keys::SHIFT;
+			//case XK_Control: return keys::CONTROL;
 
 		case XK_Pause:
-			return LISE_KEY_PAUSE;
+			return keys::PAUSE;
 		case XK_Caps_Lock:
-			return LISE_KEY_CAPITAL;
+			return keys::CAPITAL;
 
 		case XK_Escape:
-			return LISE_KEY_ESCAPE;
+			return keys::ESCAPE;
 
 			// Not supported
-			// case : return LISE_KEY_CONVERT;
-			// case : return LISE_KEY_NONCONVERT;
-			// case : return LISE_KEY_ACCEPT;
+			// case : return keys::CONVERT;
+			// case : return keys::NONCONVERT;
+			// case : return keys::ACCEPT;
 
 		case XK_Mode_switch:
-			return LISE_KEY_MODECHANGE;
+			return keys::MODECHANGE;
 
 		case XK_space:
-			return LISE_KEY_SPACE;
+			return keys::SPACE;
 		case XK_Prior:
-			return LISE_KEY_PRIOR;
+			return keys::PRIOR;
 		case XK_Next:
-			return LISE_KEY_NEXT;
+			return keys::NEXT;
 		case XK_End:
-			return LISE_KEY_END;
+			return keys::END;
 		case XK_Home:
-			return LISE_KEY_HOME;
+			return keys::HOME;
 		case XK_Left:
-			return LISE_KEY_LEFT;
+			return keys::LEFT;
 		case XK_Up:
-			return LISE_KEY_UP;
+			return keys::UP;
 		case XK_Right:
-			return LISE_KEY_RIGHT;
+			return keys::RIGHT;
 		case XK_Down:
-			return LISE_KEY_DOWN;
+			return keys::DOWN;
 		case XK_Select:
-			return LISE_KEY_SELECT;
+			return keys::SELECT;
 		case XK_Print:
-			return LISE_KEY_PRINT;
+			return keys::PRINT;
 		case XK_Execute:
-			return LISE_KEY_EXECUTE;
-		// case XK_snapshot: return LISE_KEY_SNAPSHOT; // not supported
+			return keys::EXECUTE;
+		// case XK_snapshot: return keys::SNAPSHOT; // not supported
 		case XK_Insert:
-			return LISE_KEY_INSERT;
+			return keys::INSERT;
 		case XK_Delete:
-			return LISE_KEY_DELETE;
+			return keys::DELETE;
 		case XK_Help:
-			return LISE_KEY_HELP;
+			return keys::HELP;
 
 		case XK_Meta_L:
-			return LISE_KEY_LWIN;  // TODO: not sure this is right
+			return keys::LWIN;  // TODO: not sure this is right
 		case XK_Meta_R:
-			return LISE_KEY_RWIN;
-			// case XK_apps: return LISE_KEY_APPS; // not supported
+			return keys::RWIN;
+			// case XK_apps: return keys::APPS; // not supported
 
-			// case XK_sleep: return LISE_KEY_SLEEP; //not supported
+			// case XK_sleep: return keys::SLEEP; //not supported
 
 		case XK_KP_0:
-			return LISE_KEY_NUMPAD0;
+			return keys::NUMPAD0;
 		case XK_KP_1:
-			return LISE_KEY_NUMPAD1;
+			return keys::NUMPAD1;
 		case XK_KP_2:
-			return LISE_KEY_NUMPAD2;
+			return keys::NUMPAD2;
 		case XK_KP_3:
-			return LISE_KEY_NUMPAD3;
+			return keys::NUMPAD3;
 		case XK_KP_4:
-			return LISE_KEY_NUMPAD4;
+			return keys::NUMPAD4;
 		case XK_KP_5:
-			return LISE_KEY_NUMPAD5;
+			return keys::NUMPAD5;
 		case XK_KP_6:
-			return LISE_KEY_NUMPAD6;
+			return keys::NUMPAD6;
 		case XK_KP_7:
-			return LISE_KEY_NUMPAD7;
+			return keys::NUMPAD7;
 		case XK_KP_8:
-			return LISE_KEY_NUMPAD8;
+			return keys::NUMPAD8;
 		case XK_KP_9:
-			return LISE_KEY_NUMPAD9;
+			return keys::NUMPAD9;
 		case XK_multiply:
-			return LISE_KEY_MULTIPLY;
+			return keys::MULTIPLY;
 		case XK_KP_Add:
-			return LISE_KEY_ADD;
+			return keys::ADD;
 		case XK_KP_Separator:
-			return LISE_KEY_SEPARATOR;
+			return keys::SEPARATOR;
 		case XK_KP_Subtract:
-			return LISE_KEY_SUBTRACT;
+			return keys::SUBTRACT;
 		case XK_KP_Decimal:
-			return LISE_KEY_DECIMAL;
+			return keys::DECIMAL;
 		case XK_KP_Divide:
-			return LISE_KEY_DIVIDE;
+			return keys::DIVIDE;
 		case XK_F1:
-			return LISE_KEY_F1;
+			return keys::F1;
 		case XK_F2:
-			return LISE_KEY_F2;
+			return keys::F2;
 		case XK_F3:
-			return LISE_KEY_F3;
+			return keys::F3;
 		case XK_F4:
-			return LISE_KEY_F4;
+			return keys::F4;
 		case XK_F5:
-			return LISE_KEY_F5;
+			return keys::F5;
 		case XK_F6:
-			return LISE_KEY_F6;
+			return keys::F6;
 		case XK_F7:
-			return LISE_KEY_F7;
+			return keys::F7;
 		case XK_F8:
-			return LISE_KEY_F8;
+			return keys::F8;
 		case XK_F9:
-			return LISE_KEY_F9;
+			return keys::F9;
 		case XK_F10:
-			return LISE_KEY_F10;
+			return keys::F10;
 		case XK_F11:
-			return LISE_KEY_F11;
+			return keys::F11;
 		case XK_F12:
-			return LISE_KEY_F12;
+			return keys::F12;
 		case XK_F13:
-			return LISE_KEY_F13;
+			return keys::F13;
 		case XK_F14:
-			return LISE_KEY_F14;
+			return keys::F14;
 		case XK_F15:
-			return LISE_KEY_F15;
+			return keys::F15;
 		case XK_F16:
-			return LISE_KEY_F16;
+			return keys::F16;
 		case XK_F17:
-			return LISE_KEY_F17;
+			return keys::F17;
 		case XK_F18:
-			return LISE_KEY_F18;
+			return keys::F18;
 		case XK_F19:
-			return LISE_KEY_F19;
+			return keys::F19;
 		case XK_F20:
-			return LISE_KEY_F20;
+			return keys::F20;
 		case XK_F21:
-			return LISE_KEY_F21;
+			return keys::F21;
 		case XK_F22:
-			return LISE_KEY_F22;
+			return keys::F22;
 		case XK_F23:
-			return LISE_KEY_F23;
+			return keys::F23;
 		case XK_F24:
-			return LISE_KEY_F24;
+			return keys::F24;
 
 		case XK_Num_Lock:
-			return LISE_KEY_NUMLOCK;
+			return keys::NUMLOCK;
 		case XK_Scroll_Lock:
-			return LISE_KEY_SCROLL;
+			return keys::SCROLL;
 
 		case XK_KP_Equal:
-			return LISE_KEY_NUMPAD_EQUAL;
+			return keys::NUMPAD_EQUAL;
 
 		case XK_Shift_L:
-			return LISE_KEY_LSHIFT;
+			return keys::LSHIFT;
 		case XK_Shift_R:
-			return LISE_KEY_RSHIFT;
+			return keys::RSHIFT;
 		case XK_Control_L:
-			return LISE_KEY_LCONTROL;
+			return keys::LCONTROL;
 		case XK_Control_R:
-			return LISE_KEY_RCONTROL;
-		// case XK_Menu: return LISE_KEY_LMENU;
+			return keys::RCONTROL;
+		// case XK_Menu: return keys::LMENU;
 		case XK_Menu:
-			return LISE_KEY_RMENU;
+			return keys::RMENU;
 
 		case XK_semicolon:
-			return LISE_KEY_SEMICOLON;
+			return keys::SEMICOLON;
 		case XK_plus:
-			return LISE_KEY_PLUS;
+			return keys::PLUS;
 		case XK_comma:
-			return LISE_KEY_COMMA;
+			return keys::COMMA;
 		case XK_minus:
-			return LISE_KEY_MINUS;
+			return keys::MINUS;
 		case XK_period:
-			return LISE_KEY_PERIOD;
+			return keys::PERIOD;
 		case XK_slash:
-			return LISE_KEY_SLASH;
+			return keys::SLASH;
 		case XK_grave:
-			return LISE_KEY_GRAVE;
+			return keys::GRAVE;
 
 		case XK_a:
 		case XK_A:
-			return LISE_KEY_A;
+			return keys::A;
 		case XK_b:
 		case XK_B:
-			return LISE_KEY_B;
+			return keys::B;
 		case XK_c:
 		case XK_C:
-			return LISE_KEY_C;
+			return keys::C;
 		case XK_d:
 		case XK_D:
-			return LISE_KEY_D;
+			return keys::D;
 		case XK_e:
 		case XK_E:
-			return LISE_KEY_E;
+			return keys::E;
 		case XK_f:
 		case XK_F:
-			return LISE_KEY_F;
+			return keys::F;
 		case XK_g:
 		case XK_G:
-			return LISE_KEY_G;
+			return keys::G;
 		case XK_h:
 		case XK_H:
-			return LISE_KEY_H;
+			return keys::H;
 		case XK_i:
 		case XK_I:
-			return LISE_KEY_I;
+			return keys::I;
 		case XK_j:
 		case XK_J:
-			return LISE_KEY_J;
+			return keys::J;
 		case XK_k:
 		case XK_K:
-			return LISE_KEY_K;
+			return keys::K;
 		case XK_l:
 		case XK_L:
-			return LISE_KEY_L;
+			return keys::L;
 		case XK_m:
 		case XK_M:
-			return LISE_KEY_M;
+			return keys::M;
 		case XK_n:
 		case XK_N:
-			return LISE_KEY_N;
+			return keys::N;
 		case XK_o:
 		case XK_O:
-			return LISE_KEY_O;
+			return keys::O;
 		case XK_p:
 		case XK_P:
-			return LISE_KEY_P;
+			return keys::P;
 		case XK_q:
 		case XK_Q:
-			return LISE_KEY_Q;
+			return keys::Q;
 		case XK_r:
 		case XK_R:
-			return LISE_KEY_R;
+			return keys::R;
 		case XK_s:
 		case XK_S:
-			return LISE_KEY_S;
+			return keys::S;
 		case XK_t:
 		case XK_T:
-			return LISE_KEY_T;
+			return keys::T;
 		case XK_u:
 		case XK_U:
-			return LISE_KEY_U;
+			return keys::U;
 		case XK_v:
 		case XK_V:
-			return LISE_KEY_V;
+			return keys::V;
 		case XK_w:
 		case XK_W:
-			return LISE_KEY_W;
+			return keys::W;
 		case XK_x:
 		case XK_X:
-			return LISE_KEY_X;
+			return keys::X;
 		case XK_y:
 		case XK_Y:
-			return LISE_KEY_Y;
+			return keys::Y;
 		case XK_z:
 		case XK_Z:
-			return LISE_KEY_Z;
+			return keys::Z;
 
 		default:
-			return 0;
+			return keys::A;
 	}
 }
 
 #endif
+
+}
