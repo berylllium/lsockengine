@@ -218,6 +218,11 @@ SwapchainInfo Swapchain::get_swapchain_info() const
 	return swapchain_info;
 }
 
+uint32_t Swapchain::get_image_count() const
+{
+	return image_count;
+}
+
 SwapchainInfo Swapchain::query_info(const Device& device, VkSurfaceKHR surface)
 {
 	SwapchainInfo info = {};

@@ -56,6 +56,7 @@ static uint32_t device_extension_count = 1;
 
 // Static helper functions.
 static bool check_validation_layer_support();
+static void create_command_buffers();
 
 
 bool vulkan_initialize(const char* application_name)
@@ -171,12 +172,17 @@ bool vulkan_initialize(const char* application_name)
 		return false;
 	}
 
+	// Create command buffers.
+	create_command_buffers();
+
 	return true;
 }
 
 void vulkan_shutdown()
 {
 	vkDeviceWaitIdle(*device);
+
+	graphics_command_buffers.clear();
 
 	delete render_pass;
 
@@ -249,6 +255,23 @@ static bool check_validation_layer_support()
 	}
 
 	return true;
+}
+
+void create_command_buffers()
+{
+	LDEBUG("Creating initial command buffers");
+
+	// Clear old command buffers.
+	graphics_command_buffers.clear();
+
+	for (uint32_t i = 0; i < swapchain->get_image_count(); i++)
+	{
+		graphics_command_buffers.emplace_back(
+			*device,
+			device->get_graphics_command_pool(),
+			true
+		);
+	}
 }
 
 }

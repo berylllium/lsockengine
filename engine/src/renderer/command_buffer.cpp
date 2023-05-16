@@ -14,6 +14,7 @@ CommandBuffer::CommandBuffer(const Device& device, VkCommandPool command_pool, b
 	
 	state = CommandBufferState::NOT_ALLOCATED;
 
+	// TODO: Error handling.
 	vkAllocateCommandBuffers(
 		device,
 		&allocate_info,
@@ -23,9 +24,21 @@ CommandBuffer::CommandBuffer(const Device& device, VkCommandPool command_pool, b
 	state = CommandBufferState::READY;
 }
 
+CommandBuffer::CommandBuffer(CommandBuffer&& other) : device(other.device), command_pool(other.command_pool)
+{
+	handle = other.handle;
+	other.handle = nullptr;
+
+	state = other.state;
+	other.state = CommandBufferState::NOT_ALLOCATED;
+}
+
 CommandBuffer::~CommandBuffer()
 {
-	vkFreeCommandBuffers(device, command_pool, 1, &handle);
+	if (handle)
+	{
+		vkFreeCommandBuffers(device, command_pool, 1, &handle);
+	}
 }
 
 CommandBuffer::operator VkCommandBuffer() const

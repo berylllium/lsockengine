@@ -328,6 +328,26 @@ DeviceQueueIndices Device::find_queue_families(
 	return queue_indices;
 }
 
+VkPhysicalDeviceMemoryProperties Device::get_memory_properties() const
+{
+	return physical_device_memory_properties;
+}
+
+DeviceQueueIndices Device::get_queue_indices() const
+{
+	return queue_indices;
+}
+
+VkQueue Device::get_present_queue() const
+{
+	return present_queue;
+}
+
+VkCommandPool Device::get_graphics_command_pool() const
+{
+	return graphics_command_pool;
+}
+
 DeviceSwapChainSupportInfo Device::query_swapchain_support(VkPhysicalDevice physical_device, VkSurfaceKHR surface)
 {
 	DeviceSwapChainSupportInfo swap_chain_info = {};
@@ -380,21 +400,6 @@ DeviceSwapChainSupportInfo Device::query_swapchain_support(VkPhysicalDevice phys
 	}
 	
 	return swap_chain_info;
-}
-
-VkPhysicalDeviceMemoryProperties Device::get_memory_properties() const
-{
-	return physical_device_memory_properties;
-}
-
-DeviceQueueIndices Device::get_queue_indices() const
-{
-	return queue_indices;
-}
-
-VkQueue Device::get_present_queue() const
-{
-	return present_queue;
 }
 
 }

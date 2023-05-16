@@ -23,6 +23,8 @@ class CommandBuffer
 public:
 	CommandBuffer(const Device& device, VkCommandPool command_pool, bool is_primary = true);
 
+	CommandBuffer(CommandBuffer&& other);
+
 	CommandBuffer(CommandBuffer&) = delete; // Prevent copies.
 
 	~CommandBuffer();
@@ -54,7 +56,7 @@ private:
 	/**
 	 * @brief Cached command pool used when creating the command buffer.
 	 */
-	const VkCommandPool& command_pool;
+	VkCommandPool command_pool;
 
 };
 

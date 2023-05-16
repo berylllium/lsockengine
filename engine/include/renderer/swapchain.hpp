@@ -49,6 +49,8 @@ public:
 
 	SwapchainInfo get_swapchain_info() const;
 
+	uint32_t get_image_count() const;
+
 	static SwapchainInfo query_info(const Device& device, VkSurfaceKHR surface);
 
 private:

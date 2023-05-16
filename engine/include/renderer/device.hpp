@@ -50,18 +50,20 @@ public:
 	operator VkDevice() const;
 	operator VkPhysicalDevice() const;
 
+	VkPhysicalDeviceMemoryProperties get_memory_properties() const;
+
+	DeviceQueueIndices get_queue_indices() const;
+
+	VkQueue get_present_queue() const;
+
+	VkCommandPool get_graphics_command_pool() const;
+
 	/**
 	 * @brief Queries the devices swapchain suppot for the given surface to be used with the swapchain. 
 	 * 
 	 * @param surface The surface to be used with the swapchain.
 	 */
 	static DeviceSwapChainSupportInfo query_swapchain_support(VkPhysicalDevice physical_device, VkSurfaceKHR surface);
-
-	VkPhysicalDeviceMemoryProperties get_memory_properties() const;
-
-	DeviceQueueIndices get_queue_indices() const;
-
-	VkQueue get_present_queue() const;
 
 private:
 	VkPhysicalDevice physical_device;
