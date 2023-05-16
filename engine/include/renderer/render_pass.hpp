@@ -28,8 +28,8 @@ public:
 		const Device& device,
 		VkFormat color_format,
 		VkFormat depth_format,
-		vector2i render_area_start,
-		vector2i render_area_size,
+		vector2ui render_area_start,
+		vector2ui render_area_size,
 		vector4f clear_color,
 		float depth,
 		uint32_t stencil
@@ -50,8 +50,8 @@ public:
 private:
 	VkRenderPass handle;
 
-	vector2i render_area_start;
-	vector2i render_area_size;
+	vector2ui render_area_start;
+	vector2ui render_area_size;
 
 	vector4f clear_color;
 

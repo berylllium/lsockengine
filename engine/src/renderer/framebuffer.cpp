@@ -9,7 +9,7 @@ namespace lise
 {
 
 Framebuffer::Framebuffer(
-	VkDevice device,
+	const Device& device,
 	const RenderPass& render_pass,
 	vector2ui size,
 	uint32_t attachment_count,

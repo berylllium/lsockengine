@@ -132,12 +132,55 @@ bool vulkan_initialize(const char* application_name)
 		return false;
 	}
 
+	// Get swapchain info
+	SwapchainInfo swapchain_info = Swapchain::query_info(*device, surface);
+	
+	// Create the render pass
+	try
+	{
+		render_pass = new RenderPass(
+			*device,
+			swapchain_info.image_format.format,
+			swapchain_info.depth_format,
+			vector2ui { 0, 0 },
+			vector2ui { swapchain_info.swapchain_extent.width, swapchain_info.swapchain_extent.height },
+			vector4f { 0.4f, 0.5f, 0.6f, 0.0f },
+			1.0f,
+			0
+		);
+	}
+	catch (std::exception e)
+	{
+		LFATAL("Failed to create render pass.");
+		return false;
+	}
+
+	// Create the swapchain
+	try
+	{
+		swapchain = new Swapchain(
+			*device,
+			surface,
+			swapchain_info,
+			*render_pass
+		);
+	}
+	catch (std::exception e)
+	{
+		LFATAL("Failed to create the swapchain.");
+		return false;
+	}
+
 	return true;
 }
 
 void vulkan_shutdown()
 {
 	vkDeviceWaitIdle(*device);
+
+	delete render_pass;
+
+	delete swapchain;
 
 	delete device;
 
@@ -151,22 +194,27 @@ void vulkan_shutdown()
 bool vulkan_begin_frame(float delta_time)
 {
 
+	return true;
 }
 
 bool vulkan_end_frame(float delta_time)
 {
 
+	return true;
 }
 
-vector2i vulkan_get_framebuffer_size()
+vector2ui vulkan_get_framebuffer_size()
 {
-
+	return vector2ui {
+		swapchain->get_swapchain_info().swapchain_extent.width,
+		swapchain->get_swapchain_info().swapchain_extent.height
+	};
 }
 
 // TODO: temp hack
 LAPI void vulkan_set_view_matrix_temp(const mat4x4& view)
 {
-
+	
 }
 
 // Static helper functions.

@@ -4,6 +4,7 @@
 
 #include "definitions.hpp"
 #include "math/vector2.hpp"
+#include "renderer/device.hpp"
 #include "renderer/render_pass.hpp"
 
 namespace lise
@@ -13,7 +14,7 @@ class Framebuffer
 {
 public:
 	Framebuffer(
-		VkDevice device,
+		const Device& device,
 		const RenderPass& render_pass,
 		vector2ui size,
 		uint32_t attachment_count,
@@ -34,7 +35,7 @@ private:
 
 	const RenderPass& render_pass;
 
-	const VkDevice& device;
+	const Device& device;
 };
 
 }

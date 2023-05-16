@@ -47,6 +47,8 @@ public:
 
 	bool swapchain_present(VkSemaphore render_complete_semaphore, uint32_t present_image_index);
 
+	SwapchainInfo get_swapchain_info() const;
+
 	static SwapchainInfo query_info(const Device& device, VkSurfaceKHR surface);
 
 private:

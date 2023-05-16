@@ -213,6 +213,11 @@ bool Swapchain::swapchain_present(
 	return true;
 }
 
+SwapchainInfo Swapchain::get_swapchain_info() const
+{
+	return swapchain_info;
+}
+
 SwapchainInfo Swapchain::query_info(const Device& device, VkSurfaceKHR surface)
 {
 	SwapchainInfo info = {};

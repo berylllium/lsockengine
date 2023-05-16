@@ -23,7 +23,7 @@ bool vulkan_begin_frame(float delta_time);
 
 bool vulkan_end_frame(float delta_time);
 
-vector2i vulkan_get_framebuffer_size();
+vector2ui vulkan_get_framebuffer_size();
 
 // TODO: temp hack
 LAPI void vulkan_set_view_matrix_temp(const mat4x4& view);
