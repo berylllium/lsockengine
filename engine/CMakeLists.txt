@@ -5,8 +5,23 @@ set(LISE_HEADERS
 	core/event.hpp
 	core/input.hpp
 	core/logger.hpp
+	math/arithmetic.hpp
+	math/mat4x4.hpp
+	math/math.hpp
 	math/vector2.hpp
+	math/vector3.hpp
+	math/vector4.hpp
 	platform/platform.hpp
+	renderer/command_buffer.hpp
+	renderer/device.hpp
+	renderer/fence.hpp
+	renderer/framebuffer.hpp
+	renderer/render_pass.hpp
+	renderer/renderer.hpp
+	renderer/swapchain.hpp
+	renderer/vulkan_backend.hpp
+	renderer/vulkan_buffer.hpp
+	renderer/vulkan_image.hpp
 )
 list(TRANSFORM LISE_HEADERS PREPEND "include/")
 
@@ -16,8 +31,20 @@ set(LISE_SOURCES
 	core/event.cpp
 	core/input.cpp
 	core/logger.cpp
+	math/mat4x4.cpp
+	math/math.cpp
 	platform/platform_linux.cpp
 	platform/platform_win32.cpp
+	renderer/command_buffer.cpp
+	renderer/device.cpp
+	renderer/fence.cpp
+	renderer/framebuffer.cpp
+	renderer/render_pass.cpp
+	renderer/renderer.cpp
+	renderer/swapchain.cpp
+	renderer/vulkan_backend.cpp
+	renderer/vulkan_buffer.cpp
+	renderer/vulkan_image.cpp
 )
 list(TRANSFORM LISE_SOURCES PREPEND "src/")
 
