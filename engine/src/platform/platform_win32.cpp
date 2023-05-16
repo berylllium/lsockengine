@@ -9,8 +9,8 @@
 #include <windows.h>
 #include <windowsx.h>
 
-//#include "renderer/vulkan_platform.hpp"
-//#include <vulkan/vulkan_win32.h>
+#include "renderer/vulkan_platform.hpp"
+#include <vulkan/vulkan_win32.h>
 
 static const char* window_class_name = "window_class";
 
@@ -257,22 +257,20 @@ const char** platform_get_required_instance_extensions(uint32_t* out_extension_c
 	return required_instance_extensions;
 }
 
-//bool vulkan_platform_create_vulkan_surface(
-//	VkInstance instance,
-//	VkSurfaceKHR* out_surface)
-//{
-//	VkWin32SurfaceCreateInfoKHR create_info = {};
-//	create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-//	create_info.hinstance = state.h_instance;
-//	create_info.hwnd = state.hwnd;
-//
-//	if (vkCreateWin32SurfaceKHR(instance, &create_info, NULL, out_surface) != VK_SUCCESS)
-//	{
-//		return false;
-//	}
-//
-//	return true;
-//}
+bool vulkan_platform_create_vulkan_surface(VkInstance instance,	VkSurfaceKHR* out_surface)
+{
+	VkWin32SurfaceCreateInfoKHR create_info = {};
+	create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+	create_info.hinstance = state.h_instance;
+	create_info.hwnd = state.hwnd;
+
+	if (vkCreateWin32SurfaceKHR(instance, &create_info, NULL, out_surface) != VK_SUCCESS)
+	{
+		return false;
+	}
+
+	return true;
+}
 
 }
 

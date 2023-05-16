@@ -22,6 +22,7 @@ set(LISE_HEADERS
 	renderer/vulkan_backend.hpp
 	renderer/vulkan_buffer.hpp
 	renderer/vulkan_image.hpp
+	renderer/vulkan_platform.hpp
 )
 list(TRANSFORM LISE_HEADERS PREPEND "include/")
 

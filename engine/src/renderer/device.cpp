@@ -205,7 +205,6 @@ void Device::pick_physical_device(
 	{
 		if (is_physical_device_suitable(
 			physical_devices[i], 
-			query_swapchain_support(surface),
 			physical_device_extensions,
 			physical_device_extension_count,
 			surface
@@ -226,7 +225,6 @@ void Device::pick_physical_device(
 
 bool Device::is_physical_device_suitable(
 	VkPhysicalDevice physical_device,
-	DeviceSwapChainSupportInfo swap_chain_info,
 	const char** physical_device_extensions,
 	uint32_t physical_device_extension_count,
 	VkSurfaceKHR surface
@@ -277,6 +275,8 @@ bool Device::is_physical_device_suitable(
 	delete [] available_extensions;
 
 	// Check if swapchain supported by the physcial device is adequate for our needs
+	DeviceSwapChainSupportInfo swap_chain_info = query_swapchain_support(physical_device, surface);
+
 	if (swap_chain_info.surface_format_count == 0 || swap_chain_info.present_mode_count == 0)
 	{
 		// The device is not suitable if it does not support any presentation modes or surface
@@ -328,7 +328,7 @@ DeviceQueueIndices Device::find_queue_families(
 	return queue_indices;
 }
 
-DeviceSwapChainSupportInfo Device::query_swapchain_support(VkSurfaceKHR surface) const
+DeviceSwapChainSupportInfo Device::query_swapchain_support(VkPhysicalDevice physical_device, VkSurfaceKHR surface)
 {
 	DeviceSwapChainSupportInfo swap_chain_info = {};
 

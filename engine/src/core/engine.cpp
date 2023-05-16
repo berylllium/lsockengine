@@ -4,7 +4,7 @@
 #include "core/clock.hpp"
 #include "core/event.hpp"
 #include "core/input.hpp"
-//#include "renderer/renderer.h"
+#include "renderer/renderer.hpp"
 #include "platform/platform.hpp"
 
 namespace lise
@@ -66,11 +66,11 @@ bool engine_create(engine_create_info app_create_info)
 
 	app_state.delta_clock.reset();
 
-//	if (!renderer_initialize(app_create_info.window_name))
-//	{
-//		LFATAL("Failed to initialize renderer submodule.");
-//		return false;
-//	}
+	if (!renderer_initialize(app_create_info.window_name))
+	{
+		LFATAL("Failed to initialize renderer submodule.");
+		return false;
+	}
 
 	// Run consumer initialization function
 	if (!app_state.entry_points.initialize())
@@ -140,7 +140,7 @@ bool engine_run()
 	event_shutdown();
 	logger_shutdown();
 
-//	renderer_shutdown();
+	renderer_shutdown();
 	
 	platform_shutdown();
 

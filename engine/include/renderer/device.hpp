@@ -55,7 +55,7 @@ public:
 	 * 
 	 * @param surface The surface to be used with the swapchain.
 	 */
-	DeviceSwapChainSupportInfo query_swapchain_support(VkSurfaceKHR surface) const;
+	static DeviceSwapChainSupportInfo query_swapchain_support(VkPhysicalDevice physical_device, VkSurfaceKHR surface);
 
 	VkPhysicalDeviceMemoryProperties get_memory_properties() const;
 
@@ -89,7 +89,6 @@ private:
 
 	static bool is_physical_device_suitable(
 		VkPhysicalDevice physical_device,
-		DeviceSwapChainSupportInfo swap_chain_info,
 		const char** physical_device_extensions,
 		uint32_t physical_device_extension_count,
 		VkSurfaceKHR surface

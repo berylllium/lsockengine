@@ -5,6 +5,7 @@
 
 #include "core/logger.hpp"
 #include "platform/platform.hpp"
+#include "renderer/vulkan_platform.hpp"
 
 namespace lise
 {
@@ -42,16 +43,16 @@ static VulkanBuffer* object_index_buffer;
 #endif
 
 // Hardcoded validation layers
-static constexpr const char* validation_layers[] = {
+static const char* validation_layers[] = {
 	"VK_LAYER_KHRONOS_validation"
 };
-static constexpr uint32_t validation_layer_count = 1;
+static uint32_t validation_layer_count = 1;
 
 // Hardcoded device extensions
-static constexpr const char* device_extensions[] = {
+static const char* device_extensions[] = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
-static constexpr uint32_t device_extension_count = 1;
+static uint32_t device_extension_count = 1;
 
 // Static helper functions.
 static bool check_validation_layer_support();
@@ -104,11 +105,45 @@ bool vulkan_initialize(const char* application_name)
 		LFATAL("Failed to create Vulkan instance.");
 		return false;
 	}
+
+	// Create vulkan surface
+	if (!vulkan_platform_create_vulkan_surface(instance, &surface))
+	{
+		LFATAL("Failed to create vulkan surface.");
+		return false;
+	}
+
+
+	// Create the device
+	try
+	{
+		device = new Device(
+			instance,
+			device_extensions,
+			device_extension_count,
+			validation_layers,
+			validation_layer_count,
+			surface
+		);
+	}
+	catch (std::exception e)
+	{
+		LFATAL("Failed to create a logical device.");
+		return false;
+	}
+
+	return true;
 }
 
 void vulkan_shutdown()
 {
 	vkDeviceWaitIdle(*device);
+
+	delete device;
+
+	vkDestroySurfaceKHR(instance, surface, nullptr);
+
+	vkDestroyInstance(instance, nullptr);
 
 	LINFO("Successfully shut down the vulkan backend.");
 }

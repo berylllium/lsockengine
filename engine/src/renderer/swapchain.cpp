@@ -41,7 +41,7 @@ Swapchain::Swapchain(
 		swap_chain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	}
 
-	DeviceSwapChainSupportInfo device_swap_chain_support_info = device.query_swapchain_support(surface);
+	DeviceSwapChainSupportInfo device_swap_chain_support_info = Device::query_swapchain_support(device, surface);
 
 	swap_chain_ci.preTransform = device_swap_chain_support_info.surface_capabilities.currentTransform;
 	swap_chain_ci.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
@@ -217,7 +217,7 @@ SwapchainInfo Swapchain::query_info(const Device& device, VkSurfaceKHR surface)
 {
 	SwapchainInfo info = {};
 
-	DeviceSwapChainSupportInfo swap_chain_support_info = device.query_swapchain_support(surface);
+	DeviceSwapChainSupportInfo swap_chain_support_info = Device::query_swapchain_support(device, surface);
 	
 	// Choose swap surface format
 	VkSurfaceFormatKHR surface_format = swap_chain_support_info.surface_formats[0]; // Default, first surface format.
