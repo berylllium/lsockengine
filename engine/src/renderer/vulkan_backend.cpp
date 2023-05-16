@@ -175,12 +175,54 @@ bool vulkan_initialize(const char* application_name)
 	// Create command buffers.
 	create_command_buffers();
 
+	// Create sync objects
+	uint8_t max_frames_in_flight = swapchain->get_max_frames_in_flight();
+	
+	image_available_semaphores.resize(max_frames_in_flight);
+	
+	queue_complete_semaphores.resize(max_frames_in_flight);
+
+	in_flight_fences.reserve(max_frames_in_flight);
+
+	for (uint32_t i = 0; i < max_frames_in_flight; i++)
+	{
+		VkSemaphoreCreateInfo semaphore_ci = {};
+		semaphore_ci.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+		vkCreateSemaphore(
+			*device,
+			&semaphore_ci,
+			NULL,
+			&image_available_semaphores[i]
+		);
+
+		vkCreateSemaphore(
+			*device,
+			&semaphore_ci,
+			NULL,
+			&queue_complete_semaphores[i]
+		);
+
+		in_flight_fences.emplace_back(*device, true); 
+	}
+
+	// Preallocate the in flight images and set them to nullptr;
+	images_in_flight.resize(swapchain->get_image_count(), nullptr);
+
 	return true;
 }
 
 void vulkan_shutdown()
 {
 	vkDeviceWaitIdle(*device);
+
+	for (size_t i = 0; i < image_available_semaphores.size(); i++)
+	{
+		vkDestroySemaphore(*device, image_available_semaphores[i], nullptr);
+		vkDestroySemaphore(*device, queue_complete_semaphores[i], nullptr);
+	}
+
+	in_flight_fences.clear();
 
 	graphics_command_buffers.clear();
 
@@ -264,7 +306,11 @@ void create_command_buffers()
 	// Clear old command buffers.
 	graphics_command_buffers.clear();
 
-	for (uint32_t i = 0; i < swapchain->get_image_count(); i++)
+	uint32_t swapchain_image_count = swapchain->get_image_count();
+
+	graphics_command_buffers.reserve(swapchain_image_count);
+
+	for (uint32_t i = 0; i < swapchain_image_count; i++)
 	{
 		graphics_command_buffers.emplace_back(
 			*device,

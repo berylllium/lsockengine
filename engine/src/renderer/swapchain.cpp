@@ -223,6 +223,11 @@ uint32_t Swapchain::get_image_count() const
 	return image_count;
 }
 
+uint8_t Swapchain::get_max_frames_in_flight() const
+{
+	return max_frames_in_flight;
+}
+
 SwapchainInfo Swapchain::query_info(const Device& device, VkSurfaceKHR surface)
 {
 	SwapchainInfo info = {};

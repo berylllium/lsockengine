@@ -18,9 +18,21 @@ Fence::Fence(const Device& device, bool create_signaled) : device(device), is_si
 	}
 }
 
+Fence::Fence(Fence&& other) : device(other.device)
+{
+	handle = other.handle;
+	other.handle = nullptr;
+
+	is_signaled = other.is_signaled;
+	other.is_signaled = false;
+}
+
 Fence::~Fence()
 {
-	vkDestroyFence(device, handle, NULL);
+	if (handle)
+	{
+		vkDestroyFence(device, handle, NULL);
+	}
 }
 
 bool Fence::wait(uint64_t timeout_ns)

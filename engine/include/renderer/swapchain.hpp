@@ -51,6 +51,8 @@ public:
 
 	uint32_t get_image_count() const;
 
+	uint8_t get_max_frames_in_flight() const;
+
 	static SwapchainInfo query_info(const Device& device, VkSurfaceKHR surface);
 
 private:
