@@ -12,6 +12,8 @@ set(LISE_HEADERS
 	math/vector3.hpp
 	math/vector4.hpp
 	platform/platform.hpp
+	renderer/resource/texture.hpp
+	renderer/system/texture_system.hpp
 	renderer/command_buffer.hpp
 	renderer/device.hpp
 	renderer/fence.hpp
@@ -36,6 +38,8 @@ set(LISE_SOURCES
 	math/math.cpp
 	platform/platform_linux.cpp
 	platform/platform_win32.cpp
+	renderer/resource/texture.cpp
+	renderer/system/texture_system.cpp
 	renderer/command_buffer.cpp
 	renderer/device.cpp
 	renderer/fence.cpp

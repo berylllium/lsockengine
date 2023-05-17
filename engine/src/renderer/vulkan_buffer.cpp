@@ -77,6 +77,11 @@ VulkanBuffer::~VulkanBuffer()
 	vkDestroyBuffer(device, handle, NULL);
 }
 
+VulkanBuffer::operator VkBuffer() const
+{
+	return handle;
+}
+
 bool VulkanBuffer::resize(
 	uint64_t new_size,
 	VkQueue queue,

@@ -7,6 +7,8 @@
 #include "platform/platform.hpp"
 #include "renderer/vulkan_platform.hpp"
 
+#include "renderer/system/texture_system.hpp"
+
 namespace lise
 {
 
@@ -209,12 +211,20 @@ bool vulkan_initialize(const char* application_name)
 	// Preallocate the in flight images and set them to nullptr;
 	images_in_flight.resize(swapchain->get_image_count(), nullptr);
 
+	if (!texture_system_initialize(*device))
+	{
+		LFATAL("Failed to initialize the vulkan renderer texture subsystem.");
+		return false;
+	}
+
 	return true;
 }
 
 void vulkan_shutdown()
 {
 	vkDeviceWaitIdle(*device);
+
+	texture_system_shutdown(*device);
 
 	for (size_t i = 0; i < image_available_semaphores.size(); i++)
 	{

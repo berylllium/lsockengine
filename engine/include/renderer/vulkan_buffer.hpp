@@ -20,7 +20,13 @@ public:
 		bool bind_on_create
 	);
 
+	VulkanBuffer(const VulkanBuffer&) = delete; // Prevent copies.
+
 	~VulkanBuffer();
+
+	operator VkBuffer() const;
+
+	VulkanBuffer& operator = (const VulkanBuffer&) = delete; // Prevent copies.
 
 	bool resize(uint64_t new_size, VkQueue queue, VkCommandPool pool);
 

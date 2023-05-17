@@ -54,6 +54,8 @@ public:
 
 	DeviceQueueIndices get_queue_indices() const;
 
+	VkQueue get_graphics_queue() const;
+
 	VkQueue get_present_queue() const;
 
 	VkCommandPool get_graphics_command_pool() const;

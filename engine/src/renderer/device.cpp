@@ -338,6 +338,11 @@ DeviceQueueIndices Device::get_queue_indices() const
 	return queue_indices;
 }
 
+VkQueue Device::get_graphics_queue() const
+{
+	return graphics_queue;
+}
+
 VkQueue Device::get_present_queue() const
 {
 	return present_queue;
