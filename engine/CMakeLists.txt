@@ -5,19 +5,25 @@ set(LISE_HEADERS
 	core/event.hpp
 	core/input.hpp
 	core/logger.hpp
+	loader/obj_format_loader.hpp
+	loader/shader_config_loader.hpp
 	math/arithmetic.hpp
 	math/mat4x4.hpp
 	math/math.hpp
 	math/vector2.hpp
 	math/vector3.hpp
 	math/vector4.hpp
+	math/vertex.hpp
 	platform/platform.hpp
+	renderer/resource/shader_stage.hpp
+	renderer/resource/shader.hpp
 	renderer/resource/texture.hpp
 	renderer/system/texture_system.hpp
 	renderer/command_buffer.hpp
 	renderer/device.hpp
 	renderer/fence.hpp
 	renderer/framebuffer.hpp
+	renderer/pipeline.hpp
 	renderer/render_pass.hpp
 	renderer/renderer.hpp
 	renderer/swapchain.hpp
@@ -25,6 +31,7 @@ set(LISE_HEADERS
 	renderer/vulkan_buffer.hpp
 	renderer/vulkan_image.hpp
 	renderer/vulkan_platform.hpp
+	util/string_utils.hpp
 )
 list(TRANSFORM LISE_HEADERS PREPEND "include/")
 
@@ -34,22 +41,28 @@ set(LISE_SOURCES
 	core/event.cpp
 	core/input.cpp
 	core/logger.cpp
+	loader/obj_format_loader.cpp
+	loader/shader_config_loader.cpp
 	math/mat4x4.cpp
 	math/math.cpp
 	platform/platform_linux.cpp
 	platform/platform_win32.cpp
+	renderer/resource/shader_stage.cpp
+	renderer/resource/shader.cpp
 	renderer/resource/texture.cpp
 	renderer/system/texture_system.cpp
 	renderer/command_buffer.cpp
 	renderer/device.cpp
 	renderer/fence.cpp
 	renderer/framebuffer.cpp
+	renderer/pipeline.cpp
 	renderer/render_pass.cpp
 	renderer/renderer.cpp
 	renderer/swapchain.cpp
 	renderer/vulkan_backend.cpp
 	renderer/vulkan_buffer.cpp
 	renderer/vulkan_image.cpp
+	util/string_utils.cpp
 )
 list(TRANSFORM LISE_SOURCES PREPEND "src/")
 
