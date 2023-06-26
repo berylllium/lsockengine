@@ -213,12 +213,12 @@ bool Swapchain::swapchain_present(
 	return true;
 }
 
-SwapchainInfo Swapchain::get_swapchain_info() const
+const SwapchainInfo& Swapchain::get_swapchain_info() const
 {
 	return swapchain_info;
 }
 
-uint32_t Swapchain::get_image_count() const
+const uint32_t& Swapchain::get_image_count() const
 {
 	return image_count;
 }

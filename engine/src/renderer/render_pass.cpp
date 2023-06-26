@@ -112,8 +112,6 @@ RenderPass::RenderPass(RenderPass&& other) : device(other.device), render_area_s
 	render_area_size(other.render_area_size), clear_color(other.clear_color), depth(other.depth),
 	stencil(other.stencil), state(other.state)
 {
-	this->~RenderPass();
-
 	handle = other.handle;
 	other.handle = nullptr;
 }

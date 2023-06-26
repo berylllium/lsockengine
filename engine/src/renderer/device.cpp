@@ -333,6 +333,11 @@ VkPhysicalDeviceMemoryProperties Device::get_memory_properties() const
 	return physical_device_memory_properties;
 }
 
+VkPhysicalDeviceProperties Device::get_properties() const
+{
+	return physical_device_properties;
+}
+
 DeviceQueueIndices Device::get_queue_indices() const
 {
 	return queue_indices;

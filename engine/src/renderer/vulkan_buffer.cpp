@@ -1,6 +1,6 @@
 #include "renderer/vulkan_buffer.hpp"
 
-//#include <string.h>
+#include <cstring>
 
 #include "core/logger.hpp"
 #include "renderer/command_buffer.hpp"

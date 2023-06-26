@@ -51,6 +51,7 @@ public:
 	operator VkPhysicalDevice() const;
 
 	VkPhysicalDeviceMemoryProperties get_memory_properties() const;
+	VkPhysicalDeviceProperties get_properties() const;
 
 	DeviceQueueIndices get_queue_indices() const;
 

@@ -47,9 +47,9 @@ public:
 
 	bool swapchain_present(VkSemaphore render_complete_semaphore, uint32_t present_image_index);
 
-	SwapchainInfo get_swapchain_info() const;
+	const SwapchainInfo& get_swapchain_info() const;
 
-	uint32_t get_image_count() const;
+	const uint32_t& get_image_count() const;
 
 	uint8_t get_max_frames_in_flight() const;
 

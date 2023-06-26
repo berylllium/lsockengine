@@ -18,6 +18,7 @@ set(LISE_HEADERS
 	renderer/resource/shader_stage.hpp
 	renderer/resource/shader.hpp
 	renderer/resource/texture.hpp
+	renderer/system/shader_system.hpp
 	renderer/system/texture_system.hpp
 	renderer/command_buffer.hpp
 	renderer/device.hpp
@@ -50,6 +51,7 @@ set(LISE_SOURCES
 	renderer/resource/shader_stage.cpp
 	renderer/resource/shader.cpp
 	renderer/resource/texture.cpp
+	renderer/system/shader_system.cpp
 	renderer/system/texture_system.cpp
 	renderer/command_buffer.cpp
 	renderer/device.cpp

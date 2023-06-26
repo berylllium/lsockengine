@@ -9,14 +9,10 @@ namespace lise
 Pipeline::Pipeline(
 	const Device& device,
 	const RenderPass& render_pass,
-	uint32_t attribute_count,
-	VkVertexInputAttributeDescription* attributes,
-	uint32_t descriptor_set_layout_count,
-	VkDescriptorSetLayout* descriptor_set_layouts,
-	uint32_t shader_stage_count,
-	VkPipelineShaderStageCreateInfo* shader_stages,
-	uint32_t push_constant_count,
-	VkPushConstantRange* push_constant_ranges,
+	std::vector<VkVertexInputAttributeDescription>& attributes,
+	std::vector<VkDescriptorSetLayout>& descriptor_set_layouts,
+	std::vector<VkPipelineShaderStageCreateInfo>& shader_stages,
+	std::vector<VkPushConstantRange>& push_constant_ranges,
 	VkViewport viewport,
 	VkRect2D scissor,
 	bool is_wireframe
@@ -105,8 +101,8 @@ Pipeline::Pipeline(
 	vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	vertex_input_info.vertexBindingDescriptionCount = 1;
 	vertex_input_info.pVertexBindingDescriptions = &binding_description;
-	vertex_input_info.vertexAttributeDescriptionCount = attribute_count;
-	vertex_input_info.pVertexAttributeDescriptions = attributes;
+	vertex_input_info.vertexAttributeDescriptionCount = attributes.size();
+	vertex_input_info.pVertexAttributeDescriptions = attributes.data();
 
 	// Input assembly
 	VkPipelineInputAssemblyStateCreateInfo input_assembly = {};
@@ -119,12 +115,12 @@ Pipeline::Pipeline(
 	pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
 	// Push constants
-	pipeline_layout_create_info.pushConstantRangeCount = push_constant_count;
-	pipeline_layout_create_info.pPushConstantRanges = push_constant_ranges;
+	pipeline_layout_create_info.pushConstantRangeCount = push_constant_ranges.size();
+	pipeline_layout_create_info.pPushConstantRanges = push_constant_ranges.data();
 
 	// Descriptor set layouts
-	pipeline_layout_create_info.setLayoutCount = descriptor_set_layout_count;
-	pipeline_layout_create_info.pSetLayouts = descriptor_set_layouts;
+	pipeline_layout_create_info.setLayoutCount = descriptor_set_layouts.size();
+	pipeline_layout_create_info.pSetLayouts = descriptor_set_layouts.data();
 
 	// Create the pipeline layout.
 	if (vkCreatePipelineLayout(device, &pipeline_layout_create_info, NULL, &pipeline_layout) != VK_SUCCESS)
@@ -136,8 +132,8 @@ Pipeline::Pipeline(
 	// Pipeline create
 	VkGraphicsPipelineCreateInfo pipeline_create_info = {};
 	pipeline_create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipeline_create_info.stageCount = shader_stage_count;
-	pipeline_create_info.pStages = shader_stages;
+	pipeline_create_info.stageCount = shader_stages.size();
+	pipeline_create_info.pStages = shader_stages.data();
 	pipeline_create_info.pVertexInputState = &vertex_input_info;
 	pipeline_create_info.pInputAssemblyState = &input_assembly;
 

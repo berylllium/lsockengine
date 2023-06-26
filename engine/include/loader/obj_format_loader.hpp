@@ -11,7 +11,6 @@
 
 #include <string>
 #include <string_view>
-#include <memory>
 #include <vector>
 
 #include "definitions.hpp"
@@ -35,15 +34,11 @@ struct ObjFormatLine
 	 * @brief The "type" of the line. The type is the first token in a line.
 	 */
 	std::string type;
-	/**
-	 * @brief The amount of tokens pointed to by the \ref tokens member.
-	 */
-	uint64_t token_count;
 
 	/**
 	 * @brief An array of pointers that point to the tokens within the allocation pointed to by the \ref line member.
 	 */
-	std::unique_ptr<std::string[]> tokens;
+	std::vector<std::string> tokens;
 };
 
 /**
@@ -52,14 +47,9 @@ struct ObjFormatLine
 struct ObjFormat
 {
 	/**
-	 * @brief The amount of lines pointed to by the \ref lines member.
-	 */
-	uint64_t line_count;
-
-	/**
 	 * @brief An array of \ref lise_obj_format_line s.
 	 */
-	std::unique_ptr<ObjFormatLine[]> lines;
+	std::vector<ObjFormatLine> lines;
 };
 
 /**
@@ -83,13 +73,13 @@ bool obj_format_load(const std::string& path, ObjFormat& out_obj_format);
  * 
  * @return A vector of pointers to the found lines.
  */
-std::vector<ObjFormatLine*> obj_format_get_line(
+std::vector<const ObjFormatLine*> obj_format_get_line(
 	const ObjFormat& obj_format,
 	const std::string& type, 
 	const std::string& parent_type,
 	const std::string& parent_token
 );
 
-std::vector<ObjFormatLine*> obj_format_get_line(const ObjFormat& obj_format, const std::string& type);
+std::vector<const ObjFormatLine*> obj_format_get_line(const ObjFormat& obj_format, const std::string& type);
 
 }

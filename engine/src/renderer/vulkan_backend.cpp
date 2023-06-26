@@ -8,6 +8,7 @@
 #include "renderer/vulkan_platform.hpp"
 
 #include "renderer/system/texture_system.hpp"
+#include "renderer/system/shader_system.hpp"
 
 namespace lise
 {
@@ -34,6 +35,8 @@ static std::vector<Fence> in_flight_fences;
 static std::vector<Fence*> images_in_flight;
 
 static uint32_t current_image_index;
+
+static const Shader* object_shader;
 
 static VulkanBuffer* object_vertex_buffer;
 static VulkanBuffer* object_index_buffer;
@@ -217,12 +220,36 @@ bool vulkan_initialize(const char* application_name)
 		return false;
 	}
 
+	if (!shader_system_initialize(
+		*device,
+		*render_pass,
+		swapchain->get_swapchain_info().swapchain_extent.width,
+		swapchain->get_swapchain_info().swapchain_extent.height,
+		swapchain->get_image_count()
+	))
+	{
+		LFATAL("Failed to initialize the vulkan renderer shader subsystem.");
+		return false;
+	}
+
+	// Load default shaders.
+	object_shader = shader_system_load("assets/shaders/builtin.object_shader.scfg");
+
+	if (object_shader == nullptr)
+	{
+		LFATAL("Failed to load the object shader.");
+		
+		return false;
+	}
+
 	return true;
 }
 
 void vulkan_shutdown()
 {
 	vkDeviceWaitIdle(*device);
+
+	shader_system_shutdown();
 
 	texture_system_shutdown(*device);
 

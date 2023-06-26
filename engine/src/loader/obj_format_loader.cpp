@@ -1,8 +1,5 @@
 #include "loader/obj_format_loader.hpp"
 
-//#include <stdlib.h>
-//#include <stdio.h>
-//#include <string.h>
 #include <fstream>
 
 #include "core/logger.hpp"
@@ -23,8 +20,6 @@ bool obj_format_load(const std::string& path, ObjFormat& out_obj_format)
 		LERROR("The obj formatter failed to open the following file: `%s`.", path);
 		return false;
 	}
-
-	std::vector<ObjFormatLine> tokenized_lines;
 
 	std::string line;
 	while (std::getline(file, line))
@@ -50,59 +45,46 @@ bool obj_format_load(const std::string& path, ObjFormat& out_obj_format)
 		if (valid_token_count == 0) continue; // Entire line is comment.
 
 		current_line.type = std::move(tokens[0]);
-		current_line.token_count = valid_token_count - 1;
+		uint64_t token_count = valid_token_count - 1;
 
-		if (current_line.token_count > 0)
+		if (token_count > 0)
 		{
-			current_line.tokens = std::make_unique<std::string[]>(current_line.token_count);
+			current_line.tokens.resize(token_count);
 
-			for (size_t i = 0; i < current_line.token_count - 1; i++)
+			for (size_t i = 0; i < token_count; i++)
 			{
-				current_line.tokens[i] = std::move(tokens[i + 0]);
+				current_line.tokens[i] = tokens[i + 1];
 			}
 		}
 
-		tokenized_lines.push_back(std::move(current_line));
-	}
-
-	// Populate the out_obj_format.
-	out_obj_format.line_count = tokenized_lines.size();
-
-	if (out_obj_format.line_count > 0)
-	{
-		out_obj_format.lines = std::make_unique<ObjFormatLine[]>(out_obj_format.line_count);
-
-		for (size_t i = 0; i < out_obj_format.line_count; i++)
-		{
-			out_obj_format.lines[i] = std::move(tokenized_lines[i]);
-		}
+		out_obj_format.lines.push_back(std::move(current_line));
 	}
 
 	return true;
 }
 
-std::vector<ObjFormatLine*> obj_format_get_line(
+std::vector<const ObjFormatLine*> obj_format_get_line(
 	const ObjFormat& obj_format,
 	const std::string& type, 
 	const std::string& parent_type,
 	const std::string& parent_token
 )
 {
-	std::vector<ObjFormatLine*> found_lines;
+	std::vector<const ObjFormatLine*> found_lines;
 
 	bool check_for_preceding_parent = !parent_type.empty() && !parent_token.empty();
 
 	bool parent_has_preceded = false;
 
 	// Iterate through all te lines.
-	for (uint64_t i = 0; i < obj_format.line_count; i++)
+	for (uint64_t i = 0; i < obj_format.lines.size(); i++)
 	{
 		if (type == obj_format.lines[i].type)
 		{
 			// The types match.
 			if (check_for_preceding_parent && !parent_has_preceded) continue;
 
-			ObjFormatLine* line_addr = &obj_format.lines[i];
+			const ObjFormatLine* line_addr = &(obj_format.lines[i]);
 			found_lines.push_back(line_addr);
 		}
 		else if (check_for_preceding_parent)
@@ -119,7 +101,7 @@ std::vector<ObjFormatLine*> obj_format_get_line(
 				else
 				{
 					// The parent candidate has no tokens. This invalidated the parent.
-					if (obj_format.lines[i].token_count == 0) continue;
+					if (obj_format.lines[i].tokens.size() == 0) continue;
 
 					if (parent_token == obj_format.lines[i].tokens[0])
 					{
@@ -135,7 +117,7 @@ std::vector<ObjFormatLine*> obj_format_get_line(
 	return found_lines;
 }
 
-std::vector<ObjFormatLine*> obj_format_get_line(const ObjFormat& obj_format, const std::string& type)
+std::vector<const ObjFormatLine*> obj_format_get_line(const ObjFormat& obj_format, const std::string& type)
 {
 	return obj_format_get_line(obj_format, type, "", "");
 }

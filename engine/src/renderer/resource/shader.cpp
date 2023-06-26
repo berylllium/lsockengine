@@ -20,35 +20,22 @@ static uint64_t get_attribute_format_size(VkFormat format);
 
 Shader::Shader(
 	const Device& device,
-	VkPhysicalDeviceMemoryProperties memory_properties,
-	uint64_t minimum_uniform_alignment,
 	const ShaderConfig& shader_config,
 	const RenderPass& render_pass, // TODO: Temporary, add a render pass system.
 	uint32_t framebuffer_width,
 	uint32_t framebuffer_height,
 	uint32_t swapchain_image_count
 ) : device(device), name(shader_config.name), swapchain_image_count(swapchain_image_count),
-	minimum_uniform_alignment(minimum_uniform_alignment)
+	minimum_uniform_alignment(device.get_properties().limits.minUniformBufferOffsetAlignment)
 {
-//	// Define macro for freeing the dynamic resources used in the function. Just so the code isn't so cluttered.
-//	#define FREE_F \
-//		shader_destroy(device, out_shader); \
-//		for (uint32_t i = 0; i < shader_config.stage_count; i++) \
-//		{ \
-//			shader_stage_destroy(device, &shader_stages[i]); \
-//		} \
-//		free(shader_stages); \
-//		free(shader_stage_cis); \
-//		shader_config_free(&shader_config);
-
 	// Create the shader stages.
 	std::vector<ShaderStage> shader_stages;
-	shader_stages.reserve(shader_config.stage_count);
+	shader_stages.reserve(shader_config.stage_names.size());
 
-	std::unique_ptr<VkPipelineShaderStageCreateInfo[]> shader_stage_cis =
-		std::make_unique<VkPipelineShaderStageCreateInfo[]>(shader_config.stage_count);
+	std::vector<VkPipelineShaderStageCreateInfo> shader_stage_cis;
+	shader_stage_cis.resize(shader_config.stage_names.size());
 
-	for (uint64_t i = 0; i < shader_config.stage_count; i++)
+	for (uint64_t i = 0; i < shader_config.stage_names.size(); i++)
 	{
 		VkShaderStageFlagBits stage_flag;
 
@@ -73,6 +60,7 @@ Shader::Shader(
 		
 		try
 		{
+			//std::string file_name = shader_config.stage_file_names[i];
 			shader_stages.emplace_back(device, shader_config.stage_file_names[i], stage_flag);
 		}
 		catch(std::exception e)
@@ -89,19 +77,15 @@ Shader::Shader(
 	bool global_has_uniform = false;
 	bool global_has_sampler = false;
 	uint64_t global_uniform_total_size = 0;
-	std::vector<ShaderUniform> g_uniforms;
-	std::vector<ShaderUniform> g_samplers;
 
 	bool instance_has_uniform = false;
 	bool instance_has_sampler = false;
 	uint64_t instance_uniform_total_size = 0;
-	std::vector<ShaderUniform> i_uniforms;
-	std::vector<ShaderUniform> i_samplers;
 
 	uint64_t local_uniform_total_size = 0;
-	std::vector<ShaderUniform> l_uniforms;
+	std::vector<ShaderUniform> local_uniforms;
 
-	for (uint64_t i = 0; i < shader_config.uniform_count; i++)
+	for (uint64_t i = 0; i < shader_config.uniforms.size(); i++)
 	{
 		ShaderUniform uniform;
 
@@ -117,7 +101,7 @@ Shader::Shader(
 		case ShaderScope::GLOBAL:
 			uniform.offset = global_uniform_total_size;
 
-			g_uniforms.push_back(std::move(uniform));
+			global_uniforms.push_back(std::move(uniform));
 
 			if (uniform.type == ShaderUniformType::SAMPLER)
 			{
@@ -135,12 +119,12 @@ Shader::Shader(
 
 			if (uniform.type == ShaderUniformType::SAMPLER)
 			{
-				i_samplers.push_back(std::move(uniform));
+				instance_samplers.push_back(std::move(uniform));
 				instance_has_sampler = true;
 			}
 			else
 			{
-				i_uniforms.push_back(std::move(uniform));
+				instance_uniforms.push_back(std::move(uniform));
 				instance_has_uniform = true;
 			}
 
@@ -149,7 +133,7 @@ Shader::Shader(
 		case ShaderScope::LOCAL:
 			uniform.offset = local_uniform_total_size;
 
-			l_uniforms.push_back(std::move(uniform));
+			local_uniforms.push_back(std::move(uniform));
 
 			local_uniform_total_size += uniform.size;
 			break;
@@ -162,56 +146,33 @@ Shader::Shader(
 	instance_ubo_stride = align(instance_ubo_size, minimum_uniform_alignment);
 	global_ubo_stride = align(global_ubo_size, minimum_uniform_alignment);
 
-	// Copy over uniforms to out_shader.
-	out_shader->global_uniform_count = global_uniforms.size;
-	out_shader->global_uniforms = malloc(global_uniforms.size * sizeof(shader_uniform));
-	memcpy(out_shader->global_uniforms, global_uniforms.data, global_uniforms.size * sizeof(shader_uniform));
-
-	out_shader->instance_uniform_count = instance_uniforms.size;
-	out_shader->instance_uniforms = malloc(instance_uniforms.size * sizeof(shader_uniform));
-	memcpy(out_shader->instance_uniforms, instance_uniforms.data, instance_uniforms.size * sizeof(shader_uniform));
-
-	out_shader->instance_sampler_count = instance_samplers.size;
-	out_shader->instance_samplers = malloc(instance_samplers.size * sizeof(shader_uniform));
-	memcpy(out_shader->instance_samplers, instance_samplers.data, instance_samplers.size * sizeof(shader_uniform));
-
-	// Free the darrays.
-	blib_darray_free(&global_uniforms);
-	blib_darray_free(&instance_uniforms);
-	blib_darray_free(&instance_samplers);
-
 	// Create global descriptor set layout.
-	blib_darray global_set_bindings = blib_darray_create(VkDescriptorSetLayoutBinding);
+	std::vector<VkDescriptorSetLayoutBinding> global_set_bindings;
 
 	if (global_has_uniform)
 	{
 		VkDescriptorSetLayoutBinding binding = {};
-		binding.binding = global_set_bindings.size;
+		binding.binding = global_set_bindings.size();
 		binding.descriptorCount = 1;
 		binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; // TODO: Make configurable.
 
-		blib_darray_push_back(&global_set_bindings, &binding);
+		global_set_bindings.push_back(binding);
 	}
 
 	// TODO: Handle global samplers.
 
 	VkDescriptorSetLayoutCreateInfo global_layout_ci = {};
 	global_layout_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	global_layout_ci.bindingCount = global_set_bindings.size;
-	global_layout_ci.pBindings = global_set_bindings.data;
+	global_layout_ci.bindingCount = global_set_bindings.size();
+	global_layout_ci.pBindings = global_set_bindings.data();
 
-	if (vkCreateDescriptorSetLayout(device, & global_layout_ci, NULL, &out_shader->global_descriptor_set_layout)
-		!= VK_SUCCESS
-	)
+	if (vkCreateDescriptorSetLayout(device, & global_layout_ci, NULL, &global_descriptor_set_layout) != VK_SUCCESS)
 	{
 		LERROR("Failed to create global descriptor set layout.");
 
-		FREE_F
-		return false;
+		throw std::exception();
 	}
-
-	blib_darray_free(&global_set_bindings);
 
 	// Create global descriptor pool.
 	VkDescriptorPoolSize global_pool_size;
@@ -224,92 +185,83 @@ Shader::Shader(
 	global_pool_ci.pPoolSizes = &global_pool_size;
 	global_pool_ci.maxSets = swapchain_image_count;
 
-	if (vkCreateDescriptorPool(device, &global_pool_ci, NULL, &out_shader->global_descriptor_pool) != VK_SUCCESS)
+	if (vkCreateDescriptorPool(device, &global_pool_ci, NULL, &global_descriptor_pool) != VK_SUCCESS)
 	{
 		LERROR("Failed to create global descriptor pool.");
 		
-		FREE_F
-		return false;
+		throw std::exception();
 	}
 
 	// Create instance descriptor set layout.
-	blib_darray instance_set_bindings = blib_darray_create(VkDescriptorSetLayoutBinding);
+	std::vector<VkDescriptorSetLayoutBinding> instance_set_bindings;
 
 	if (instance_has_uniform)
 	{
 		VkDescriptorSetLayoutBinding binding = {};
-		binding.binding = instance_set_bindings.size;
+		binding.binding = instance_set_bindings.size();
 		binding.descriptorCount = 1;
 		binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT; // TODO: Make configurable.
 
-		blib_darray_push_back(&instance_set_bindings, &binding);
+		instance_set_bindings.push_back(binding);
 	}
 	
 	if (instance_has_sampler)
 	{
 		VkDescriptorSetLayoutBinding binding = {};
-		binding.binding = instance_set_bindings.size;
+		binding.binding = instance_set_bindings.size();
 		binding.descriptorCount = 1;
 		binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT; // TODO: Make configurable.
 
-		blib_darray_push_back(&instance_set_bindings, &binding);
+		instance_set_bindings.push_back(binding);
 	}
 
 	VkDescriptorSetLayoutCreateInfo instance_layout_ci = {};
 	instance_layout_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	instance_layout_ci.bindingCount = instance_set_bindings.size;
-	instance_layout_ci.pBindings = blib_darray_get(&instance_set_bindings, 0);
+	instance_layout_ci.bindingCount = instance_set_bindings.size();
+	instance_layout_ci.pBindings = instance_set_bindings.data();
 
-	if (vkCreateDescriptorSetLayout(device, &instance_layout_ci, NULL, &out_shader->instance_descriptor_set_layout)
-		!= VK_SUCCESS
-	)
+	if (vkCreateDescriptorSetLayout(device, &instance_layout_ci, NULL, &instance_descriptor_set_layout) != VK_SUCCESS)
 	{
 		LERROR("Failed to create instance descriptor set layout.");
 
-		FREE_F
-		return false;
+		throw std::exception();
 	}
 
-	VkDescriptorPoolSize* instance_sizes = malloc(instance_set_bindings.size * sizeof(VkDescriptorPoolSize));
+	std::unique_ptr<VkDescriptorPoolSize[]> instance_sizes =
+		std::make_unique<VkDescriptorPoolSize[]>(instance_set_bindings.size());
 
-	for (uint64_t i = 0; i < instance_set_bindings.size; i++)
+	for (uint64_t i = 0; i < instance_set_bindings.size(); i++)
 	{
-		instance_sizes[i].type =
-			((VkDescriptorSetLayoutBinding*) blib_darray_get(&instance_set_bindings, i))->descriptorType;
+		instance_sizes[i].type = instance_set_bindings[i].descriptorType;
 		instance_sizes[i].descriptorCount = LSHADER_MAX_INSTANCE_COUNT; // TODO: Add caluclation for exact dCount.
 	}
 
 	VkDescriptorPoolCreateInfo instance_pool_ci = {};
 	instance_pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	instance_pool_ci.poolSizeCount = instance_set_bindings.size;
-	instance_pool_ci.pPoolSizes = instance_sizes;
+	instance_pool_ci.poolSizeCount = instance_set_bindings.size();
+	instance_pool_ci.pPoolSizes = instance_sizes.get();
 	instance_pool_ci.maxSets = LSHADER_MAX_INSTANCE_COUNT;
 
-	if (vkCreateDescriptorPool(device, &instance_pool_ci, NULL, &out_shader->instance_descriptor_pool) != VK_SUCCESS)
+	if (vkCreateDescriptorPool(device, &instance_pool_ci, NULL, &instance_descriptor_pool) != VK_SUCCESS)
 	{
 		LERROR("Failed to create instance descriptor pool.");
 
-		FREE_F
-		return false;
+		throw std::exception();
 	}
-
-	blib_darray_free(&instance_set_bindings);
 
 	// Push constants / Local uniforms.
-	uint32_t push_constant_count = local_uniforms.size;
-	VkPushConstantRange* push_constant_ranges = malloc(local_uniforms.size * sizeof(VkPushConstantRange));
+	uint32_t push_constant_count = local_uniforms.size();
+	std::vector<VkPushConstantRange> push_constant_ranges;
+	push_constant_ranges.resize(local_uniforms.size());
 
-	for (uint32_t i = 0; i < local_uniforms.size; i++)
+	for (uint32_t i = 0; i < local_uniforms.size(); i++)
 	{
-		shader_uniform* pc = ((shader_uniform*) blib_darray_get(&local_uniforms, i));
 		push_constant_ranges[i].stageFlags = VK_SHADER_STAGE_VERTEX_BIT; // TODO: Make configurable.
-		push_constant_ranges[i].size = pc->size;
-		push_constant_ranges[i].offset = pc->offset;
+		push_constant_ranges[i].size = local_uniforms[i].size;
+		push_constant_ranges[i].offset = local_uniforms[i].offset;
 	}
-
-	blib_darray_free(&local_uniforms);
 
 	// Pipeline creation
 	VkViewport viewport;
@@ -327,14 +279,13 @@ Shader::Shader(
 	scissor.extent.height = framebuffer_height;
 
 	// Vertex attributes
-	VkVertexInputAttributeDescription* attribs =
-		malloc(shader_config.attribute_count * sizeof(VkVertexInputAttributeDescription));
+	std::vector<VkVertexInputAttributeDescription> attribs;
+	attribs.resize(shader_config.attributes.size());
 	
-	out_shader->vertex_attribute_count = shader_config.attribute_count;
-	out_shader->vertex_attributes = malloc(shader_config.attribute_count * sizeof(shader_attribute));
+	vertex_attributes.resize(shader_config.attributes.size());
 	
 	uint32_t offset = 0;
-	for (uint32_t i = 0; i < shader_config.attribute_count; i++)
+	for (uint32_t i = 0; i < shader_config.attributes.size(); i++)
 	{
 		attribs[i].binding = 0;
 		attribs[i].location = i;
@@ -345,210 +296,202 @@ Shader::Shader(
 
 		offset += attrib_size;
 
-		out_shader->vertex_attributes[i].name = strdup(shader_config.attributes[i].name);
-		out_shader->vertex_attributes[i].type = attribs[i].format;
-		out_shader->vertex_attributes[i].size = attrib_size;
+		vertex_attributes[i].name = shader_config.attributes[i].name;
+		vertex_attributes[i].type = attribs[i].format;
+		vertex_attributes[i].size = attrib_size;
 	}
 
 	// Create pipeline.
-	VkDescriptorSetLayout set_layouts[2] = {
-		out_shader->global_descriptor_set_layout,
-		out_shader->instance_descriptor_set_layout
+	std::vector<VkDescriptorSetLayout> set_layouts = {
+		global_descriptor_set_layout,
+		instance_descriptor_set_layout
 	};
 
-	if (!pipeline_create(
-		device,
-		render_pass,
-		shader_config.attribute_count,
-		attribs,
-		2,
-		set_layouts,
-		shader_config.stage_count,
-		shader_stage_cis,
-		push_constant_count,
-		push_constant_ranges,
-		viewport,
-		scissor,
-		false,
-		&out_shader->pipeline
-	))
+	try
+	{
+		pipeline = new Pipeline(
+			device,
+			render_pass,
+			attribs,
+			set_layouts,
+			shader_stage_cis,
+			push_constant_ranges,
+			viewport,
+			scissor,
+			false
+		);
+	}
+	catch (std::exception e)
 	{
 		LERROR("Failed to create graphics pipeline.");
 
-		FREE_F
-		return false;
+		throw std::exception();
 	}
 
 	// Allocate the global uniform buffer object.
-	if (!vulkan_buffer_create(
-		device,
-		memory_properties,
-		out_shader->global_ubo_stride * swapchain_image_count, // We use the stride, not the total size.
-		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		true,
-		&out_shader->global_ub
-	))
+	try
+	{
+		global_ub = new VulkanBuffer(
+			device,
+			device.get_memory_properties(),
+			global_ubo_stride * swapchain_image_count, // We use the stride, not the total size.
+			static_cast<VkBufferUsageFlagBits>(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT),
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			true
+		);
+	}
+	catch (std::exception e)
 	{
 		LERROR("Failed to allocate the global uniform buffer object.");
 
-		FREE_F
-		return false;
+		throw std::exception();
 	}
 
 	// Allocate global descriptor sets.
-	VkDescriptorSetLayout* global_set_layouts = malloc(swapchain_image_count * sizeof(VkDescriptorSetLayout));
+	std::vector<VkDescriptorSetLayout> global_set_layouts(swapchain_image_count);
 
 	for (uint32_t i = 0; i < swapchain_image_count; i++)
 	{
-		global_set_layouts[i] = out_shader->global_descriptor_set_layout;
+		global_set_layouts[i] = global_descriptor_set_layout;
 	}
 
 	VkDescriptorSetAllocateInfo global_set_allocate_info = {};
 	global_set_allocate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	global_set_allocate_info.descriptorPool = out_shader->global_descriptor_pool;
+	global_set_allocate_info.descriptorPool = global_descriptor_pool;
 	global_set_allocate_info.descriptorSetCount = swapchain_image_count;
-	global_set_allocate_info.pSetLayouts = global_set_layouts;
+	global_set_allocate_info.pSetLayouts = global_set_layouts.data();
 
-	out_shader->global_descriptor_sets = malloc(swapchain_image_count * sizeof(VkDescriptorSet));
-	if (vkAllocateDescriptorSets(device, &global_set_allocate_info, out_shader->global_descriptor_sets) != VK_SUCCESS)
+	global_descriptor_sets.reserve(swapchain_image_count);
+	if (vkAllocateDescriptorSets(device, &global_set_allocate_info, global_descriptor_sets.data()) != VK_SUCCESS)
 	{
 		LERROR("Failed to allocate global descriptor sets.");
 
-		FREE_F
-		return false;
+		throw std::exception();
 	}
 
 	// Setup the descriptors to point to the corrosponding location in the global uniform buffer.
-	VkDescriptorBufferInfo* global_descriptor_buffer_infos =
-		malloc(swapchain_image_count * sizeof(VkDescriptorBufferInfo));
+	std::vector<VkDescriptorBufferInfo> global_descriptor_buffer_infos(swapchain_image_count);
 
-	VkWriteDescriptorSet* global_descriptor_writes = calloc(swapchain_image_count, sizeof(VkWriteDescriptorSet));
+	std::vector<VkWriteDescriptorSet> global_descriptor_writes(swapchain_image_count);
 
 	for (uint32_t i = 0; i < swapchain_image_count; i++)
 	{
-		global_descriptor_buffer_infos[i].buffer = out_shader->global_ub.handle;
-		global_descriptor_buffer_infos[i].offset = i * out_shader->global_ubo_stride;
+		global_descriptor_buffer_infos[i].buffer = *global_ub;
+		global_descriptor_buffer_infos[i].offset = i * global_ubo_stride;
 		global_descriptor_buffer_infos[i].range = global_uniform_total_size;
 
+		global_descriptor_writes[i] = {};
 		global_descriptor_writes[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		global_descriptor_writes[i].dstSet = out_shader->global_descriptor_sets[i];
+		global_descriptor_writes[i].dstSet = global_descriptor_sets[i];
 		global_descriptor_writes[i].dstBinding = 0;
 		global_descriptor_writes[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		global_descriptor_writes[i].descriptorCount = 1;
 		global_descriptor_writes[i].pBufferInfo = &global_descriptor_buffer_infos[i];
 	}
 
-	vkUpdateDescriptorSets(device, swapchain_image_count, global_descriptor_writes, 0, NULL);
-
-	free(global_descriptor_buffer_infos);
-	free(global_descriptor_writes);
+	vkUpdateDescriptorSets(device, swapchain_image_count, global_descriptor_writes.data(), 0, NULL);
 
 	// Set global ubos to be dirty.
-	out_shader->global_ubo_dirty = malloc(swapchain_image_count * sizeof(bool));
-	memset(out_shader->global_ubo_dirty, true, swapchain_image_count * sizeof(bool));
-
-	// Update descriptors to point to the correct region within the global uniform buffer.
-	VkWriteDescriptorSet* global_set_writes = malloc(swapchain_image_count * sizeof(VkWriteDescriptorSet));
+	global_ubo_dirty.resize(swapchain_image_count, true);
 
 	// Allocate the instance uniform buffer.
-	if (!vulkan_buffer_create(
-		device,
-		memory_properties,
-		instance_uniform_total_size * LSHADER_MAX_INSTANCE_COUNT * swapchain_image_count,
-		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-		VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		true,
-		&out_shader->instance_ub
-	))
+	try
+	{
+		instance_ub = new VulkanBuffer(
+			device,
+			device.get_memory_properties(),
+			instance_uniform_total_size * LSHADER_MAX_INSTANCE_COUNT * swapchain_image_count,
+			static_cast<VkBufferUsageFlagBits>(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT),
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+			VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			true
+		);
+	}
+	catch (std::exception e)
 	{
 		LERROR("Failed to create the object unbiform buffer.");
 
-		FREE_F
-		return false;
+		throw std::exception();
 	}
 
 	// Allocate the instance uniform buffer object free list.
-	out_shader->instance_ubo_free_list = malloc(LSHADER_MAX_INSTANCE_COUNT * sizeof(bool));
-
-	// Set free state of all available slots to true.
-	memset(out_shader->instance_ubo_free_list, true, LSHADER_MAX_INSTANCE_COUNT * sizeof(bool));
-
-	// Free stuff.
-	free(attribs);
-	free(push_constant_ranges);
-	free(global_set_layouts);
-
-	for (uint32_t i = 0; i < shader_config.stage_count; i++)
-	{
-		shader_stage_destroy(device, &shader_stages[i]);
-	}
-
-	free(shader_stage_cis);
-	free(shader_stages);
-
-	shader_config_free(&shader_config);
-
-	return true;
+	instance_ubo_free_list.resize(LSHADER_MAX_INSTANCE_COUNT, true);
 }
 
-void shader_destroy(VkDevice device, shader* shader)
+Shader::~Shader()
 {
-	// Free the uniform buffers.
-	vulkan_buffer_destroy(device, &shader->global_ub);
-	vulkan_buffer_destroy(device, &shader->instance_ub);
-	free(shader->instance_ubo_free_list);
-	free(shader->global_ubo_dirty);
-
 	// Free the pipeline.
-	pipeline_destroy(device, &shader->pipeline);
+	delete pipeline;
+	
+	delete global_ub;
+
+	delete instance_ub;
 
 	// Destroy the descriptor pools.
-	vkDestroyDescriptorPool(device, shader->global_descriptor_pool, NULL);
-	vkDestroyDescriptorPool(device, shader->instance_descriptor_pool, NULL);
+	vkDestroyDescriptorPool(device, global_descriptor_pool, NULL);
+	vkDestroyDescriptorPool(device, instance_descriptor_pool, NULL);
 
 	// Destroy the descriptor set layouts.
-	vkDestroyDescriptorSetLayout(device, shader->global_descriptor_set_layout, NULL);
-	vkDestroyDescriptorSetLayout(device, shader->instance_descriptor_set_layout, NULL);
-
-	// Free remaining pointers.
-	free(shader->name);
-
-	free(shader->vertex_attributes);
-
-	free(shader->global_uniforms);
-	free(shader->instance_uniforms);
-	free(shader->instance_samplers);
+	vkDestroyDescriptorSetLayout(device, global_descriptor_set_layout, NULL);
+	vkDestroyDescriptorSetLayout(device, instance_descriptor_set_layout, NULL);
 }
 
-void shader_use(shader* shader, VkCommandBuffer command_buffer, uint32_t current_image)
+void Shader::use(CommandBuffer& command_buffer, uint32_t current_image)
 {
 	vkCmdBindDescriptorSets(
 		command_buffer,
 		VK_PIPELINE_BIND_POINT_GRAPHICS,
-		shader->pipeline.pipeline_layout,
+		pipeline->get_layout(),
 		0,
 		1,
-		&shader->global_descriptor_sets[current_image],
+		&global_descriptor_sets[current_image],
 		0,
 		NULL
 	);
 
-	pipeline_bind(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, &shader->pipeline);
+	pipeline->bind(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
-bool shader_allocate_instance(VkDevice device, shader* shader, shader_instance* out_instance)
+void Shader::set_global_ubo(void* data)
 {
+	global_ubo = data;
+	
+	// Set ubos to be dirty.
+	for (size_t i = 0; i < swapchain_image_count; i++)
+	{
+		global_ubo_dirty[i] = true;
+	}
+}
+
+void Shader::update_global_uniforms(uint32_t current_image)
+{
+	// Uniform buffers.
+	if (global_ubo_dirty[current_image])
+	{
+		global_ub->load_data(
+			current_image * global_ubo_stride,
+			global_ubo_size,
+			0,
+			global_ubo
+		);
+
+		// Undirty ubo.
+		global_ubo_dirty[current_image] = false;
+	}
+}
+
+const Shader::Instance* Shader::allocate_instance()
+{
+	Instance out_instance;
+
 	// Iterate the free list and pick a free spot.
 	bool slot_found = false;
 	uint64_t id;
 
-	uint32_t q = 0;
-
 	for (uint64_t i = 0; i < LSHADER_MAX_INSTANCE_COUNT; i++)
 	{
-		if (shader->instance_ubo_free_list[i])
+		if (instance_ubo_free_list[i])
 		{
 			id = i;
 			slot_found = true;
@@ -558,226 +501,173 @@ bool shader_allocate_instance(VkDevice device, shader* shader, shader_instance* 
 
 	if (!slot_found)
 	{
-		LERROR("Failed to find a free slot in the instance uniform buffer of shader `%s`.", shader->name);
-		return false;
+		LERROR("Failed to find a free slot in the instance uniform buffer of shader `%s`.", name);
+
+		return nullptr;
 	}
 
 	// Claim slot.
-	shader->instance_ubo_free_list[id] = false;
-	out_instance->id = id;
+	instance_ubo_free_list[id] = false;
+	out_instance.id = id;
 
 	// Allocate arrays.
-	out_instance->descriptor_sets = malloc(shader->swapchain_image_count * sizeof(VkDescriptorSet));
+	out_instance.descriptor_sets.resize(swapchain_image_count);
 
-	out_instance->ubo_dirty = malloc(shader->swapchain_image_count * sizeof(bool));
+	out_instance.ubo_dirty.resize(swapchain_image_count, true);
 
-	if (shader->instance_sampler_count)
+	if (instance_samplers.size() > 0)
 	{
-		out_instance->samplers =
-			malloc(shader->swapchain_image_count * shader->instance_sampler_count * sizeof(texture*));
+		out_instance.samplers.resize(instance_samplers.size(), &texture_system_get_default_texture());
 
-		out_instance->sampler_dirty =
-			malloc(shader->swapchain_image_count * shader->instance_sampler_count * sizeof(bool));
-
-		// Set samplers to default and dirty.
-		for (uint32_t i = 0; i < shader->instance_sampler_count; i++)
-		{
-			out_instance->samplers[i] = texture_system_get_default_texture();
-
-			for (uint32_t j = 0; j < shader->swapchain_image_count; j++)
-			{
-				out_instance->sampler_dirty[i * shader->swapchain_image_count + j] = true;
-			}
-		}
+		out_instance.sampler_dirty.resize(swapchain_image_count * instance_samplers.size(), true);
 	}
-
-	// Set all uniform buffer objects to be dirty.
-	memset(out_instance->ubo_dirty, true, shader->swapchain_image_count * sizeof(bool));
 
 	// Allocate the descriptor sets.
-	VkDescriptorSetLayout* layouts = malloc(shader->swapchain_image_count * sizeof(VkDescriptorSetLayout));
-	for (uint32_t i = 0; i < shader->swapchain_image_count; i++)
-	{
-		layouts[i] = shader->instance_descriptor_set_layout;
-	}
+	std::vector<VkDescriptorSetLayout> layouts(swapchain_image_count, instance_descriptor_set_layout);
 
 	VkDescriptorSetAllocateInfo d_set_ai = {};
 	d_set_ai.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	d_set_ai.descriptorPool = shader->instance_descriptor_pool;
-	d_set_ai.descriptorSetCount = shader->swapchain_image_count;
-	d_set_ai.pSetLayouts = layouts;
+	d_set_ai.descriptorPool = instance_descriptor_pool;
+	d_set_ai.descriptorSetCount = swapchain_image_count;
+	d_set_ai.pSetLayouts = layouts.data();
 
-	VkResult r = vkAllocateDescriptorSets(device, &d_set_ai, out_instance->descriptor_sets);
-
-	free(layouts);
-
-	if (r != VK_SUCCESS)
+	if (vkAllocateDescriptorSets(device, &d_set_ai, out_instance.descriptor_sets.data()) != VK_SUCCESS)
 	{
-		LERROR("Failed to allocate instance descriptor sets for shader `%s`.", shader->name);
+		LERROR("Failed to allocate instance descriptor sets for shader `%s`.", name);
 
-		free(out_instance->descriptor_sets);
-		free(out_instance->ubo_dirty);
-		return false;
+		return nullptr;
 	}
 
 	// Point the descriptors to the corrosponding location in the uniform buffer.
-	VkDescriptorBufferInfo* instance_descriptor_buffer_infos =
-		malloc(shader->swapchain_image_count * sizeof(VkDescriptorBufferInfo));
+	std::vector<VkDescriptorBufferInfo> instance_descriptor_buffer_infos(swapchain_image_count);
+	std::vector<VkWriteDescriptorSet> instance_descriptor_writes(swapchain_image_count);
 
-	VkWriteDescriptorSet* instance_descriptor_writes =
-		calloc(shader->swapchain_image_count, sizeof(VkWriteDescriptorSet));
-
-	for (uint32_t i = 0; i < shader->swapchain_image_count; i++)
+	for (uint32_t i = 0; i < swapchain_image_count; i++)
 	{
-		instance_descriptor_buffer_infos[i].buffer = shader->instance_ub.handle;
-		instance_descriptor_buffer_infos[i].offset =
-			(shader->swapchain_image_count * id + i) * shader->instance_ubo_stride;
-		instance_descriptor_buffer_infos[i].range = shader->instance_ubo_size;
+		instance_descriptor_buffer_infos[i].buffer = *instance_ub;
+		instance_descriptor_buffer_infos[i].offset = (swapchain_image_count * id + i) * instance_ubo_stride;
+		instance_descriptor_buffer_infos[i].range = instance_ubo_size;
 
 		instance_descriptor_writes[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		instance_descriptor_writes[i].dstSet = out_instance->descriptor_sets[i];
+		instance_descriptor_writes[i].dstSet = out_instance.descriptor_sets[i];
 		instance_descriptor_writes[i].dstBinding = 0;
 		instance_descriptor_writes[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		instance_descriptor_writes[i].descriptorCount = 1;
 		instance_descriptor_writes[i].pBufferInfo = &instance_descriptor_buffer_infos[i];
 	}
 
-	vkUpdateDescriptorSets(device, shader->swapchain_image_count, instance_descriptor_writes, 0, NULL);
+	vkUpdateDescriptorSets(device, swapchain_image_count, instance_descriptor_writes.data(), 0, NULL);
 
-	free(instance_descriptor_buffer_infos);
-	free(instance_descriptor_writes);
-
-	return true;
+	return &(*(instances.insert({id, std::move(out_instance)}).first)).second;
 }
 
-void shader_free_instance(VkDevice device, shader* shader, shader_instance* instance)
+void Shader::deallocate_instance(uint64_t id)
 {
 	// Return slot to the free list.
-	shader->instance_ubo_free_list[instance->id] = true;
+	instance_ubo_free_list[id] = true;
 
-	// Free descriptor sets.
+	instances.erase(id);
+}
+
+Shader::Instance::Instance(Shader::Instance&& other) : id(other.id), descriptor_sets(std::move(other.descriptor_sets)),
+	ubo(other.ubo), ubo_dirty(std::move(other.ubo_dirty)), samplers(std::move(other.samplers)),
+	sampler_dirty(std::move(other.sampler_dirty)), shader(other.shader)
+{
+	other.id = 0;
+	other.ubo = nullptr;
+	other.shader = nullptr;
+}
+
+Shader::Instance::~Instance()
+{
 	vkFreeDescriptorSets(
-		device,
+		shader->device,
 		shader->instance_descriptor_pool,
 		shader->swapchain_image_count,
-		instance->descriptor_sets
+		descriptor_sets.data()
 	);
-
-	// Free remaining pointers.
-	free(instance->descriptor_sets);
-
-	free(instance->ubo_dirty);
-
-	free(instance->samplers);
-	free(instance->sampler_dirty);
 }
 
-void shader_set_global_ubo(VkDevice device, shader* shader, void* data)
+Shader::Instance& Shader::Instance::operator = (Shader::Instance&& other)
 {
-	shader->global_ubo = data;
+	this->~Instance();
+
+	id = other.id;
+	other.id = 0;
+
+	descriptor_sets = std::move(other.descriptor_sets);
+
+	ubo = other.ubo;
+	other.ubo = nullptr;
+
+	ubo_dirty = std::move(other.ubo_dirty);
 	
-	// Set ubos to be dirty.
-	memset(shader->global_ubo_dirty, true, shader->swapchain_image_count * sizeof(bool));
+	samplers = std::move(other.samplers);
+
+	sampler_dirty = std::move(other.sampler_dirty);
+
+	shader = other.shader;
+	other.shader = nullptr;
+
+	return *this;
 }
 
-void shader_update_global_uniforms(
-	VkDevice device,
-	shader* shader,
-	uint32_t current_image
-)
+void Shader::Instance::set_ubo(void* data)
 {
-	// Uniform buffers.
-	if (shader->global_ubo_dirty[current_image])
-	{
-		vulkan_buffer_load_data(
-			device,
-			&shader->global_ub,
-			current_image * shader->global_ubo_stride,
-			shader->global_ubo_size,
-			0,
-			shader->global_ubo
-		);
+	ubo = data;
 
-		// Undirty ubo.
-		shader->global_ubo_dirty[current_image] = false;
+	// Set ubos to be dirty;
+	for (uint64_t i = 0; i < ubo_dirty.size(); i++)
+	{
+		ubo_dirty[i] = true;
 	}
 }
 
-void shader_set_instance_ubo(
-	VkDevice device,
-	shader* shader,
-	void* data,
-	shader_instance* instance
-)
+void Shader::Instance::set_sampler(uint32_t sampler_index, const Texture* sampler)
 {
-	instance->ubo = data;
-
-	// Set ubos to be dirty;
-	memset(instance->ubo_dirty, true, shader->swapchain_image_count * sizeof(bool));
-}
-
-void shader_set_instance_sampler(
-	VkDevice device,
-	shader* shader,
-	uint32_t sampler_index,
-	texture* sampler,
-	shader_instance* instance
-)
-{
-	instance->samplers[sampler_index] = sampler;
+	samplers[sampler_index] = sampler;
 
 	// Set samplers to be dirty.
-	memset(
-		instance->sampler_dirty + sampler_index * shader->swapchain_image_count,
-		true,
-		shader->swapchain_image_count * sizeof(bool)
-	);
+	for (uint64_t i = 0; i < sampler_dirty.size(); i++)
+	{
+		sampler_dirty[i] = true;
+	}
 }
 
-bool shader_update_instance_ubo(
-	VkDevice device,
-	shader* shader,
-	uint32_t current_image,
-	shader_instance* instance
-)
+void Shader::Instance::update_ubo(uint32_t current_image)
 {
 	// Uniform buffer objects.
-	if (instance->ubo_dirty[current_image])
+	if (ubo_dirty[current_image])
 	{
 		// Uniform is dirty. Update the instance uniform buffer. The descriptors do not need to be updated as they
 		// point to the same address.
-		vulkan_buffer_load_data(
-			device,
-			&shader->instance_ub,
-			(shader->swapchain_image_count * instance->id + current_image) * shader->instance_ubo_stride,
+		shader->instance_ub->load_data(
+			(shader->swapchain_image_count * id + current_image) * shader->instance_ubo_stride,
 			shader->instance_ubo_size,
 			0,
-			instance->ubo
+			ubo
 		);
 
 		// Undirty ubo.
-		instance->ubo_dirty[current_image] = false;
+		ubo_dirty[current_image] = false;
 	}
 	
 	// Samplers.
 	uint32_t d = 0; // Dirty sampler count.
-	VkDescriptorImageInfo* instance_descriptor_image_infos =
-		malloc(shader->instance_sampler_count * sizeof(VkDescriptorImageInfo));
+	std::vector<VkDescriptorImageInfo> instance_descriptor_image_infos(shader->instance_samplers.size());
+	std::vector<VkWriteDescriptorSet> instance_descriptor_writes(shader->instance_samplers.size());
 
-	VkWriteDescriptorSet* instance_descriptor_writes =
-		calloc(shader->instance_sampler_count, sizeof(VkWriteDescriptorSet));
-
-	for (uint32_t i = 0; i < shader->instance_sampler_count; i++)
+	for (uint32_t i = 0; i < shader->instance_samplers.size(); i++)
 	{
-		if (instance->sampler_dirty[i * shader->swapchain_image_count + current_image])
+		if (sampler_dirty[i * shader->swapchain_image_count + current_image])
 		{
 			// Sampler is dirty. Update the descriptor to point to a new sampler.
-			instance_descriptor_image_infos[d].sampler = instance->samplers[i]->sampler;
-			instance_descriptor_image_infos[d].imageView = instance->samplers[i]->image.image_view;
+			instance_descriptor_image_infos[d].sampler = samplers[i]->get_sampler();
+			instance_descriptor_image_infos[d].imageView = ((VulkanImage&) *samplers[i]).get_image_view();
 			instance_descriptor_image_infos[d].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 			instance_descriptor_writes[d].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			instance_descriptor_writes[d].dstSet = instance->descriptor_sets[current_image];
+			instance_descriptor_writes[d].dstSet = descriptor_sets[current_image];
 			instance_descriptor_writes[d].dstBinding = 1;
 			instance_descriptor_writes[d].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			instance_descriptor_writes[d].descriptorCount = 1;
@@ -789,63 +679,58 @@ bool shader_update_instance_ubo(
 
 	if (d)
 	{
-		vkUpdateDescriptorSets(device, d, instance_descriptor_writes, 0, NULL);
+		vkUpdateDescriptorSets(shader->device, d, instance_descriptor_writes.data(), 0, NULL);
 	}
-
-	free(instance_descriptor_image_infos);
-	free(instance_descriptor_writes);
 }
 
 // Static helper functions.
-#define streq(x, y) x == y
-
-static ShaderUniformType parse_uniform_type(const std::string type)
+static ShaderUniformType parse_uniform_type(const std::string& type)
 {
-	if (streq(type, "float"))
+	if (type == "float")
 	{
 		return ShaderUniformType::FLOAT32;
 	}
-	else if (streq(type, "vec2"))
+	else if (type == "vec2")
 	{
 		return ShaderUniformType::FLOAT32_2;
 	}
-	else if (streq(type, "vec3"))
+	else if (type == "vec3")
 	{
 		return ShaderUniformType::FLOAT32_3;
 	}
-	else if (streq(type, "vec4"))
+	else if (type == "vec4")
 	{
 		return ShaderUniformType::FLOAT32_4;
 	}
-	else if (streq(type, "int8"))
+	else if (type == "int8")
 	{
 		return ShaderUniformType::INT8;
 	}
-	else if (streq(type, "uint8"))
+	else if (type == "uint8")
 	{
 		return ShaderUniformType::UINT8;
 	}
-	else if (streq(type, "int16"))
+	else if (type == "int16")
 	{
 		return ShaderUniformType::INT16;
 	}
-	else if (streq(type, "uint16"))
+	else if (type == "uint16")
 	{
 		return ShaderUniformType::UINT16;
 	}
-	else if (streq(type, "int32"))
+	else if (type == "int32")
 	{
 		return ShaderUniformType::INT32;
 	}
-	else if (streq(type, "uint32"))
+	else if (type == "uint32")
 	{
 		return ShaderUniformType::UINT32;
 	}
-	else if (streq(type, "mat4"))
+	else if (type == "mat4")
 	{
 		return ShaderUniformType::MATRIX_4;
 	}
-	else if (streq(type, "samp"))
+	else if (type == "samp")
 	{
 		return ShaderUniformType::SAMPLER;
 	}
@@ -855,7 +740,7 @@ static ShaderUniformType parse_uniform_type(const std::string type)
 	}
 }
 
-static uint64_t get_uniform_type_size(shader_uniform_type type)
+static uint64_t get_uniform_type_size(ShaderUniformType type)
 {
 	switch (type)
 	{
@@ -883,51 +768,51 @@ static uint64_t get_uniform_type_size(shader_uniform_type type)
 	}
 }
 
-static VkFormat parse_attribute_format(const char* type)
+static VkFormat parse_attribute_format(std::string type)
 {
-	if (streq(type, "float"))
+	if (type == "float")
 	{
 		return VK_FORMAT_R32_SFLOAT;
 	}
-	else if (streq(type, "vec2"))
+	else if (type == "vec2")
 	{
 		return VK_FORMAT_R32G32_SFLOAT;
 	}
-	else if (streq(type, "vec3"))
+	else if (type == "vec3")
 	{
 		return VK_FORMAT_R32G32B32_SFLOAT;
 	}
-	else if (streq(type, "vec4"))
+	else if (type == "vec4")
 	{
 		return VK_FORMAT_R32G32B32A32_SFLOAT;
 	}
-	else if (streq(type, "int8"))
+	else if (type == "int8")
 	{
 		return VK_FORMAT_R8_SINT;
 	}
-	else if (streq(type, "uint8"))
+	else if (type == "uint8")
 	{
 		return VK_FORMAT_R8_UINT;
 	}
-	else if (streq(type, "int16"))
+	else if (type == "int16")
 	{
 		return VK_FORMAT_R16_SINT;
 	}
-	else if (streq(type, "uint16"))
+	else if (type == "uint16")
 	{
 		return VK_FORMAT_R16_UINT;
 	}
-	else if (streq(type, "int32"))
+	else if (type == "int32")
 	{
 		return VK_FORMAT_R32_SINT;
 	}
-	else if (streq(type, "uint32"))
+	else if (type == "uint32")
 	{
 		return VK_FORMAT_R32_UINT;
 	}
 	else
 	{
-		return 0;
+		return VK_FORMAT_R32_SINT;
 	}
 }
 

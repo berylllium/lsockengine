@@ -25,9 +25,9 @@
 #include "core/event.hpp"
 #include "core/input.hpp"
 
-//#include "renderer/vulkan_platform.h"
+#include "renderer/vulkan_platform.hpp"
 
-//#include <vulkan/vulkan_xcb.h>
+#include <vulkan/vulkan_xcb.h>
 
 namespace lise
 {
@@ -335,23 +335,20 @@ const char** platform_get_required_instance_extensions(uint32_t* out_extension_c
 	return required_instance_extensions;
 }
 
-//bool vulkan_platform_create_vulkan_surface(
-//	VkInstance instance,
-//	VkSurfaceKHR* out_surface
-//)
-//{
-//	VkXcbSurfaceCreateInfoKHR create_info = {VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR};
-//	create_info.connection = state.connection;
-//	create_info.window = state.window;
-//
-//	if (vkCreateXcbSurfaceKHR(instance, &create_info, NULL, out_surface) != VK_SUCCESS)
-//	{
-//		LFATAL("Vulkan surface creation failed.");
-//		return false;
-//	}
-//
-//	return true;
-//}
+bool vulkan_platform_create_vulkan_surface(VkInstance instance, VkSurfaceKHR* out_surface)
+{
+	VkXcbSurfaceCreateInfoKHR create_info = {VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR};
+	create_info.connection = state.connection;
+	create_info.window = state.window;
+
+	if (vkCreateXcbSurfaceKHR(instance, &create_info, NULL, out_surface) != VK_SUCCESS)
+	{
+		LFATAL("Vulkan surface creation failed.");
+		return false;
+	}
+
+	return true;
+}
 
 // Key translation
 keys translate_keycode(uint32_t x_keycode) {

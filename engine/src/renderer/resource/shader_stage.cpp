@@ -3,9 +3,6 @@
 #include <fstream>
 #include <memory>
 
-//#include <stdlib.h>
-//#include <string.h>
-
 #include "core/logger.hpp"
 
 namespace lise
@@ -44,10 +41,20 @@ ShaderStage::ShaderStage(const Device& device, std::string path, VkShaderStageFl
 		throw std::exception();
 	}
 
+	shader_stage_create_info = {};
 	shader_stage_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	shader_stage_create_info.stage = shader_stage_flags;
 	shader_stage_create_info.module = module_handle;
 	shader_stage_create_info.pName = "main";
+}
+
+ShaderStage::ShaderStage(ShaderStage&& other) : device(other.device)
+{
+	module_handle = other.module_handle;
+	other.module_handle = nullptr;
+
+	shader_stage_create_info = other.shader_stage_create_info;
+	other.shader_stage_create_info = {};
 }
 
 ShaderStage::~ShaderStage()

@@ -1,8 +1,5 @@
 #include "loader/shader_config_loader.hpp"
 
-//#include <stdlib.h>
-//#include <string.h>
-
 #include "core/logger.hpp"
 #include "loader/obj_format_loader.hpp"
 
@@ -20,7 +17,7 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 	}
 
 	// Get the name.
-	std::vector<ObjFormatLine*> found_lines = obj_format_get_line(loaded_format, "name");
+	std::vector<const ObjFormatLine*> found_lines = obj_format_get_line(loaded_format, "name");
 
 	if (found_lines.size() != 1)
 	{
@@ -34,11 +31,11 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 		return false;
 	}
 
-	if (found_lines[0]->token_count != 1)
+	if (found_lines[0]->tokens.size() != 1)
 	{
 		LERROR("Provided config file `%s` contains a `name` line, %s",
 			path,
-			found_lines[0]->token_count == 0 ?
+			found_lines[0]->tokens.size() == 0 ?
 				"but no names were specified. Please specify one." :
 				"but too many names were specified. Please specify only one."
 		);
@@ -63,11 +60,11 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 		return false;
 	}
 
-	if (found_lines[0]->token_count != 1)
+	if (found_lines[0]->tokens.size() != 1)
 	{
 		LERROR("Provided config file `%s` contains a `render_pass` line, %s",
 			path,
-			found_lines[0]->token_count == 0 ?
+			found_lines[0]->tokens.size() == 0 ?
 				"but no render pass names were specified. Please specify one." :
 				"but too many render pass names were specified. Please specify only one."
 		);
@@ -92,7 +89,7 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 		return false;
 	}
 
-	if (found_lines[0]->token_count == 0)
+	if (found_lines[0]->tokens.size() == 0)
 	{
 		LERROR(
 			"Provided config file `%s` contains a `stages` line but no stages were specified."
@@ -103,14 +100,8 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 		return false;
 	}
 
-	out_config.stage_count = found_lines[0]->token_count;
-	out_config.stage_names = std::make_unique<std::string[]>(out_config.stage_count);
+	out_config.stage_names = found_lines[0]->tokens;
 	
-	for (uint64_t i = 0; i < out_config.stage_count; i++)
-	{
-		out_config.stage_names[i] = found_lines[0]->tokens[i];
-	}
-
 	// Load stage file paths.
 	found_lines = obj_format_get_line(loaded_format, "stage_files");
 
@@ -126,7 +117,7 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 		return false;
 	}
 
-	if (found_lines[0]->token_count == 0)
+	if (found_lines[0]->tokens.size() == 0)
 	{
 		LERROR(
 			"Provided config file `%s` contains a `stage_files` line but no stage file paths were specified."
@@ -137,7 +128,7 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 		return false;
 	}
 
-	if (found_lines[0]->token_count != out_config.stage_count)
+	if (found_lines[0]->tokens.size() != out_config.stage_names.size())
 	{
 		LERROR(
 			"The amount of provided stage file paths does not math the amount of provided stage names "
@@ -148,12 +139,7 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 		return false;
 	}
 
-	out_config.stage_file_names = std::make_unique<std::string[]>(out_config.stage_count);
-
-	for (uint32_t i = 0; i < out_config.stage_count; i++)
-	{
-		out_config.stage_file_names[i] = found_lines[0]->tokens[i];
-	}
+	out_config.stage_file_names = found_lines[0]->tokens;
 
 	// Load attributes
 	found_lines = obj_format_get_line(loaded_format, "attribute");
@@ -165,12 +151,11 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 		return false;
 	}
 
-	out_config.attribute_count = found_lines.size();
-	out_config.attributes = std::make_unique<ShaderConfigAttribute[]>(out_config.attribute_count);
+	out_config.attributes.resize(found_lines.size());
 
-	for (uint64_t i = 0; i < out_config.attribute_count; i++)
+	for (uint64_t i = 0; i < out_config.attributes.size(); i++)
 	{
-		if (found_lines[i]->token_count != 2)
+		if (found_lines[i]->tokens.size() != 2)
 		{
 			LERROR(
 				"An `attribute` line in config file `%s` does not contain exactly two (2) parameters. `attribute` lines"
@@ -195,12 +180,11 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 		return false;
 	}
 
-	out_config.uniform_count = found_lines.size();
-	out_config.uniforms = std::make_unique<ShaderConfigUniform[]>(out_config.uniform_count);
+	out_config.uniforms.resize(found_lines.size());
 
-	for (uint64_t i = 0; i < out_config.uniform_count; i++)
+	for (uint64_t i = 0; i < out_config.uniforms.size(); i++)
 	{
-		if (found_lines[i]->token_count != 3)
+		if (found_lines[i]->tokens.size() != 3)
 		{
 			LERROR(
 				"A `uniform` line in config file `%s` does not contain exactly three (3) parameters. `uniform` lines "
