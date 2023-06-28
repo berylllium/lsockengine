@@ -10,6 +10,7 @@ set(LISE_HEADERS
 	math/arithmetic.hpp
 	math/mat4x4.hpp
 	math/math.hpp
+	math/transform.hpp
 	math/vector2.hpp
 	math/vector3.hpp
 	math/vector4.hpp
@@ -46,6 +47,7 @@ set(LISE_SOURCES
 	loader/shader_config_loader.cpp
 	math/mat4x4.cpp
 	math/math.cpp
+	math/transform.cpp
 	platform/platform_linux.cpp
 	platform/platform_win32.cpp
 	renderer/resource/shader_stage.cpp

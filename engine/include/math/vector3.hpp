@@ -7,6 +7,9 @@
 namespace lise
 {
 
+#define LVEC3_ONE	(vector3f { 1, 1, 1 })
+#define LVEC3_ZERO	(vector3f { 0, 0, 0 })
+
 template<arithmetic A>
 struct vector3
 {
