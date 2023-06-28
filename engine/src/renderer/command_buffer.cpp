@@ -41,9 +41,14 @@ CommandBuffer::~CommandBuffer()
 	}
 }
 
-CommandBuffer::operator VkCommandBuffer() const
+CommandBuffer::operator const VkCommandBuffer&() const
 {
 	return handle;
+}
+
+void CommandBuffer::reset()
+{
+	state = CommandBufferState::READY;
 }
 
 void CommandBuffer::begin(bool is_single_use, bool is_render_pass_continue, bool is_simultaneous_use)

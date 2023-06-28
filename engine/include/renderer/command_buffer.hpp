@@ -29,7 +29,9 @@ public:
 
 	~CommandBuffer();
 
-	operator VkCommandBuffer() const;
+	operator const VkCommandBuffer&() const;
+
+	void reset();
 
 	void begin(bool is_single_use, bool is_render_pass_continue, bool is_simultaneous_use);
 

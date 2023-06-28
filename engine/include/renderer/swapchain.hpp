@@ -45,13 +45,19 @@ public:
 		uint32_t& out_image_index
 	);
 
-	bool swapchain_present(VkSemaphore render_complete_semaphore, uint32_t present_image_index);
+	bool present(VkSemaphore render_complete_semaphore, uint32_t present_image_index);
 
 	const SwapchainInfo& get_swapchain_info() const;
 
 	const uint32_t& get_image_count() const;
 
+	const Framebuffer& get_framebuffer(uint64_t index);
+
 	uint8_t get_max_frames_in_flight() const;
+
+	uint8_t get_current_frame() const;
+
+	bool is_swapchain_out_of_date() const;
 
 	static SwapchainInfo query_info(const Device& device, VkSurfaceKHR surface);
 

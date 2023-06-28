@@ -53,7 +53,7 @@ void shader_system_shutdown()
 	LINFO("Successfully shut down the renderer shader subsystem.");
 }
 
-const Shader* shader_system_load(const std::string& path)
+Shader* shader_system_load(const std::string& path)
 {
 	if (loaded_shaders.contains(path))
 	{
@@ -100,7 +100,7 @@ const Shader* shader_system_load(const std::string& path)
 	return &((*it).second);
 }
 
-const Shader* shader_system_get(const std::string& path)
+Shader* shader_system_get(const std::string& path)
 {
 	std::unordered_map<std::string, Shader>::iterator it = loaded_shaders.find(path);
 
@@ -113,7 +113,7 @@ const Shader* shader_system_get(const std::string& path)
 	return &((*it).second);
 }
 
-const Shader* shader_system_get_or_load(const std::string& path)
+Shader* shader_system_get_or_load(const std::string& path)
 {
 	std::unordered_map<std::string, Shader>::iterator it = loaded_shaders.find(path);
 

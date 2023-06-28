@@ -36,7 +36,7 @@ static std::vector<Fence*> images_in_flight;
 
 static uint32_t current_image_index;
 
-static const Shader* object_shader;
+static Shader* object_shader;
 
 static VulkanBuffer* object_vertex_buffer;
 static VulkanBuffer* object_index_buffer;
@@ -62,7 +62,25 @@ static uint32_t device_extension_count = 1;
 // Static helper functions.
 static bool check_validation_layer_support();
 static void create_command_buffers();
+static bool recreate_swapchain();
 
+// TODO: temp statics
+static mat4x4 view_matrix = LMAT4X4_IDENTITY;
+static Texture* temp_texture;
+
+//static Model test_model;
+//static Model car_model;
+
+struct GlobalUBO
+{
+	mat4x4 projection;
+	mat4x4 view;
+};
+
+struct InstanceUBO
+{
+	vector4f diffuse_color;
+};
 
 bool vulkan_initialize(const char* application_name)
 {
@@ -278,12 +296,150 @@ void vulkan_shutdown()
 
 bool vulkan_begin_frame(float delta_time)
 {
+	if (swapchain->is_swapchain_out_of_date())
+	{
+		recreate_swapchain();
+		return vulkan_begin_frame(delta_time);
+	}
+
+	// Wait for the current frame
+	if (!in_flight_fences[swapchain->get_current_frame()].wait())
+	{
+		LWARN("Failed to wait on an in-flight fence.");
+		return false;
+	}
+
+	// Acquire next image in swapchain
+	if (!swapchain->acquire_next_image_index(
+		UINT64_MAX,
+		image_available_semaphores[swapchain->get_current_frame()],
+		NULL,
+		current_image_index
+	))
+	{
+		LWARN("Failed to acquire next swapchain image");
+		return false;
+	}
+
+	// Begin command buffer
+	CommandBuffer& command_buffer = graphics_command_buffers[swapchain->get_current_frame()];
+	command_buffer.reset();
+	command_buffer.begin(false, false, false);
+
+	// Dynamic state
+	VkViewport viewport;
+	viewport.x = 0.0f;
+	viewport.y = (float) swapchain->get_swapchain_info().swapchain_extent.height;
+	viewport.width = (float) swapchain->get_swapchain_info().swapchain_extent.width;
+	viewport.height = -(float) swapchain->get_swapchain_info().swapchain_extent.height;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+
+	// Scissor
+	VkRect2D scissor;
+	scissor.offset.x = scissor.offset.y = 0;
+	scissor.extent.width = swapchain->get_swapchain_info().swapchain_extent.width;
+	scissor.extent.height = swapchain->get_swapchain_info().swapchain_extent.height;
+
+	vkCmdSetViewport(command_buffer, 0, 1, &viewport);
+	vkCmdSetScissor(command_buffer, 0, 1, &scissor);
+
+	render_pass->begin(command_buffer, swapchain->get_framebuffer(current_image_index));
+
+	// -------- TEMP
+	vector2ui framebuffer_size = vulkan_get_framebuffer_size();
+
+	GlobalUBO gubo = {};
+	gubo.projection =
+		mat4x4::perspective(LQUARTER_PI, (float) framebuffer_size.x / (float) framebuffer_size.y, 0.1f, 1000.0f);
+	
+	gubo.view = view_matrix;
+
+	object_shader->set_global_ubo(&gubo);
+	object_shader->update_global_uniforms(current_image_index);
+
+	//test_model.transform.rotation.y += LQUARTER_PI * delta_time;
+	//lise_transform_update(&test_model.transform);
+
+	//lise_model_draw(&test_model, vulkan_context.device.logical_device, command_buffer->handle, vulkan_context.current_image_index);
+	//
+	//lise_model_draw(&car_model, vulkan_context.device.logical_device, command_buffer->handle, vulkan_context.current_image_index);
+
+	// -------- ENDTEMP
 
 	return true;
 }
 
 bool vulkan_end_frame(float delta_time)
 {
+	uint8_t current_frame = swapchain->get_current_frame();
+	CommandBuffer& command_buffer = graphics_command_buffers[current_frame];
+
+	// End render pass.
+	render_pass->end(command_buffer);
+
+	command_buffer.end();
+
+	// Wait if a previous frame is still using this image.
+	if (images_in_flight[current_frame] != NULL)
+	{
+		images_in_flight[current_frame]->wait();
+	}
+
+	// Mark fence as being in use by this image.
+	images_in_flight[current_frame] = &in_flight_fences[current_frame];
+
+	// Reset the fence
+	images_in_flight[current_frame]->reset();
+
+	// Submit queue
+	VkSubmitInfo submit_info = {};
+	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+	submit_info.commandBufferCount = 1;
+	submit_info.pCommandBuffers = &((const VkCommandBuffer&) command_buffer);
+
+	// Semaphores to be signaled when the queue is completed
+	submit_info.signalSemaphoreCount = 1;
+	submit_info.pSignalSemaphores = &queue_complete_semaphores[current_frame];
+
+	// Wait before queue execution until image is available (image available semaphore is signaled)
+	submit_info.waitSemaphoreCount = 1;
+	submit_info.pWaitSemaphores = &image_available_semaphores[current_frame];
+
+	// Wait destination
+	VkPipelineStageFlags stage_flags[1] = {
+		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+	};
+
+	submit_info.pWaitDstStageMask = stage_flags;
+
+	if (vkQueueSubmit(
+		device->get_graphics_queue(),
+		1,
+		&submit_info,
+		in_flight_fences[current_frame]) != VK_SUCCESS
+	)
+	{
+		LERROR("Failed to submit queue.");
+
+		return false;
+	}
+
+	command_buffer.set_state(CommandBufferState::SUBMITTED);
+
+	// Give images back to the swapchain
+	if (!swapchain->present(
+		queue_complete_semaphores[swapchain->get_current_frame()],
+		current_image_index
+		) && !swapchain->is_swapchain_out_of_date()
+	)
+	{
+		// Swapchain is not out of date, so the return value indicates a failure.
+		LFATAL("Failed to present swap chain image.");
+
+		return false;
+	}
 
 	return true;
 }
@@ -343,11 +499,9 @@ void create_command_buffers()
 	// Clear old command buffers.
 	graphics_command_buffers.clear();
 
-	uint32_t swapchain_image_count = swapchain->get_image_count();
+	graphics_command_buffers.reserve(swapchain->get_max_frames_in_flight());
 
-	graphics_command_buffers.reserve(swapchain_image_count);
-
-	for (uint32_t i = 0; i < swapchain_image_count; i++)
+	for (uint32_t i = 0; i < swapchain->get_max_frames_in_flight(); i++)
 	{
 		graphics_command_buffers.emplace_back(
 			*device,
@@ -355,6 +509,52 @@ void create_command_buffers()
 			true
 		);
 	}
+}
+
+static bool recreate_swapchain()
+{
+	// Wait for the device to idle.
+	vkDeviceWaitIdle(*device);
+
+	// Reset inflight fences,
+	for (uint64_t i = 0; i < images_in_flight.size(); i++)
+	{
+		images_in_flight[i] = nullptr;
+	}
+
+	SwapchainInfo new_info = Swapchain::query_info(*device, surface);
+
+	delete render_pass;
+	delete swapchain;
+
+	try
+	{
+		render_pass = new RenderPass(
+			*device,
+			new_info.image_format.format,
+			new_info.depth_format,
+			vector2ui { 0, 0 },
+			vector2ui { new_info.swapchain_extent.width, new_info.swapchain_extent.height },
+			vector4f { 0.4f, 0.5f, 0.6f, 0.0f },
+			1.0f,
+			0
+		);
+
+		swapchain = new Swapchain(
+			*device,
+			surface,
+			new_info,
+			*render_pass
+		);
+	}
+	catch (std::exception e)
+	{
+		LERROR("Failed to recreate the swapchain");
+
+		return false;
+	}
+
+	return true;
 }
 
 }

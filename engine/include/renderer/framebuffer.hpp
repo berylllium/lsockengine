@@ -27,6 +27,8 @@ public:
 
 	~Framebuffer();
 
+	operator VkFramebuffer() const;
+
 private:
 	VkFramebuffer handle;
 

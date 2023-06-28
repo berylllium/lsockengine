@@ -19,9 +19,11 @@ public:
 
 	~Fence();
 
+	operator VkFence() const;
+
 	Fence& operator = (const Fence&) = delete; // Prevent copies.
 
-	bool wait(uint64_t timeout_ns);
+	bool wait(uint64_t timeout_ns = UINT64_MAX);
 
 	bool reset();
 

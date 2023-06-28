@@ -35,6 +35,11 @@ Fence::~Fence()
 	}
 }
 
+Fence::operator VkFence() const
+{
+	return handle;
+}
+
 bool Fence::wait(uint64_t timeout_ns)
 {
 	if (!is_signaled)

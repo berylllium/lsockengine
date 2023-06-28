@@ -35,10 +35,10 @@ bool shader_system_initialize(
 
 void shader_system_shutdown();
 
-const Shader* shader_system_load(const std::string& path);
+Shader* shader_system_load(const std::string& path);
 
-const Shader* shader_system_get(const std::string& path);
+Shader* shader_system_get(const std::string& path);
 
-const Shader* shader_system_get_or_load(const std::string& path);
+Shader* shader_system_get_or_load(const std::string& path);
 
 }

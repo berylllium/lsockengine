@@ -58,4 +58,9 @@ Framebuffer::~Framebuffer()
 	delete attachments;
 }
 
+Framebuffer::operator VkFramebuffer() const
+{
+	return handle;
+}
+
 }

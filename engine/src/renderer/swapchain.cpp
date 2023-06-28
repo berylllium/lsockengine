@@ -181,7 +181,7 @@ bool Swapchain::acquire_next_image_index(
 	return true;
 }
 
-bool Swapchain::swapchain_present(
+bool Swapchain::present(
 	VkSemaphore render_complete_semaphore,
 	uint32_t present_image_index
 )
@@ -223,9 +223,24 @@ const uint32_t& Swapchain::get_image_count() const
 	return image_count;
 }
 
+const Framebuffer& Swapchain::get_framebuffer(uint64_t index)
+{
+	return framebuffers[index];
+}
+
 uint8_t Swapchain::get_max_frames_in_flight() const
 {
 	return max_frames_in_flight;
+}
+
+uint8_t Swapchain::get_current_frame() const
+{
+	return current_frame;
+}
+
+bool Swapchain::is_swapchain_out_of_date() const
+{
+	return swapchain_out_of_date;
 }
 
 SwapchainInfo Swapchain::query_info(const Device& device, VkSurfaceKHR surface)

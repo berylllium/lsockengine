@@ -25,10 +25,4 @@ typedef vector2<unsigned int> vector2ui;
 typedef vector2<float> vector2f;
 typedef vector2<double> vector2d;
 
-//struct vector2i : public vector2<int> {};
-//
-//struct vector2f : public vector2<float> {};
-//
-//struct vector2d : public vector2<double> {};
-
 }
