@@ -376,6 +376,7 @@ bool vulkan_begin_frame(float delta_time)
 
 	//test_model.transform.rotation.y += LQUARTER_PI * delta_time;
 	//lise_transform_update(&test_model.transform);
+	car_model->get_transform().set_rotation(car_model->get_transform().get_rotation() + vector3f {0, LQUARTER_PI * delta_time});
 	
 	car_model->draw(command_buffer, current_frame);
 
@@ -473,7 +474,7 @@ vector2ui vulkan_get_framebuffer_size()
 // TODO: temp hack
 LAPI void vulkan_set_view_matrix_temp(const mat4x4& view)
 {
-	
+	view_matrix = view;
 }
 
 // Static helper functions.

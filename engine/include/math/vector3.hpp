@@ -4,11 +4,11 @@
 #include "math/math.hpp"
 #include "definitions.hpp"
 
+#define LVEC3_ONE	(lise::vector3f { 1, 1, 1 })
+#define LVEC3_ZERO	(lise::vector3f { 0, 0, 0 })
+
 namespace lise
 {
-
-#define LVEC3_ONE	(vector3f { 1, 1, 1 })
-#define LVEC3_ZERO	(vector3f { 0, 0, 0 })
 
 template<arithmetic A>
 struct vector3
@@ -17,17 +17,17 @@ struct vector3
 	union { A y, g, v; };
 	union { A z, b, w; };
 
-	A length_squared() const
+	LAPI A length_squared() const
 	{
 		return x * x + y * y + z * z;
 	}
 
-	A length() const
+	LAPI A length() const
 	{
 		return sqrt(length_squared());
 	}
 
-	void normalize()
+	LAPI void normalize()
 	{
 		A len = length();
 
@@ -36,7 +36,7 @@ struct vector3
 		y /= len;
 	}
 
-	vector3<A> normalized() const
+	LAPI vector3<A> normalized() const
 	{
 		vector3<A> out = *this;
 
@@ -45,7 +45,7 @@ struct vector3
 		return out;
 	}
 
-	A dot(const vector3<A>& r) const
+	LAPI A dot(const vector3<A>& r) const
 	{
 		A p = 0;
 
@@ -56,7 +56,7 @@ struct vector3
 		return p;
 	}
 
-	vector3<A> cross(const vector3<A>& r) const
+	LAPI vector3<A> cross(const vector3<A>& r) const
 	{
 		return vector3<A>
 		{
@@ -68,18 +68,44 @@ struct vector3
 };
 
 template <arithmetic A>
-bool operator == (const vector3<A>& l, const vector3<A>& r)
+LAPI bool operator == (const vector3<A>& l, const vector3<A>& r)
 {
     return l.x == r.x && l.y == r.y && l.z == r.z;
 }
 
+template <arithmetic A>
+LAPI bool operator != (const vector3<A>& l, const vector3<A>& r)
+{
+    return l.x != r.x || l.y != r.y || l.z != r.z;
+}
+
 template<arithmetic A>
-vector3<A> operator - (const vector3<A>& l, const vector3<A>& r)
+LAPI vector3<A> operator - (const vector3<A>& l, const vector3<A>& r)
 {
 	return vector3<A> {
 		l.x - r.x,
 		l.y - r.y,
 		l.z - r.z
+	};
+}
+
+template<arithmetic A>
+LAPI vector3<A> operator + (const vector3<A>& l, const vector3<A>& r)
+{
+	return vector3<A> {
+		l.x + r.x,
+		l.y + r.y,
+		l.z + r.z
+	};
+}
+
+template<arithmetic A>
+LAPI vector3<A> operator * (A l, const vector3<A>& r)
+{
+	return vector3<A> {
+		l * r.x,
+		l * r.y,
+		l * r.z
 	};
 }
 

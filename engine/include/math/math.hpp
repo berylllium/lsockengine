@@ -37,6 +37,21 @@ LAPI float absolute(float x);
 
 #define lclamp(x, lo, hi) lmin(hi, lmax(lo, x))
 
+LINLINE float min(float x, float y)
+{
+	return x < y ? x : y;
+}
+
+LINLINE float max(float x, float y)
+{
+	return x > y ? x : y;
+}
+
+LINLINE float clamp(float x, float lo, float hi)
+{
+	return min(hi, lmax(lo, x));
+}
+
 
 LINLINE bool is_power_of_two(uint64_t val)
 {
