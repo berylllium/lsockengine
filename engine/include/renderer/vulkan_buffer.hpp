@@ -48,6 +48,8 @@ public:
 		uint64_t size
 	);
 
+	VkBuffer get_handle() const;
+
 private:
 	VkBuffer handle;
 

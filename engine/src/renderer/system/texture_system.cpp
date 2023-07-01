@@ -45,18 +45,18 @@ void texture_system_shutdown(const Device& device)
 	LINFO("Successfully shut down the renderer texture subsystem.");
 }
 
-const Texture& texture_system_get_default_texture()
+const Texture* texture_system_get_default_texture()
 {
-	return *default_texture;
+	return default_texture;
 }
 
-const Texture& texture_system_load(const Device& device, const std::string& path)
+const Texture* texture_system_load(const Device& device, const std::string& path)
 {
 	if (loaded_textures.contains(path))
 	{
 		// Texture is already loaded.
 		LWARN("Attempting to load an already loaded texture.");
-		return *default_texture;
+		return default_texture;
 	}
 
 	// Load the image using stb_image.
@@ -75,7 +75,7 @@ const Texture& texture_system_load(const Device& device, const std::string& path
 			stbi_failure_reason()
 		);
 
-		return *default_texture;
+		return default_texture;
 	}
 
 	uint64_t size = width * height * required_channel_count;
@@ -95,36 +95,37 @@ const Texture& texture_system_load(const Device& device, const std::string& path
 	// Create texture.
 	try
 	{
+		// TODO: Use std::piecewise_construct
 		loaded_textures.emplace(path, std::move(Texture(device, path, vector2ui { width, height} , channel_count, data, has_transparency)));
 	}
 	catch (std::exception e)
 	{
 		LERROR("Faild to load texture: `%s`. Providing default texture.", path);
 
-		return *default_texture;
+		return default_texture;
 	}
 
-	return loaded_textures.at(path);
+	return &loaded_textures.at(path);
 }
 
-const Texture& texture_system_get(const std::string& path)
+const Texture* texture_system_get(const std::string& path)
 {
 	if (!loaded_textures.contains(path))
 	{
 		LWARN("Texture with path `%s` has not been loaded yet. Providing default texture.", path);
 
-		return *default_texture;
+		return default_texture;
 	}
 
-	return loaded_textures.at(path);
+	return &loaded_textures.at(path);
 }
 
-const Texture& texture_system_get_or_load(const Device& device, const std::string& path)
+const Texture* texture_system_get_or_load(const Device& device, const std::string& path)
 {
 	if (loaded_textures.contains(path))
 	{
 		// Texture has already been loaded.
-		return loaded_textures.at(path);
+		return &loaded_textures.at(path);
 	}
 	else
 	{

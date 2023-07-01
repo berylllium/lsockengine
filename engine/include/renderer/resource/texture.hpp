@@ -36,6 +36,7 @@ public:
 
 	Texture& operator = (const Texture&) = delete; // Prevent copies.
 
+	VkImageView get_image_view() const;
 	VkSampler get_sampler() const;
 
 private:

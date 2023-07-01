@@ -211,4 +211,9 @@ void VulkanBuffer::copy_to(
 	cb.end_and_submit_single_use(queue);
 }
 
+VkBuffer VulkanBuffer::get_handle() const
+{
+	return handle;
+}
+
 }

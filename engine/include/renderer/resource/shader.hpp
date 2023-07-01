@@ -95,6 +95,8 @@ public:
 	
 		void update_ubo(uint32_t current_image);
 
+		void bind_descriptor_set(CommandBuffer& command_buffer, uint32_t current_image);
+
 	private:
 		Instance() = default;
 
@@ -142,7 +144,9 @@ public:
 
 	void update_global_uniforms(uint32_t current_image);
 
-	const Instance* allocate_instance();
+	const Pipeline& get_pipeline() const;
+
+	Instance* allocate_instance();
 
 	void deallocate_instance(uint64_t id);
 

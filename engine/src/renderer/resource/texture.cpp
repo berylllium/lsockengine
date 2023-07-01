@@ -122,6 +122,11 @@ Texture::operator const VulkanImage&() const
 	return *image;
 }
 
+VkImageView Texture::get_image_view() const
+{
+	return image->get_image_view();
+}
+
 VkSampler Texture::get_sampler() const
 {
 	return sampler;

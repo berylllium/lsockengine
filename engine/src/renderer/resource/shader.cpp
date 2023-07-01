@@ -240,6 +240,7 @@ Shader::Shader(
 
 	VkDescriptorPoolCreateInfo instance_pool_ci = {};
 	instance_pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	instance_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 	instance_pool_ci.poolSizeCount = instance_set_bindings.size();
 	instance_pool_ci.pPoolSizes = instance_sizes.get();
 	instance_pool_ci.maxSets = LSHADER_MAX_INSTANCE_COUNT;
@@ -421,6 +422,8 @@ Shader::Shader(
 
 Shader::~Shader()
 {
+	instances.clear();
+
 	// Free the pipeline.
 	delete pipeline;
 	
@@ -481,9 +484,16 @@ void Shader::update_global_uniforms(uint32_t current_image)
 	}
 }
 
-const Shader::Instance* Shader::allocate_instance()
+const Pipeline& Shader::get_pipeline() const
+{
+	return *pipeline;
+}
+
+Shader::Instance* Shader::allocate_instance()
 {
 	Instance out_instance;
+
+	out_instance.shader = this;
 
 	// Iterate the free list and pick a free spot.
 	bool slot_found = false;
@@ -517,7 +527,7 @@ const Shader::Instance* Shader::allocate_instance()
 
 	if (instance_samplers.size() > 0)
 	{
-		out_instance.samplers.resize(instance_samplers.size(), &texture_system_get_default_texture());
+		out_instance.samplers.resize(instance_samplers.size(), texture_system_get_default_texture());
 
 		out_instance.sampler_dirty.resize(swapchain_image_count * instance_samplers.size(), true);
 	}
@@ -569,23 +579,41 @@ void Shader::deallocate_instance(uint64_t id)
 	instances.erase(id);
 }
 
-Shader::Instance::Instance(Shader::Instance&& other) : id(other.id), descriptor_sets(std::move(other.descriptor_sets)),
-	ubo(other.ubo), ubo_dirty(std::move(other.ubo_dirty)), samplers(std::move(other.samplers)),
-	sampler_dirty(std::move(other.sampler_dirty)), shader(other.shader)
+Shader::Instance::Instance(Shader::Instance&& other)
 {
+	id = other.id;
 	other.id = 0;
+
+	descriptor_sets = other.descriptor_sets;
+	other.descriptor_sets.clear();
+
+	ubo = other.ubo;
 	other.ubo = nullptr;
+	
+	ubo_dirty = other.ubo_dirty;
+	other.ubo_dirty.clear();
+
+	samplers = other.samplers;
+	other.samplers.clear();
+
+	sampler_dirty = other.sampler_dirty;
+	other.sampler_dirty.clear();
+
+	shader = other.shader;
 	other.shader = nullptr;
 }
 
 Shader::Instance::~Instance()
 {
-	vkFreeDescriptorSets(
-		shader->device,
-		shader->instance_descriptor_pool,
-		shader->swapchain_image_count,
-		descriptor_sets.data()
-	);
+	if (shader)
+	{
+		vkFreeDescriptorSets(
+			shader->device,
+			shader->instance_descriptor_pool,
+			shader->swapchain_image_count,
+			descriptor_sets.data()
+		);
+	}
 }
 
 Shader::Instance& Shader::Instance::operator = (Shader::Instance&& other)
@@ -595,16 +623,20 @@ Shader::Instance& Shader::Instance::operator = (Shader::Instance&& other)
 	id = other.id;
 	other.id = 0;
 
-	descriptor_sets = std::move(other.descriptor_sets);
+	descriptor_sets = other.descriptor_sets;
+	other.descriptor_sets.clear();
 
 	ubo = other.ubo;
 	other.ubo = nullptr;
-
-	ubo_dirty = std::move(other.ubo_dirty);
 	
-	samplers = std::move(other.samplers);
+	ubo_dirty = other.ubo_dirty;
+	other.ubo_dirty.clear();
 
-	sampler_dirty = std::move(other.sampler_dirty);
+	samplers = other.samplers;
+	other.samplers.clear();
+
+	sampler_dirty = other.sampler_dirty;
+	other.sampler_dirty.clear();
 
 	shader = other.shader;
 	other.shader = nullptr;
@@ -663,7 +695,7 @@ void Shader::Instance::update_ubo(uint32_t current_image)
 		{
 			// Sampler is dirty. Update the descriptor to point to a new sampler.
 			instance_descriptor_image_infos[d].sampler = samplers[i]->get_sampler();
-			instance_descriptor_image_infos[d].imageView = ((VulkanImage&) *samplers[i]).get_image_view();
+			instance_descriptor_image_infos[d].imageView = samplers[i]->get_image_view();
 			instance_descriptor_image_infos[d].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 			instance_descriptor_writes[d].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -681,6 +713,20 @@ void Shader::Instance::update_ubo(uint32_t current_image)
 	{
 		vkUpdateDescriptorSets(shader->device, d, instance_descriptor_writes.data(), 0, NULL);
 	}
+}
+
+void Shader::Instance::bind_descriptor_set(CommandBuffer& command_buffer, uint32_t current_image)
+{
+	vkCmdBindDescriptorSets(
+		command_buffer,
+		VK_PIPELINE_BIND_POINT_GRAPHICS,
+		shader->get_pipeline().get_layout(),
+		1,
+		1,
+		&descriptor_sets[current_image],
+		0,
+		0
+	);
 }
 
 // Static helper functions.

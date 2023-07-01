@@ -6,6 +6,7 @@ set(LISE_HEADERS
 	core/input.hpp
 	core/logger.hpp
 	loader/obj_format_loader.hpp
+	loader/obj_loader.hpp
 	loader/shader_config_loader.hpp
 	math/arithmetic.hpp
 	math/mat4x4.hpp
@@ -16,6 +17,8 @@ set(LISE_HEADERS
 	math/vector4.hpp
 	math/vertex.hpp
 	platform/platform.hpp
+	renderer/resource/mesh.hpp
+	renderer/resource/model.hpp
 	renderer/resource/shader_stage.hpp
 	renderer/resource/shader.hpp
 	renderer/resource/texture.hpp
@@ -44,12 +47,15 @@ set(LISE_SOURCES
 	core/input.cpp
 	core/logger.cpp
 	loader/obj_format_loader.cpp
+	loader/obj_loader.cpp
 	loader/shader_config_loader.cpp
 	math/mat4x4.cpp
 	math/math.cpp
 	math/transform.cpp
 	platform/platform_linux.cpp
 	platform/platform_win32.cpp
+	renderer/resource/mesh.cpp
+	renderer/resource/model.cpp
 	renderer/resource/shader_stage.cpp
 	renderer/resource/shader.cpp
 	renderer/resource/texture.cpp

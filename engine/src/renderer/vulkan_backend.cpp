@@ -6,6 +6,7 @@
 #include "core/logger.hpp"
 #include "platform/platform.hpp"
 #include "renderer/vulkan_platform.hpp"
+#include "renderer/resource/model.hpp"
 
 #include "renderer/system/texture_system.hpp"
 #include "renderer/system/shader_system.hpp"
@@ -38,9 +39,6 @@ static uint32_t current_image_index;
 
 static Shader* object_shader;
 
-static VulkanBuffer* object_vertex_buffer;
-static VulkanBuffer* object_index_buffer;
-
 #ifdef NDEBUG
 	static constexpr bool enable_validation_layers = false;
 #else
@@ -69,7 +67,7 @@ static mat4x4 view_matrix = LMAT4X4_IDENTITY;
 static Texture* temp_texture;
 
 //static Model test_model;
-//static Model car_model;
+static Model* car_model;
 
 struct GlobalUBO
 {
@@ -260,12 +258,28 @@ bool vulkan_initialize(const char* application_name)
 		return false;
 	}
 
+	// TEMP:
+	
+	std::optional<Obj> car_obj = Obj::load("assets/models/obj/car.obj");
+
+	if (!car_obj)
+	{
+		LFATAL("Failed to load car obj file.");
+
+		return false;
+	}
+
+	car_model = new Model(device, object_shader, *car_obj);
+	car_model->get_transform().set_position(0, 0, -10);
+
 	return true;
 }
 
 void vulkan_shutdown()
 {
 	vkDeviceWaitIdle(*device);
+
+	delete car_model;
 
 	shader_system_shutdown();
 
@@ -302,8 +316,10 @@ bool vulkan_begin_frame(float delta_time)
 		return vulkan_begin_frame(delta_time);
 	}
 
+	uint8_t current_frame = swapchain->get_current_frame();
+
 	// Wait for the current frame
-	if (!in_flight_fences[swapchain->get_current_frame()].wait())
+	if (!in_flight_fences[current_frame].wait())
 	{
 		LWARN("Failed to wait on an in-flight fence.");
 		return false;
@@ -312,7 +328,7 @@ bool vulkan_begin_frame(float delta_time)
 	// Acquire next image in swapchain
 	if (!swapchain->acquire_next_image_index(
 		UINT64_MAX,
-		image_available_semaphores[swapchain->get_current_frame()],
+		image_available_semaphores[current_frame],
 		NULL,
 		current_image_index
 	))
@@ -322,7 +338,7 @@ bool vulkan_begin_frame(float delta_time)
 	}
 
 	// Begin command buffer
-	CommandBuffer& command_buffer = graphics_command_buffers[swapchain->get_current_frame()];
+	CommandBuffer& command_buffer = graphics_command_buffers[current_frame];
 	command_buffer.reset();
 	command_buffer.begin(false, false, false);
 
@@ -356,10 +372,12 @@ bool vulkan_begin_frame(float delta_time)
 	gubo.view = view_matrix;
 
 	object_shader->set_global_ubo(&gubo);
-	object_shader->update_global_uniforms(current_image_index);
+	object_shader->update_global_uniforms(current_frame);
 
 	//test_model.transform.rotation.y += LQUARTER_PI * delta_time;
 	//lise_transform_update(&test_model.transform);
+	
+	car_model->draw(command_buffer, current_frame);
 
 	//lise_model_draw(&test_model, vulkan_context.device.logical_device, command_buffer->handle, vulkan_context.current_image_index);
 	//
