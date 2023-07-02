@@ -1,7 +1,6 @@
 #include "renderer/pipeline.hpp"
 
 #include "core/logger.hpp"
-#include "math/vertex.hpp"
 
 namespace lise
 {
@@ -9,13 +8,15 @@ namespace lise
 Pipeline::Pipeline(
 	const Device& device,
 	const RenderPass& render_pass,
+	uint32_t vertex_input_stride,
 	std::vector<VkVertexInputAttributeDescription>& attributes,
 	std::vector<VkDescriptorSetLayout>& descriptor_set_layouts,
 	std::vector<VkPipelineShaderStageCreateInfo>& shader_stages,
 	std::vector<VkPushConstantRange>& push_constant_ranges,
 	VkViewport viewport,
 	VkRect2D scissor,
-	bool is_wireframe
+	bool is_wireframe,
+	bool depth_test_enabled
 ) : device(device)
 {
 	// Viewport state
@@ -93,7 +94,7 @@ Pipeline::Pipeline(
 	// Vertex input
 	VkVertexInputBindingDescription binding_description;
 	binding_description.binding = 0;  // Binding index
-	binding_description.stride = sizeof(vertex);
+	binding_description.stride = vertex_input_stride;
 	binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;  // Move to next data entry for each vertex.
 
 	// Attributes
@@ -140,7 +141,7 @@ Pipeline::Pipeline(
 	pipeline_create_info.pViewportState = &viewport_state;
 	pipeline_create_info.pRasterizationState = &rasterizer_create_info;
 	pipeline_create_info.pMultisampleState = &multisampling_create_info;
-	pipeline_create_info.pDepthStencilState = &depth_stencil;
+	pipeline_create_info.pDepthStencilState = depth_test_enabled ? &depth_stencil : nullptr;
 	pipeline_create_info.pColorBlendState = &color_blend_state_create_info;
 	pipeline_create_info.pDynamicState = &dynamic_state_create_info;
 	pipeline_create_info.pTessellationState = 0;

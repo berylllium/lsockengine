@@ -18,13 +18,15 @@ public:
 	Pipeline(
 		const Device& device,
 		const RenderPass& render_pass,
+		uint32_t vertex_input_stride,
 		std::vector<VkVertexInputAttributeDescription>& attributes,
 		std::vector<VkDescriptorSetLayout>& descriptor_set_layouts,
 		std::vector<VkPipelineShaderStageCreateInfo>& shader_stages,
 		std::vector<VkPushConstantRange>& push_constant_ranges,
 		VkViewport viewport,
 		VkRect2D scissor,
-		bool is_wireframe
+		bool is_wireframe,
+		bool depth_test_enabled
 	);
 
 	Pipeline(Pipeline&& other);

@@ -4,6 +4,7 @@
 
 #include "core/logger.hpp"
 #include "loader/shader_config_loader.hpp"
+#include "math/vertex.hpp"
 #include "renderer/resource/shader_stage.hpp"
 #include "renderer/system/texture_system.hpp"
 
@@ -313,13 +314,15 @@ Shader::Shader(
 		pipeline = new Pipeline(
 			device,
 			render_pass,
+			sizeof(vertex),
 			attribs,
 			set_layouts,
 			shader_stage_cis,
 			push_constant_ranges,
 			viewport,
 			scissor,
-			false
+			false,
+			true
 		);
 	}
 	catch (std::exception e)
