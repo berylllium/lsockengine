@@ -22,7 +22,8 @@ static VkSurfaceKHR surface;
 static Device* device;
 
 static Swapchain* swapchain;
-static RenderPass* render_pass;
+static RenderPass* world_render_pass;
+static RenderPass* ui_render_pass;
 
 static std::vector<CommandBuffer> graphics_command_buffers;
 
@@ -38,6 +39,10 @@ static std::vector<Fence*> images_in_flight;
 static uint32_t current_image_index;
 
 static Shader* object_shader;
+
+static Shader* ui_shader;
+
+static std::vector<Framebuffer> world_framebuffers;
 
 #ifdef NDEBUG
 	static constexpr bool enable_validation_layers = false;
@@ -160,7 +165,7 @@ bool vulkan_initialize(const char* application_name)
 	// Create the render pass
 	try
 	{
-		render_pass = new RenderPass(
+		world_render_pass = new RenderPass(
 			*device,
 			swapchain_info.image_format.format,
 			swapchain_info.depth_format,
@@ -168,7 +173,25 @@ bool vulkan_initialize(const char* application_name)
 			vector2ui { swapchain_info.swapchain_extent.width, swapchain_info.swapchain_extent.height },
 			vector4f { 0.4f, 0.5f, 0.6f, 0.0f },
 			1.0f,
-			0
+			0,
+			RenderPassClearFlag::COLOR_BUFFER_FLAG | RenderPassClearFlag::DEPTH_BUFFER_FLAG |
+				RenderPassClearFlag::STENCIL_BUFFER_FLAG,
+			false,
+			true
+		);
+
+		ui_render_pass = new RenderPass(
+			*device,
+			swapchain_info.image_format.format,
+			swapchain_info.depth_format,
+			vector2ui { 0, 0 },
+			vector2ui { swapchain_info.swapchain_extent.width, swapchain_info.swapchain_extent.height },
+			vector4f { 0.0f, 0.0f, 0.0f, 0.0f },
+			1.0f,
+			0,
+			RenderPassClearFlag::NONE_FLAG,
+			true,
+			false
 		);
 	}
 	catch (std::exception e)
@@ -184,7 +207,7 @@ bool vulkan_initialize(const char* application_name)
 			*device,
 			surface,
 			swapchain_info,
-			*render_pass
+			*ui_render_pass
 		);
 	}
 	catch (std::exception e)
@@ -193,6 +216,25 @@ bool vulkan_initialize(const char* application_name)
 		return false;
 	}
 
+	// Create world framebuffers.
+	world_framebuffers.reserve(swapchain->get_images().size());
+
+	for (size_t i = 0; i < swapchain->get_images().size(); i++)
+	{
+		VkImageView attachments[2] = {
+			swapchain->get_image_views()[i],
+			swapchain->get_depth_attachments()[i].get_image_view()
+		};
+
+		world_framebuffers.emplace_back(
+			*device,
+			*world_render_pass,
+			vulkan_get_framebuffer_size(),
+			2,
+			attachments
+		);
+	}
+	
 	// Create command buffers.
 	create_command_buffers();
 
@@ -228,7 +270,7 @@ bool vulkan_initialize(const char* application_name)
 	}
 
 	// Preallocate the in flight images and set them to nullptr;
-	images_in_flight.resize(swapchain->get_image_count(), nullptr);
+	images_in_flight.resize(swapchain->get_images().size(), nullptr);
 
 	if (!texture_system_initialize(*device))
 	{
@@ -238,10 +280,7 @@ bool vulkan_initialize(const char* application_name)
 
 	if (!shader_system_initialize(
 		*device,
-		*render_pass,
-		swapchain->get_swapchain_info().swapchain_extent.width,
-		swapchain->get_swapchain_info().swapchain_extent.height,
-		swapchain->get_image_count()
+		*swapchain
 	))
 	{
 		LFATAL("Failed to initialize the vulkan renderer shader subsystem.");
@@ -249,11 +288,19 @@ bool vulkan_initialize(const char* application_name)
 	}
 
 	// Load default shaders.
-	object_shader = shader_system_load("assets/shaders/builtin.object_shader.scfg");
+	object_shader = shader_system_load("assets/shaders/builtin.object_shader.scfg", *world_render_pass);
+	ui_shader = shader_system_load("assets/shaders/builtin.ui_shader.scfg", *ui_render_pass);
 
 	if (object_shader == nullptr)
 	{
 		LFATAL("Failed to load the object shader.");
+		
+		return false;
+	}
+
+	if (ui_shader == nullptr)
+	{
+		LFATAL("Failed to load the ui shader.");
 		
 		return false;
 	}
@@ -295,7 +342,11 @@ void vulkan_shutdown()
 
 	graphics_command_buffers.clear();
 
-	delete render_pass;
+	world_framebuffers.clear();
+
+	delete ui_render_pass;
+
+	delete world_render_pass;
 
 	delete swapchain;
 
@@ -360,7 +411,7 @@ bool vulkan_begin_frame(float delta_time)
 	vkCmdSetViewport(command_buffer, 0, 1, &viewport);
 	vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-	render_pass->begin(command_buffer, swapchain->get_framebuffer(current_image_index));
+	world_render_pass->begin(command_buffer, world_framebuffers[current_image_index]);
 
 	// -------- TEMP
 	vector2ui framebuffer_size = vulkan_get_framebuffer_size();
@@ -395,7 +446,11 @@ bool vulkan_end_frame(float delta_time)
 	CommandBuffer& command_buffer = graphics_command_buffers[current_frame];
 
 	// End render pass.
-	render_pass->end(command_buffer);
+	world_render_pass->end(command_buffer);
+
+	ui_render_pass->begin(command_buffer, swapchain->get_framebuffers()[current_image_index]);
+
+	ui_render_pass->end(command_buffer);
 
 	command_buffer.end();
 
@@ -543,12 +598,14 @@ static bool recreate_swapchain()
 
 	SwapchainInfo new_info = Swapchain::query_info(*device, surface);
 
-	delete render_pass;
+	world_framebuffers.clear();
+	delete ui_render_pass;
+	delete world_render_pass;
 	delete swapchain;
 
 	try
 	{
-		render_pass = new RenderPass(
+		world_render_pass = new RenderPass(
 			*device,
 			new_info.image_format.format,
 			new_info.depth_format,
@@ -556,15 +613,54 @@ static bool recreate_swapchain()
 			vector2ui { new_info.swapchain_extent.width, new_info.swapchain_extent.height },
 			vector4f { 0.4f, 0.5f, 0.6f, 0.0f },
 			1.0f,
-			0
+			0,
+			RenderPassClearFlag::COLOR_BUFFER_FLAG | RenderPassClearFlag::DEPTH_BUFFER_FLAG |
+				RenderPassClearFlag::STENCIL_BUFFER_FLAG,
+			false,
+			true
+		);
+
+		ui_render_pass = new RenderPass(
+			*device,
+			new_info.image_format.format,
+			new_info.depth_format,
+			vector2ui { 0, 0 },
+			vector2ui { new_info.swapchain_extent.width, new_info.swapchain_extent.height },
+			vector4f { 0.0f, 0.0f, 0.0f, 0.0f },
+			1.0f,
+			0,
+			RenderPassClearFlag::NONE_FLAG,
+			true,
+			false
 		);
 
 		swapchain = new Swapchain(
 			*device,
 			surface,
 			new_info,
-			*render_pass
+			*ui_render_pass
 		);
+
+		// World framebuffers.
+		size_t swapchain_image_count = swapchain->get_images().size();
+
+		world_framebuffers.reserve(swapchain_image_count);
+
+		for (size_t i = 0; i < swapchain_image_count; i++)
+		{
+			VkImageView attachments[2] = {
+				swapchain->get_image_views()[i],
+				swapchain->get_depth_attachments()[i].get_image_view()
+			};
+
+			world_framebuffers.emplace_back(
+				*device,
+				*world_render_pass,
+				vulkan_get_framebuffer_size(),
+				2,
+				attachments
+			);
+		}
 	}
 	catch (std::exception e)
 	{

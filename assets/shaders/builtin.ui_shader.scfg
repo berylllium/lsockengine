@@ -1,0 +1,17 @@
+# Internal shader config file.
+name 			builtin.shader.ui
+render_pass 	builtin.render_pass.ui
+stages 			vertex											fragment
+stage_files 	assets/shaders/builtin.ui_shader.vert.spv		assets/shaders/builtin.ui_shader.frag.spv
+
+# Attributes
+attribute vec2 in_position
+attribute vec2 in_tex_coord
+
+# Uniforms
+# 0: Global, 1: Instance, 2: Local
+uniform mat4 0 projection
+uniform mat4 0 view
+uniform mat4 1 diffuse_color
+uniform samp 1 diffuse_texture
+uniform mat4 2 model

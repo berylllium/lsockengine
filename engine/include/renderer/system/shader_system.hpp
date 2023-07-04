@@ -6,6 +6,7 @@
 #include "renderer/resource/shader.hpp"
 #include "renderer/device.hpp"
 #include "renderer/render_pass.hpp"
+#include "renderer/swapchain.hpp"
 
 namespace lise
 {
@@ -16,29 +17,22 @@ namespace lise
  * 
  * @param device A pointer to the device currently in use by the engine. This pointer gets cached internally, so
  * make sure to keep using the same memory address for the device.
- * @param world_render_pass A pointer to the world render pass. This pointer gets cached internally, so make sure to
- * keep using the same memory address for this render pass.
- * @param framebuffer_width A pointer to the framebuffer width. This pointer gets cached internally.
- * @param framebuffer_height A pointer to the framebuffer height. This pointer gets cached internally.
- * @param swapchain_image_count A pointer to the swapchain image count. This pointer gets cached internally.
+ * @param swapchain A pointer to the swapchain. This pointer gets cached internally.
  * 
  * @return true if the initialisation succeeded.
  * @return false if the initialisation failed.
  */
 bool shader_system_initialize(
 	const Device& device,
-	const RenderPass& world_render_pass,
-	const uint32_t& framebuffer_width,
-	const uint32_t& framebuffer_height,
-	const uint32_t& swapchain_image_count
+	const Swapchain& swapchain
 );
 
 void shader_system_shutdown();
 
-Shader* shader_system_load(const std::string& path);
+void shader_system_update_cache(const Swapchain* swapchain);
+
+Shader* shader_system_load(const std::string& path, const RenderPass& render_pass);
 
 Shader* shader_system_get(const std::string& path);
-
-Shader* shader_system_get_or_load(const std::string& path);
 
 }

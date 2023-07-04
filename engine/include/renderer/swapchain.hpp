@@ -49,9 +49,13 @@ public:
 
 	const SwapchainInfo& get_swapchain_info() const;
 
-	const uint32_t& get_image_count() const;
+	const std::vector<Framebuffer>& get_framebuffers() const;
 
-	const Framebuffer& get_framebuffer(uint64_t index);
+	const std::vector<VkImage>& get_images() const;
+	
+	const std::vector<VkImageView>& get_image_views() const;
+
+	const std::vector<VulkanImage>& get_depth_attachments() const;
 
 	uint8_t get_max_frames_in_flight() const;
 
@@ -67,9 +71,9 @@ private:
 	SwapchainInfo swapchain_info;
 
 	VkSurfaceFormatKHR image_format;
-	uint32_t image_count;
-	VkImage* images;
-	VkImageView* image_views;
+
+	std::vector<VkImage> images;
+	std::vector<VkImageView> image_views;
 
 	uint8_t max_frames_in_flight;
 	uint8_t current_frame;

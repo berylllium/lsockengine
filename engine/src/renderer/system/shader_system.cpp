@@ -13,25 +13,16 @@ static std::unordered_map<std::string, Shader> loaded_shaders;
 
 // Caches
 static const Device* p_device;
-static const RenderPass* p_world_render_pass;
-static const uint32_t* p_framebuffer_width;
-static const uint32_t* p_framebuffer_height;
-static const uint32_t* p_swapchain_image_count;
+static const Swapchain* p_swapchain;
 
 bool shader_system_initialize(
 	const Device& device,
-	const RenderPass& world_render_pass,
-	const uint32_t& framebuffer_width,
-	const uint32_t& framebuffer_height,
-	const uint32_t& swapchain_image_count
+	const Swapchain& swapchain
 )
 {
 	// Set the caches.
 	p_device = &device;
-	p_world_render_pass = &world_render_pass;
-	p_framebuffer_width = &framebuffer_width;
-	p_framebuffer_height = &framebuffer_height;
-	p_swapchain_image_count = &swapchain_image_count;
+	p_swapchain = &swapchain;
 
 	LINFO("Successfully initialized the renderer shader subsystem.");
 
@@ -45,15 +36,17 @@ void shader_system_shutdown()
 
 	// Clear caches.
 	p_device = NULL;
-	p_world_render_pass = NULL;
-	p_framebuffer_width = NULL;
-	p_framebuffer_height = NULL;
-	p_swapchain_image_count = NULL;
+	p_swapchain - NULL;
 
 	LINFO("Successfully shut down the renderer shader subsystem.");
 }
 
-Shader* shader_system_load(const std::string& path)
+void shader_system_update_cache(const Swapchain* swapchain)
+{
+	p_swapchain = swapchain;
+}
+
+Shader* shader_system_load(const std::string& path, const RenderPass& render_pass)
 {
 	if (loaded_shaders.contains(path))
 	{
@@ -83,10 +76,10 @@ Shader* shader_system_load(const std::string& path)
 			std::forward_as_tuple(
 				*p_device,
 				shader_config,
-				*p_world_render_pass,
-				*p_framebuffer_width,
-				*p_framebuffer_height,
-				*p_swapchain_image_count
+				render_pass,
+				p_swapchain->get_swapchain_info().swapchain_extent.width,
+				p_swapchain->get_swapchain_info().swapchain_extent.height,
+				p_swapchain->get_images().size()
 			)
 		);
 	}
@@ -111,20 +104,6 @@ Shader* shader_system_get(const std::string& path)
 	}
 
 	return &((*it).second);
-}
-
-Shader* shader_system_get_or_load(const std::string& path)
-{
-	std::unordered_map<std::string, Shader>::iterator it = loaded_shaders.find(path);
-
-	if (it != loaded_shaders.end())
-	{
-		return &((*it).second);
-	}
-	else
-	{
-		return shader_system_load(path);
-	}
 }
 
 }

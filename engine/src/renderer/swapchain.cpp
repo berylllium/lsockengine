@@ -14,7 +14,7 @@ Swapchain::Swapchain(
 	SwapchainInfo swapchain_info,
 	const RenderPass& render_pass
 ) : swapchain_info(swapchain_info), device(device), surface(surface),
-	swapchain_out_of_date(false), current_frame(0), image_count(0)
+	swapchain_out_of_date(false), current_frame(0)
 {
 	VkSwapchainCreateInfoKHR swap_chain_ci = {};
 	swap_chain_ci.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -56,16 +56,18 @@ Swapchain::Swapchain(
 	}
 
 	// Get swapchain images
+	uint32_t image_count;
+
 	vkGetSwapchainImagesKHR(device, handle, &image_count, NULL);
 
-	images = new VkImage[image_count];
+	images.resize(image_count);
 
 	max_frames_in_flight = image_count - 1;
 
-	vkGetSwapchainImagesKHR(device, handle,	&image_count, images);
+	vkGetSwapchainImagesKHR(device, handle,	&image_count, images.data());
 	
 	// Views
-	image_views = new VkImageView[image_count];
+	image_views.resize(image_count);
 
 	for (uint32_t i = 0; i < image_count; i++)
 	{
@@ -114,10 +116,9 @@ Swapchain::Swapchain(
 
 	for (uint32_t i = 0; i < image_count; i++)
 	{
-		uint32_t attachment_count = 2;
+		uint32_t attachment_count = 1;
 		VkImageView attachments[] = {
-			image_views[i],
-			depth_attachments[i].get_image_view()
+			image_views[i]
 		};
 
 		try
@@ -140,12 +141,10 @@ Swapchain::Swapchain(
 
 Swapchain::~Swapchain()
 {
-	for (uint32_t i = 0; i < image_count; i++)
+	for (uint32_t i = 0; i < images.size(); i++)
 	{
 		vkDestroyImageView(device, image_views[i], NULL);
 	}
-
-	delete images;
 
 	vkDestroySwapchainKHR(device, handle, NULL);
 }
@@ -218,14 +217,24 @@ const SwapchainInfo& Swapchain::get_swapchain_info() const
 	return swapchain_info;
 }
 
-const uint32_t& Swapchain::get_image_count() const
+const std::vector<Framebuffer>& Swapchain::get_framebuffers() const
 {
-	return image_count;
+	return framebuffers;
 }
 
-const Framebuffer& Swapchain::get_framebuffer(uint64_t index)
+const std::vector<VkImage>& Swapchain::get_images() const
 {
-	return framebuffers[index];
+	return images;
+}
+	
+const std::vector<VkImageView>& Swapchain::get_image_views() const
+{
+	return image_views;
+}
+
+const std::vector<VulkanImage>& Swapchain::get_depth_attachments() const
+{
+	return depth_attachments;
 }
 
 uint8_t Swapchain::get_max_frames_in_flight() const

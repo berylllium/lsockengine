@@ -21,6 +21,14 @@ enum class render_pass_state
 	NOT_ALLOCATED
 };
 
+enum RenderPassClearFlag
+{
+	NONE_FLAG = 0x0,
+	COLOR_BUFFER_FLAG = 0x1,
+	DEPTH_BUFFER_FLAG = 0x2,
+	STENCIL_BUFFER_FLAG = 0x4
+};
+
 class RenderPass
 {
 public:
@@ -32,7 +40,10 @@ public:
 		vector2ui render_area_size,
 		vector4f clear_color,
 		float depth,
-		uint32_t stencil
+		uint32_t stencil,
+		uint8_t clear_flags,
+		bool has_prev_pass,
+		bool has_next_pass
 	);
 
 	RenderPass(RenderPass&& other);
@@ -57,6 +68,10 @@ private:
 
 	float depth;
 	uint32_t stencil;
+
+	uint8_t clear_flags;
+	bool has_prev_pass;
+	bool has_next_pass;
 
 	render_pass_state state;
 
