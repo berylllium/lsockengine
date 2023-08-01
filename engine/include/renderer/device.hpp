@@ -34,6 +34,7 @@ struct DeviceQueueIndices
 class Device
 {
 public:
+	// TODO: Use vectors instead of pointer + count.
 	Device(
 		VkInstance vulkan_instance,
 		const char** physical_device_extensions,

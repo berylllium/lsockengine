@@ -33,6 +33,9 @@ static engine_state app_state;
 
 bool engine_create(EngineCreateInfo app_create_info)
 {
+	sl::set_log_to_file(true);
+	sl::set_log_time(true);
+
 	if (app_state.is_initialized)
 	{
 		sl::log_error("'engine_create' has been called more than once.");
@@ -47,9 +50,6 @@ bool engine_create(EngineCreateInfo app_create_info)
 	app_state.height = app_create_info.window_height;
 
 	// Initialize subsystems
-	sl::set_log_to_file(true);
-	sl::set_log_time(true);
-
 	event_init();
 	
 	app_state.is_running = true;

@@ -11,7 +11,7 @@ std::vector<std::string> split(const std::string& input, const std::string& deli
 	{
 		pos = input.find_first_of(delims, start);
 
-		std::string token = input.substr(start, pos - start);
+		auto token = input.substr(start, pos - start);
 
 		if (token.length() > 0)	// Ignore empty tokens.
 		{

@@ -20,7 +20,7 @@ Framebuffer::Framebuffer(
 	this->attachments = new VkImageView[attachment_count];
 	std::copy(attachments, attachments + attachment_count, this->attachments);
 
-	VkFramebufferCreateInfo framebuffer_ci = {};
+	auto framebuffer_ci = VkFramebufferCreateInfo {};
 	framebuffer_ci.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 	framebuffer_ci.renderPass = render_pass;
 	framebuffer_ci.attachmentCount = attachment_count;

@@ -31,7 +31,7 @@ bool obj_format_load(const std::string& path, ObjFormat& out_obj_format)
 		if (line.length() == 0) continue;
 
 		// Allocate a temprary dynamic array to store the pointers to the tokens.
-		std::vector<std::string> tokens = split(line, " \t");
+		auto tokens = split(line, " \t");
 
 		size_t valid_token_count = 0;
 

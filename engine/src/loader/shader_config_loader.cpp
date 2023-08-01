@@ -18,7 +18,7 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 	}
 
 	// Get the name.
-	std::vector<const ObjFormatLine*> found_lines = obj_format_get_line(loaded_format, "name");
+	auto found_lines = obj_format_get_line(loaded_format, "name");
 
 	if (found_lines.size() != 1)
 	{

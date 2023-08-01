@@ -1,5 +1,6 @@
 #include "renderer/device.hpp"
 
+#include <memory>
 #include <cstring>
 #include <stdexcept>
 
@@ -43,17 +44,16 @@ Device::Device(
 		&physical_device_memory_properties
 	);
 
-	
 	queue_indices = find_queue_families(physical_device, surface);
 
 	// Create the logical device
-	uint32_t unique_queues_count = 1; 	// We initialize to zero because the graphics queue will
+	auto unique_queues_count = uint32_t {1}; 	// We initialize to zero because the graphics queue will
 										// always be present
 
-	bool present_unique =
+	auto present_unique =
 		queue_indices.present_queue_index != queue_indices.graphics_queue_index;
 
-	bool transfer_unique =
+	auto transfer_unique =
 		queue_indices.transfer_queue_index != queue_indices.graphics_queue_index &&
 		queue_indices.transfer_queue_index != queue_indices.present_queue_index;
 	
@@ -61,9 +61,9 @@ Device::Device(
 
 	if (transfer_unique) unique_queues_count++;
 
-	uint32_t* unique_queue_indices = new uint32_t[unique_queues_count];
+	auto unique_queue_indices = std::make_unique<uint32_t[]>(unique_queues_count);
 
-	uint32_t i = 0;
+	auto i = int { 0 };
 	unique_queue_indices[i++] = queue_indices.graphics_queue_index;
 
 	if (present_unique)
@@ -72,9 +72,9 @@ Device::Device(
 	if (transfer_unique)
 		unique_queue_indices[i++] = queue_indices.transfer_queue_index;
 
-	VkDeviceQueueCreateInfo* queue_create_infos = new VkDeviceQueueCreateInfo[unique_queues_count];
+	auto queue_create_infos = std::make_unique<VkDeviceQueueCreateInfo[]>(unique_queues_count);
 
-	float queue_priority = 1.0f;
+	auto queue_priority = 1.0f;
 	for (uint32_t i = 0; i < unique_queues_count; i++)
 	{
 		queue_create_infos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -87,14 +87,14 @@ Device::Device(
 	}
 
 	// Request features
-	VkPhysicalDeviceFeatures device_features = {};
+	auto device_features = VkPhysicalDeviceFeatures {};
 
 	// Create device
-	VkDeviceCreateInfo create_info = {};
+	auto create_info = VkDeviceCreateInfo {};
 	create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
 	create_info.queueCreateInfoCount = unique_queues_count;
-	create_info.pQueueCreateInfos = queue_create_infos;
+	create_info.pQueueCreateInfos = queue_create_infos.get();
 
 	create_info.pEnabledFeatures = &device_features;
 
@@ -112,13 +112,8 @@ Device::Device(
 	if (vkCreateDevice(physical_device, &create_info, NULL, &logical_device)
 		!= VK_SUCCESS)
 	{
-		delete [] unique_queue_indices; // Not that necessary because of fatal error.
-		delete [] queue_create_infos;
 		throw std::runtime_error("Failed to create the logical device.");
 	}
-
-	delete [] unique_queue_indices;
-	delete [] queue_create_infos;
 
 	// Get queues
 	vkGetDeviceQueue(
@@ -143,16 +138,15 @@ Device::Device(
 	);
 
 	// Create the graphics command pool
-	VkCommandPoolCreateInfo graphics_pool_ci = {};
+	auto graphics_pool_ci = VkCommandPoolCreateInfo {};
 	graphics_pool_ci.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	graphics_pool_ci.queueFamilyIndex = queue_indices.graphics_queue_index;
 	graphics_pool_ci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-	if (vkCreateCommandPool(logical_device, &graphics_pool_ci, NULL, &graphics_command_pool)
-		!= VK_SUCCESS
-	)
+	if (vkCreateCommandPool(logical_device, &graphics_pool_ci, NULL, &graphics_command_pool) != VK_SUCCESS)
 	{
-		throw std::runtime_error("Failed to create the graphics command pool.");
+		sl::log_error("Failed to create the graphics command pool.");
+		throw std::exception();
 	}
 }
 
@@ -187,17 +181,18 @@ void Device::pick_physical_device(
 	VkSurfaceKHR surface
 )
 {
-	uint32_t physical_device_count = 0;
+	auto physical_device_count = uint32_t { 0 };
 	vkEnumeratePhysicalDevices(vulkan_instance, &physical_device_count, NULL);
 
 	if (physical_device_count == 0)
 	{
-		throw std::runtime_error("Failed to find GPUs with Vulkan support.");
+		sl::log_error("Failed to find GPUs with Vulkan support.");
+		throw std::exception();
 	}
 
-	VkPhysicalDevice* physical_devices = new VkPhysicalDevice[physical_device_count];
+	auto physical_devices = std::make_unique<VkPhysicalDevice[]>(physical_device_count);
 
-	vkEnumeratePhysicalDevices(vulkan_instance, &physical_device_count, physical_devices);
+	vkEnumeratePhysicalDevices(vulkan_instance, &physical_device_count, physical_devices.get());
 
 	for (uint32_t i = 0; i < physical_device_count; i++)
 	{
@@ -213,11 +208,10 @@ void Device::pick_physical_device(
 		}
 	}
 
-	delete [] physical_devices;
-
 	if (physical_device == VK_NULL_HANDLE)
 	{
-		throw std::runtime_error("Failed to find a suitable GPU.");
+		sl::log_error("Failed to find a suitable GPU.");
+		throw std::exception();
 	}
 }
 
@@ -229,7 +223,7 @@ bool Device::is_physical_device_suitable(
 )
 {
 	// Get the queue family indices
-	DeviceQueueIndices queue_indices = find_queue_families(physical_device, surface);
+	auto queue_indices = find_queue_families(physical_device, surface);
 
 	if (queue_indices.graphics_queue_index == UINT32_MAX ||
 		queue_indices.present_queue_index == UINT32_MAX ||
@@ -243,14 +237,14 @@ bool Device::is_physical_device_suitable(
 	uint32_t extension_count;
 	vkEnumerateDeviceExtensionProperties(physical_device, NULL, &extension_count, NULL);
 	
-	VkExtensionProperties* available_extensions = new VkExtensionProperties[extension_count];
+	auto available_extensions = std::make_unique<VkExtensionProperties[]>(extension_count);
 
-	vkEnumerateDeviceExtensionProperties(physical_device, NULL, &extension_count, available_extensions);
+	vkEnumerateDeviceExtensionProperties(physical_device, NULL, &extension_count, available_extensions.get());
 	
 	for (uint32_t i = 0; i < physical_device_extension_count; i++)
 	{
 		// Check if given device extensions are contained in available_extensions
-		bool contains = false;
+		auto contains = false;
 		for (uint32_t j = 9; j < extension_count; j++)
 		{
 			if (strcmp(physical_device_extensions[i], available_extensions[j].extensionName) == 0)
@@ -262,18 +256,13 @@ bool Device::is_physical_device_suitable(
 
 		if (!contains)
 		{
-			delete [] available_extensions;
-
 			// The device is not suitable if it does not support all the required extensions.
 			return false;
 		}
 	}
 
-	// We will no longer need the available extensions.
-	delete [] available_extensions;
-
 	// Check if swapchain supported by the physcial device is adequate for our needs
-	DeviceSwapChainSupportInfo swap_chain_info = query_swapchain_support(physical_device, surface);
+	auto swap_chain_info = query_swapchain_support(physical_device, surface);
 
 	if (swap_chain_info.surface_format_count == 0 || swap_chain_info.present_mode_count == 0)
 	{
@@ -285,22 +274,19 @@ bool Device::is_physical_device_suitable(
 	return true;
 }
 
-DeviceQueueIndices Device::find_queue_families(
-	VkPhysicalDevice physical_device,
-	VkSurfaceKHR surface
-)
+DeviceQueueIndices Device::find_queue_families(VkPhysicalDevice physical_device, VkSurfaceKHR surface)
 {
-	DeviceQueueIndices queue_indices = {};
+	auto queue_indices = DeviceQueueIndices {};
 	queue_indices.graphics_queue_index = UINT32_MAX;
 	queue_indices.present_queue_index = UINT32_MAX;
 	queue_indices.transfer_queue_index = UINT32_MAX;
 
-	uint32_t queue_family_count = 0;
+	auto queue_family_count = uint32_t { 0 };
 	vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, NULL);
 
-	VkQueueFamilyProperties* queue_families = new VkQueueFamilyProperties[queue_family_count];
+	auto queue_families = std::make_unique<VkQueueFamilyProperties[]>(queue_family_count);
 
-	vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, queue_families);
+	vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, queue_families.get());
 
 	for (uint32_t i = 0; i < queue_family_count; i++)
 	{
@@ -309,7 +295,7 @@ DeviceQueueIndices Device::find_queue_families(
 			queue_indices.graphics_queue_index = i;
 		}
 
-		VkBool32 present_support = false;
+		auto present_support = VkBool32 { false };
 		vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, i, surface, &present_support);
 		if (present_support)
 		{
@@ -322,7 +308,6 @@ DeviceQueueIndices Device::find_queue_families(
 		}
 	}
 
-	delete [] queue_families;
 	return queue_indices;
 }
 

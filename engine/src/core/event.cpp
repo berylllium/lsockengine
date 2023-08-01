@@ -45,11 +45,11 @@ void event_register(uint16_t event_code)
 
 void event_fire(uint16_t event_code, event_context ctx)
 {
-	for (event_entry entry : registered_events)
+	for (auto& entry : registered_events)
 	{
 		if (entry.event_code == event_code)
 		{
-			for (on_event_cb event_cb : entry.listeners)
+			for (auto& event_cb : entry.listeners)
 			{
 				(*event_cb)(event_code, ctx);
 			}
@@ -61,7 +61,7 @@ void event_fire(uint16_t event_code, event_context ctx)
 
 void event_add_listener(uint16_t event_code, on_event_cb listener)
 {
-	for (event_entry& entry : registered_events)
+	for (auto& entry : registered_events)
 	{
 		if (entry.event_code == event_code)
 		{

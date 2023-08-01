@@ -13,7 +13,7 @@ Swapchain::Swapchain(
 ) : swapchain_info(swapchain_info), device(device), surface(surface),
 	swapchain_out_of_date(false), current_frame(0)
 {
-	VkSwapchainCreateInfoKHR swap_chain_ci = {};
+	auto swap_chain_ci = VkSwapchainCreateInfoKHR {};
 	swap_chain_ci.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	swap_chain_ci.surface = surface;
 	swap_chain_ci.minImageCount = swapchain_info.min_image_count;
@@ -23,7 +23,7 @@ Swapchain::Swapchain(
 	swap_chain_ci.imageArrayLayers = 1;
 	swap_chain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-	DeviceQueueIndices device_queue_indices = device.get_queue_indices();
+	auto device_queue_indices = device.get_queue_indices();
 
 	uint32_t queue_indices[] = { device_queue_indices.graphics_queue_index, device_queue_indices.present_queue_index };
 
@@ -38,7 +38,7 @@ Swapchain::Swapchain(
 		swap_chain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	}
 
-	DeviceSwapChainSupportInfo device_swap_chain_support_info = Device::query_swapchain_support(device, surface);
+	auto device_swap_chain_support_info = Device::query_swapchain_support(device, surface);
 
 	swap_chain_ci.preTransform = device_swap_chain_support_info.surface_capabilities.currentTransform;
 	swap_chain_ci.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
@@ -68,7 +68,7 @@ Swapchain::Swapchain(
 
 	for (uint32_t i = 0; i < image_count; i++)
 	{
-		VkImageViewCreateInfo view_ci = {};
+		auto view_ci = VkImageViewCreateInfo {};
 		view_ci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		view_ci.image = images[i];
 		view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -153,7 +153,7 @@ bool Swapchain::acquire_next_image_index(
 	uint32_t& out_image_index
 )
 {
-	VkResult result = vkAcquireNextImageKHR(
+	auto result = vkAcquireNextImageKHR(
 		device,
 		handle,
 		timeout_ns,
@@ -182,7 +182,7 @@ bool Swapchain::present(
 	uint32_t present_image_index
 )
 {
-	VkPresentInfoKHR present_info = {};
+	auto present_info = VkPresentInfoKHR {};
 	present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	present_info.waitSemaphoreCount = 1;
 	present_info.pWaitSemaphores = &render_complete_semaphore;
@@ -190,7 +190,7 @@ bool Swapchain::present(
 	present_info.pSwapchains = &handle;
 	present_info.pImageIndices = &present_image_index;
 	
-	VkResult result = vkQueuePresentKHR(device.get_present_queue(), &present_info);
+	auto result = vkQueuePresentKHR(device.get_present_queue(), &present_info);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 	{
@@ -251,12 +251,12 @@ bool Swapchain::is_swapchain_out_of_date() const
 
 SwapchainInfo Swapchain::query_info(const Device& device, VkSurfaceKHR surface)
 {
-	SwapchainInfo info = {};
+	auto info = SwapchainInfo {};
 
-	DeviceSwapChainSupportInfo swap_chain_support_info = Device::query_swapchain_support(device, surface);
+	auto swap_chain_support_info = Device::query_swapchain_support(device, surface);
 	
 	// Choose swap surface format
-	VkSurfaceFormatKHR surface_format = swap_chain_support_info.surface_formats[0]; // Default, first surface format.
+	auto surface_format = swap_chain_support_info.surface_formats[0]; // Default, first surface format.
 
 	for (uint32_t i = 0; i < swap_chain_support_info.surface_format_count; i++)
 	{
@@ -271,7 +271,7 @@ SwapchainInfo Swapchain::query_info(const Device& device, VkSurfaceKHR surface)
 	info.image_format = surface_format;
 
 	// Choose swap present mode
-	VkPresentModeKHR surface_present_mode = VK_PRESENT_MODE_FIFO_KHR; // Default, guaranteed present mode
+	auto surface_present_mode = VK_PRESENT_MODE_FIFO_KHR; // Default, guaranteed present mode
 
 	for (uint32_t i = 0; i < swap_chain_support_info.present_mode_count; i++)
 	{
@@ -287,7 +287,7 @@ SwapchainInfo Swapchain::query_info(const Device& device, VkSurfaceKHR surface)
 	// Choose swap extent
 	info.swapchain_extent = swap_chain_support_info.surface_capabilities.currentExtent;
 
-	uint32_t swap_chain_image_count = swap_chain_support_info.surface_capabilities.minImageCount + 1;
+	auto swap_chain_image_count = swap_chain_support_info.surface_capabilities.minImageCount + 1;
 
 	// Make sure to not exceed the maximum image count
 	if (swap_chain_image_count > swap_chain_support_info.surface_capabilities.maxImageCount &&
@@ -306,12 +306,12 @@ SwapchainInfo Swapchain::query_info(const Device& device, VkSurfaceKHR surface)
 		VK_FORMAT_D24_UNORM_S8_UINT
 	};
 
-	bool formats_supported = false;
-	VkFormat depth_format;
-	uint32_t flags = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+	auto formats_supported = false;
+	auto depth_format = VkFormat {};
+	auto flags = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
 	for (uint32_t i = 0; i < candidate_count; i++)
 	{
-		VkFormatProperties format_properties;
+		auto format_properties = VkFormatProperties {};
 		vkGetPhysicalDeviceFormatProperties(device, candidates[i], &format_properties);
 
 		if ((format_properties.linearTilingFeatures & flags) == flags)

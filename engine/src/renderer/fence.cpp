@@ -7,7 +7,7 @@ namespace lise
 
 Fence::Fence(const Device& device, bool create_signaled) : device(device), is_signaled(create_signaled)
 {
-	VkFenceCreateInfo fence_ci = {};
+	auto fence_ci = VkFenceCreateInfo {};
 	fence_ci.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	if (create_signaled) fence_ci.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 

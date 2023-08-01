@@ -25,7 +25,7 @@ std::optional<Obj> Obj::load(const std::string& path)
 	}
 
 	// Get directory.
-	size_t path_last_slash_pos = path.rfind("/");
+	auto path_last_slash_pos = path.rfind("/");
 
 	std::string directory;
 	if (path_last_slash_pos != std::string::npos)
@@ -38,7 +38,7 @@ std::optional<Obj> Obj::load(const std::string& path)
 
 	if (found_lines.size())
 	{
-		std::string mtl_path = directory + found_lines[0]->tokens[0];
+		auto mtl_path = directory + found_lines[0]->tokens[0];
 
 		ObjFormat loaded_mtl;
 

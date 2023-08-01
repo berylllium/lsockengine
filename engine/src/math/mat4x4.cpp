@@ -5,11 +5,11 @@ namespace lise
 
 mat4x4 mat4x4::operator * (const mat4x4& r) const
 {
-	mat4x4 out_matrix = LMAT4X4_IDENTITY;
+	auto out_matrix = LMAT4X4_IDENTITY;
 
-	const float* l_ptr = data;
-	const float* r_ptr = r.data;
-	float* dst_ptr = out_matrix.data;
+	auto l_ptr = data;
+	auto r_ptr = r.data;
+	auto dst_ptr = out_matrix.data;
 
 	for (int32_t i = 0; i < 4; ++i)
 	{
@@ -30,7 +30,7 @@ mat4x4 mat4x4::operator * (const mat4x4& r) const
 
 mat4x4 mat4x4::transposed() const
 {
-	mat4x4 out_matrix = LMAT4X4_IDENTITY;
+	auto out_matrix = LMAT4X4_IDENTITY;
 
 	out_matrix.data[0] = data[0];
 	out_matrix.data[1] = data[4];
@@ -54,7 +54,7 @@ mat4x4 mat4x4::transposed() const
 
 mat4x4 mat4x4::inversed() const
 {
-	const float* m = data;
+	auto m = data;
 
 	float t0 = m[10] * m[15];
 	float t1 = m[14] * m[11];
@@ -82,7 +82,7 @@ mat4x4 mat4x4::inversed() const
 	float t23 = m[4] * m[1];
 
 	mat4x4 out_matrix;
-	float* o = out_matrix.data;
+	auto o = out_matrix.data;
 
 	o[0] = (t0 * m[5] + t3 * m[9] + t4 * m[13]) - (t1 * m[5] + t2 * m[9] + t5 * m[13]);
 	o[1] = (t1 * m[1] + t6 * m[9] + t9 * m[13]) - (t0 * m[1] + t7 * m[9] + t8 * m[13]);

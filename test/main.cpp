@@ -176,8 +176,7 @@ void game_on_resize(uint32_t width, uint32_t height)
 
 int main()
 {
-	lise::EngineCreateInfo engine_create_info = {};
-
+	auto engine_create_info = lise::EngineCreateInfo {};
 	engine_create_info.window_pos_x = 100;
 	engine_create_info.window_pos_y = 100;
 	engine_create_info.window_width = 1280;
