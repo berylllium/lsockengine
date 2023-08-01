@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <algorithm>
 
-#include "core/logger.hpp"
+#include <simple-logger.hpp>
 
 namespace lise
 {
@@ -31,7 +31,7 @@ Framebuffer::Framebuffer(
 
 	if (vkCreateFramebuffer(device, &framebuffer_ci, NULL, &handle) != VK_SUCCESS)
 	{
-		LERROR("Failed to create framebuffer.");
+		sl::log_error("Failed to create framebuffer.");
 		throw std::exception();
 	}
 }

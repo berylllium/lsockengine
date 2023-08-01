@@ -1,10 +1,8 @@
 #include "renderer/system/shader_system.hpp"
 
-//#include <stdlib.h>
-
 #include <unordered_map>
 
-#include "core/logger.hpp"
+#include <simple-logger.hpp>
 
 namespace lise
 {
@@ -24,7 +22,7 @@ bool shader_system_initialize(
 	p_device = &device;
 	p_swapchain = &swapchain;
 
-	LINFO("Successfully initialized the renderer shader subsystem.");
+	sl::log_info("Successfully initialized the renderer shader subsystem.");
 
 	return true;
 }
@@ -36,9 +34,9 @@ void shader_system_shutdown()
 
 	// Clear caches.
 	p_device = NULL;
-	p_swapchain - NULL;
+	p_swapchain = NULL;
 
-	LINFO("Successfully shut down the renderer shader subsystem.");
+	sl::log_info("Successfully shut down the renderer shader subsystem.");
 }
 
 void shader_system_update_cache(const Swapchain* swapchain)
@@ -51,7 +49,7 @@ Shader* shader_system_load(const std::string& path, const RenderPass& render_pas
 	if (loaded_shaders.contains(path))
 	{
 		// Shader is already loaded.
-		LWARN("Attempting to load an already loaded shader.");
+		sl::log_warn("Attempting to load an already loaded shader.");
 		return nullptr;
 	}
 
@@ -60,7 +58,7 @@ Shader* shader_system_load(const std::string& path, const RenderPass& render_pas
 
 	if (!shader_config_load(path, shader_config))
 	{
-		LERROR("Failed to load shader configuration file for shader `%s`.", path);
+		sl::log_error("Failed to load shader configuration file for shader `{}`.", path);
 
 		return nullptr;
 	}
@@ -85,7 +83,7 @@ Shader* shader_system_load(const std::string& path, const RenderPass& render_pas
 	}
 	catch(std::exception e)
 	{
-		LERROR("Failed to load shader.");
+		sl::log_error("Failed to load shader.");
 
 		return nullptr;
 	}
@@ -99,7 +97,7 @@ Shader* shader_system_get(const std::string& path)
 
 	if (it == loaded_shaders.end())
 	{
-		LERROR("Failed to find shader with path `%s`.", path);
+		sl::log_error("Failed to find shader with path `{}`.", path);
 		return nullptr;
 	}
 

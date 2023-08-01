@@ -20,8 +20,9 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include <simple-logger.hpp>
+
 #include "definitions.hpp"
-#include "core/logger.hpp"
 #include "core/event.hpp"
 #include "core/input.hpp"
 
@@ -64,7 +65,7 @@ bool platform_init(
 
 	if (xcb_connection_has_error(state.connection))
 	{
-		LFATAL("Failed to connect to X server via XCB");
+		sl::log_fatal("Failed to connect to X server via XCB");
 		return false;
 	}
 
@@ -164,7 +165,7 @@ bool platform_init(
 	// Flush the stream
 	int32_t stream_result = xcb_flush(state.connection);
 	if (stream_result <= 0) {
-		LFATAL("An error occurred when flusing the stream: %d", stream_result);
+		sl::log_fatal("An error occurred when flusing the stream: %d", stream_result);
 		return false;
 	}
 
@@ -343,7 +344,7 @@ bool vulkan_platform_create_vulkan_surface(VkInstance instance, VkSurfaceKHR* ou
 
 	if (vkCreateXcbSurfaceKHR(instance, &create_info, NULL, out_surface) != VK_SUCCESS)
 	{
-		LFATAL("Vulkan surface creation failed.");
+		sl::log_fatal("Vulkan surface creation failed.");
 		return false;
 	}
 

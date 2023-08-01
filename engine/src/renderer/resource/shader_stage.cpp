@@ -3,7 +3,7 @@
 #include <fstream>
 #include <memory>
 
-#include "core/logger.hpp"
+#include <simple-logger.hpp>
 
 namespace lise
 {
@@ -16,7 +16,7 @@ ShaderStage::ShaderStage(const Device& device, std::string path, VkShaderStageFl
 
 	if (file.fail())
 	{
-		LERROR("Unable to open shader bytecode file for shader `%s`.", path);
+		sl::log_error("Unable to open shader bytecode file for shader `{}`.", path);
 		throw std::exception();
 	}
 
@@ -36,7 +36,7 @@ ShaderStage::ShaderStage(const Device& device, std::string path, VkShaderStageFl
 
 	if (vkCreateShaderModule(device, &shader_module_ci, NULL, &module_handle) != VK_SUCCESS)
 	{
-		LERROR("Failed to create shader module for shader `%s`.", path);
+		sl::log_error("Failed to create shader module for shader `{}`.", path);
 
 		throw std::exception();
 	}

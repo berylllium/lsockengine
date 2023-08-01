@@ -4,7 +4,6 @@ set(LISE_HEADERS
 	core/engine.hpp
 	core/event.hpp
 	core/input.hpp
-	core/logger.hpp
 	loader/obj_format_loader.hpp
 	loader/obj_loader.hpp
 	loader/shader_config_loader.hpp
@@ -45,7 +44,6 @@ set(LISE_SOURCES
 	core/engine.cpp
 	core/event.cpp
 	core/input.cpp
-	core/logger.cpp
 	loader/obj_format_loader.cpp
 	loader/obj_loader.cpp
 	loader/shader_config_loader.cpp
@@ -81,10 +79,10 @@ target_include_directories(lise PUBLIC include/ ../deps/stb)
 target_compile_definitions(lise PRIVATE L_EXPORT)
 target_compile_options(lise PRIVATE -fvisibility=hidden)
 
-target_link_libraries(lise m) # Link math
+target_link_libraries(lise PUBLIC m PUBLIC simple-logger) # Link math
 
 if (CMAKE_BUILD_TYPE MATCHES "Release")
-	target_link_libraries (lise -static-libgcc -static)
+	target_link_libraries (lise PUBLIC -static-libgcc PUBLIC -static)
 endif (CMAKE_BUILD_TYPE MATCHES "Release")
 
 if (WIN32)
@@ -106,7 +104,7 @@ if (WIN32)
 	endif()
 
 	target_include_directories(lise PUBLIC ${VULKAN_PATH}/Include)
-	target_link_libraries(lise ${VULKAN_PATH}/Lib/vulkan-1.lib)
+	target_link_libraries(lise PUBLIC ${VULKAN_PATH}/Lib/vulkan-1.lib)
 
 	# Create symlink to assets folder in build path
 	if(NOT EXISTS "${CMAKE_BINARY_DIR}/assets")
@@ -127,13 +125,11 @@ if (UNIX)
 
 	message(STATUS "Generating build files specifically for linux.")
 
-	target_link_libraries(lise vulkan xcb X11-xcb X11)
+	target_link_libraries(lise PUBLIC vulkan PUBLIC xcb PUBLIC X11-xcb PUBLIC X11)
 	
 	# Create symlink to assets folder in build path
 	if(NOT EXISTS "${CMAKE_BINARY_DIR}/assets")
 		message(STATUS "Creating symlink for assets.")
-	
-		target_link_libraries(lise vulkan)
 	
 		execute_process(
 			COMMAND ln -s ${CMAKE_CURRENT_LIST_DIR}/../assets ${CMAKE_BINARY_DIR}/assets

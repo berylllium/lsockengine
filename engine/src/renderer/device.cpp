@@ -1,11 +1,9 @@
 #include "renderer/device.hpp"
 
-//#include <stdlib.h>
 #include <cstring>
 #include <stdexcept>
 
-#include "core/logger.hpp"
-//#include "util/string_utils.hpp"
+#include <simple-logger.hpp>
 
 #define AMD_VENDOR_ID 0x1002
 

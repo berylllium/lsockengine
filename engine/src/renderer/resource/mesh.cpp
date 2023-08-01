@@ -2,7 +2,7 @@
 
 #include <format>
 
-#include "core/logger.hpp"
+#include <simple-logger.hpp>
 
 namespace lise
 {
@@ -79,7 +79,7 @@ Mesh::Mesh(
 	shader_instance = shader->allocate_instance();
 	if (shader_instance == nullptr)
 	{
-		LERROR("Failed to allocate a shader instance for mesh `%s`.", name);
+		sl::log_error("Failed to allocate a shader instance for mesh `%s`.", name);
 
 		throw std::runtime_error("Failed to allocate a shader instance");
 	}

@@ -1,6 +1,6 @@
 #include "renderer/renderer.hpp"
 
-#include "core/logger.hpp"
+#include <simple-logger.hpp>
 #include "renderer/vulkan_backend.hpp"
 
 namespace lise
@@ -10,7 +10,7 @@ bool renderer_initialize(const char* consumer_name)
 {
 	if (!vulkan_initialize(consumer_name))
 	{
-		LFATAL("Failed to initialize the vulkan backend.");
+		sl::log_fatal("Failed to initialize the vulkan backend.");
 		return false;
 	}
 
@@ -27,7 +27,7 @@ bool renderer_draw_frame(float delta_time)
 	// Begin the frame
 	if (!vulkan_begin_frame(delta_time))
 	{
-		LFATAL("Failed begin the frame drawing process.");
+		sl::log_fatal("Failed begin the frame drawing process.");
 		return false;
 	}
 
@@ -36,7 +36,7 @@ bool renderer_draw_frame(float delta_time)
 	// End the frame
 	if (!vulkan_end_frame(delta_time))
 	{
-		LFATAL("Failed to end the frame drawing process.");
+		sl::log_fatal("Failed to end the frame drawing process.");
 		return false;
 	}
 

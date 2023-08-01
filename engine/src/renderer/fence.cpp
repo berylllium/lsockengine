@@ -1,6 +1,6 @@
 #include "renderer/fence.hpp"
 
-#include "core/logger.hpp"
+#include <simple-logger.hpp>
 
 namespace lise
 {
@@ -13,7 +13,7 @@ Fence::Fence(const Device& device, bool create_signaled) : device(device), is_si
 
 	if (vkCreateFence(device, &fence_ci, NULL, &handle) != VK_SUCCESS)
 	{
-		LERROR("Could not create fence.");
+		sl::log_error("Could not create fence.");
 		throw std::exception();
 	}
 }
@@ -52,19 +52,19 @@ bool Fence::wait(uint64_t timeout_ns)
 			is_signaled = true;
 			return true;
 		case VK_TIMEOUT:
-			LWARN("Fence has timed out while waiting.");
+			sl::log_warn("Fence has timed out while waiting.");
 			break;
 		case VK_ERROR_DEVICE_LOST:
-			LERROR("An error has occurred while waiting for a fence: VK_ERROR_DEVICE_LOST");
+			sl::log_error("An error has occurred while waiting for a fence: VK_ERROR_DEVICE_LOST");
 			break;
 		case VK_ERROR_OUT_OF_HOST_MEMORY:
-			LERROR("An error has occurred while waiting for a fence: VK_ERROR_OUT_OF_HOST_MEMORY");
+			sl::log_error("An error has occurred while waiting for a fence: VK_ERROR_OUT_OF_HOST_MEMORY");
 			break;
 		case VK_ERROR_OUT_OF_DEVICE_MEMORY:
-			LERROR("An error has occurred while waiting for a fence: VK_ERROR_OUT_OF_DEVICE_MEMORY");
+			sl::log_error("An error has occurred while waiting for a fence: VK_ERROR_OUT_OF_DEVICE_MEMORY");
 			break;
 		default:
-			LERROR("An unknown error has occurred while waiting for a fence.");
+			sl::log_error("An unknown error has occurred while waiting for a fence.");
 			break;
 		}
 	}
@@ -79,7 +79,7 @@ bool Fence::reset()
 	{
 		if (vkResetFences(device, 1, &handle) != VK_SUCCESS)
 		{
-			LERROR("An error has occurred while resetting a fence.");
+			sl::log_error("An error has occurred while resetting a fence.");
 			return false;
 		}
 

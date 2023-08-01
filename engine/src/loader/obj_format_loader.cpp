@@ -2,7 +2,8 @@
 
 #include <fstream>
 
-#include "core/logger.hpp"
+#include <simple-logger.hpp>
+
 #include "util/string_utils.hpp"
 
 #define COMMENT_CHAR '#'
@@ -17,7 +18,7 @@ bool obj_format_load(const std::string& path, ObjFormat& out_obj_format)
 
 	if (file.fail())
 	{
-		LERROR("The obj formatter failed to open the following file: `%s`.", path);
+		sl::log_error("The obj formatter failed to open the following file: `{}`.", path);
 		return false;
 	}
 

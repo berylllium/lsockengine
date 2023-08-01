@@ -2,7 +2,8 @@
 
 #include <cstring>
 
-#include "core/logger.hpp"
+#include <simple-logger.hpp>
+
 #include "renderer/command_buffer.hpp"
 
 namespace lise
@@ -25,7 +26,7 @@ VulkanBuffer::VulkanBuffer(
 
 	if (vkCreateBuffer(device, &buffer_ci, NULL, &handle) != VK_SUCCESS)
 	{
-		LERROR("Failed to create buffer.");
+		sl::log_error("Failed to create buffer.");
 		throw std::exception();
 	}
 
@@ -46,7 +47,7 @@ VulkanBuffer::VulkanBuffer(
 
 	if (memory_type == -1)
 	{
-		LERROR("Required memory type was not found.");
+		sl::log_error("Required memory type was not found.");
 		throw std::exception();
 	}
 
@@ -60,7 +61,7 @@ VulkanBuffer::VulkanBuffer(
 
 	if (vkAllocateMemory(device, &allocate_info, NULL, &memory) != VK_SUCCESS)
 	{
-		LERROR("Failed to allocate memory for buffer");
+		sl::log_error("Failed to allocate memory for buffer");
 		throw std::exception();
 	}
 
@@ -97,7 +98,7 @@ bool VulkanBuffer::resize(
 	VkBuffer new_buffer;
 	if (vkCreateBuffer(device, &buffer_ci, NULL, &new_buffer) != VK_SUCCESS)
 	{
-		LERROR("Failed to create buffer.");
+		sl::log_error("Failed to create buffer.");
 		return false;
 	}
 
@@ -114,14 +115,14 @@ bool VulkanBuffer::resize(
 	VkDeviceMemory new_memory;
 	if (vkAllocateMemory(device, &allocate_info, NULL, &new_memory) != VK_SUCCESS)
 	{
-		LERROR("Failed to allocate memory for buffer.");
+		sl::log_error("Failed to allocate memory for buffer.");
 		return false;
 	}
 
 	// Bind new memory
 	if (vkBindBufferMemory(device, new_buffer, new_memory, 0) != VK_SUCCESS)
 	{
-		LERROR("Failed to bind memory to buffer.");
+		sl::log_error("Failed to bind memory to buffer.");
 		return false;
 	}
 
@@ -154,7 +155,7 @@ bool VulkanBuffer::bind(uint64_t offset)
 {
 	if (vkBindBufferMemory(device, handle, memory, offset) != VK_SUCCESS)
 	{
-		LERROR("Failed to bind buffer memory.");
+		sl::log_error("Failed to bind buffer memory.");
 		return false;
 	}
 

@@ -3,8 +3,9 @@
 #include <cstdlib>
 #include <unordered_map>
 
+#include <simple-logger.hpp>
+
 #include "loader/obj_format_loader.hpp"
-#include "core/logger.hpp"
 #include "util/string_utils.hpp"
 
 namespace lise
@@ -18,7 +19,7 @@ std::optional<Obj> Obj::load(const std::string& path)
 
 	if (!obj_format_load(path, loaded_obj_format))
 	{
-		LERROR("Failed to load obj file `%s`.", path);
+		sl::log_error("Failed to load obj file `{}`.", path);
 		
 		return {};
 	}
@@ -43,7 +44,7 @@ std::optional<Obj> Obj::load(const std::string& path)
 
 		if (!obj_format_load(mtl_path, loaded_mtl))
 		{
-			LERROR("Failed to load MTL file `%s` for obj file `%s`.", mtl_path.c_str(), path.c_str());
+			sl::log_error("Failed to load MTL file `{}` for obj file `{}`.", mtl_path, path);
 			
 			return {};
 		}

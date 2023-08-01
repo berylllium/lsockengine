@@ -1,6 +1,6 @@
-#include "core/engine.hpp"
-#include "core/logger.hpp"
+#include <simple-logger.hpp>
 
+#include "core/engine.hpp"
 #include <core/event.hpp>
 #include <core/input.hpp>
 #include <math/mat4x4.hpp>
@@ -19,23 +19,23 @@ void on_event(uint16_t event_code, lise::event_context ctx)
 	switch (event_code)
 	{
 	case lise::event_codes::ON_KEY_DOWN:
-		LDEBUG("Key pressed: %d", ctx.data.u32[0]);
+		sl::log_debug("Key pressed: {}", ctx.data.u32[0]);
 	break;
 	case lise::event_codes::ON_KEY_UP:
-		LDEBUG("Key released: %d", ctx.data.u32[0]);
+		sl::log_debug("Key released: {}", ctx.data.u32[0]);
 	break;
 	case lise::event_codes::ON_MOUSE_MOVE:
-		LDEBUG("Mouse moved: %d, %d", ctx.data.u32[0], ctx.data.u32[1]);
+		sl::log_debug("Mouse moved: {}, {}", ctx.data.u32[0], ctx.data.u32[1]);
 	break;
 	case lise::event_codes::ON_MOUSE_WHEEL_MOVE:
-		LDEBUG("Mouse wheel moved: %d", ctx.data.i8[0]);
+		sl::log_debug("Mouse wheel moved: {}", ctx.data.i8[0]);
 	break;
 	}
 }
 
 void on_window_resize(uint16_t event_code, lise::event_context ctx)
 {
-	LDEBUG("New window size: %d, %d", ctx.data.u32[0], ctx.data.u32[1]);
+	sl::log_debug("New window size: {}, {}", ctx.data.u32[0], ctx.data.u32[1]);
 }
 
 void camera_yaw(float amount) 
@@ -56,12 +56,12 @@ void camera_pitch(float amount) {
 
 bool game_initialize() 
 {
-	LFATAL("A test message: %f", 2.72f);
-	LERROR("A test message: %f", 2.72f);
-	LWARN("A test message: %f", 2.72f);
-	LINFO("A test message: %f", 2.72f);
-	LDEBUG("A test message: %f", 2.72f);
-	LTRACE("A test message: %f", 2.72f);
+	sl::log_fatal("A test message: {}", 2.72f);
+	sl::log_error("A test message: {}", 2.72f);
+	sl::log_warn("A test message: {}", 2.72f);
+	sl::log_info("A test message: {}", 2.72f);
+	sl::log_debug("A test message: {}", 2.72f);
+	sl::log_trace("A test message: {}", 2.72f);
 
 	lise::event_add_listener(lise::event_codes::ON_KEY_DOWN, on_event);
 
@@ -94,7 +94,7 @@ bool game_update(float delta_time)
 
 	if (sum >= 1)
 	{
-		LDEBUG("Its been a second, %d game loops have passed. The average frametime was %f", count, sum / count);
+		sl::log_debug("Its been a second, {} game loops have passed. The average frametime was {}", count, sum / count);
 
 		sum = 0;
 		count = 0;
@@ -190,13 +190,13 @@ int main()
 
 	if (!lise::engine_create(engine_create_info))
 	{
-		LFATAL("Could not create engine.");
+		sl::log_fatal("Could not create engine.");
 		return -1;
 	}
 
 	if (!lise::engine_run())
 	{
-		LFATAL("Application did not shut down engine.");
+		sl::log_fatal("Application did not shut down engine.");
 		return -1;
 	}
 

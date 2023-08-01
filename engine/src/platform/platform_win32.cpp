@@ -2,9 +2,10 @@
 
 #ifdef L_ISWIN
 
+#include <simple-logger.hpp>
+
 #include "core/event.hpp"
 #include "core/input.hpp"
-#include "core/logger.hpp"
 
 #include <windows.h>
 #include <windowsx.h>
@@ -55,7 +56,7 @@ bool platform_init(
 	{
 		MessageBoxA(0, "Window registration failed.", "Error", MB_ICONEXCLAMATION | MB_OK);
 
-		LFATAL("Window registration failed.");
+		sl::log_fatal("Window registration failed.");
 		return false;
 	}
 
@@ -90,7 +91,7 @@ bool platform_init(
 	{
 		MessageBoxA(NULL, "Window creation failed.", "Error", MB_ICONEXCLAMATION | MB_OK);
 
-		LFATAL("Window creation failed.");
+		sl::log_fatal("Window creation failed.");
 		return false;
 	}
 
@@ -108,7 +109,7 @@ bool platform_init(
 	clock_frequency = 1.0 / (double) freq.QuadPart;
 	QueryPerformanceCounter(&start_time);
 
-	LINFO("Successfully initialized the windows platform subsystem.");
+	sl::log_info("Successfully initialized the windows platform subsystem.");
 
 	return true;
 }
@@ -121,7 +122,7 @@ void platform_shutdown()
 		state.hwnd = 0;
 	}
 
-	LINFO("Successfully shut down the windows platform subsystem.");
+	sl::log_info("Successfully shut down the windows platform subsystem.");
 }
 
 bool platform_poll_messages()

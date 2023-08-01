@@ -1,9 +1,6 @@
 #include "renderer/swapchain.hpp"
 
-//#include <stdlib.h>
-
-//#include "util/math_utils.h"
-#include "core/logger.hpp"
+#include <simple-logger.hpp>
 
 namespace lise
 {
@@ -51,7 +48,7 @@ Swapchain::Swapchain(
 
 	if (vkCreateSwapchainKHR(device, &swap_chain_ci, NULL, &handle)	!= VK_SUCCESS)
 	{
-		LFATAL("Failed to create the swap chain.");
+		sl::log_fatal("Failed to create the swap chain.");
 		throw std::exception();
 	}
 
@@ -106,7 +103,7 @@ Swapchain::Swapchain(
 		}
 		catch (std::exception e)
 		{
-			LFATAL("Failed to create image swap chain depth attachments.");
+			sl::log_fatal("Failed to create image swap chain depth attachments.");
 			throw std::exception();
 		}
 	}
@@ -133,7 +130,7 @@ Swapchain::Swapchain(
 		}
 		catch (std::exception e)
 		{
-			LFATAL("Failed to create swap chain frame buffers");
+			sl::log_fatal("Failed to create swap chain frame buffers");
 			throw std::exception();
 		}
 	}
@@ -167,13 +164,13 @@ bool Swapchain::acquire_next_image_index(
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
-		LDEBUG("Swapchain is out of date. Attempring to recreate.");
+		sl::log_debug("Swapchain is out of date. Attempring to recreate.");
 		swapchain_out_of_date = true;
 		return false;
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 	{
-		LFATAL("Failed to acquire next swapchain image.");
+		sl::log_fatal("Failed to acquire next swapchain image.");
 		return false;
 	}
 
@@ -197,13 +194,13 @@ bool Swapchain::present(
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 	{
-		LDEBUG("Swapchain is out of date. Attempring to recreate.");
+		sl::log_debug("Swapchain is out of date. Attempring to recreate.");
 		swapchain_out_of_date = true;
 		return false;
 	}
 	else if (result != VK_SUCCESS)
 	{
-		LFATAL("Failed to present swapchain image.");
+		sl::log_fatal("Failed to present swapchain image.");
 		return false;
 	}
 
@@ -333,7 +330,7 @@ SwapchainInfo Swapchain::query_info(const Device& device, VkSurfaceKHR surface)
 
 	if (!formats_supported)
 	{
-		LFATAL("Failed to find supported depth format during swapchain creation.");
+		sl::log_fatal("Failed to find supported depth format during swapchain creation.");
 		return SwapchainInfo {};
 	}
 

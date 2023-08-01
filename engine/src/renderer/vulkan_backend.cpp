@@ -3,7 +3,8 @@
 #include <memory>
 #include <cstring>
 
-#include "core/logger.hpp"
+#include <simple-logger.hpp>
+
 #include "platform/platform.hpp"
 #include "renderer/vulkan_platform.hpp"
 #include "renderer/resource/model.hpp"
@@ -89,7 +90,7 @@ bool vulkan_initialize(const char* application_name)
 {
 	if (enable_validation_layers && !check_validation_layer_support())
 	{
-		LFATAL("One or more requested validation layers do not exist.");
+		sl::log_fatal("One or more requested validation layers do not exist.");
 		return false;
 	}
 
@@ -129,14 +130,14 @@ bool vulkan_initialize(const char* application_name)
 	// Create vulkan instance
 	if (vkCreateInstance(&create_info, NULL, &instance) != VK_SUCCESS)
 	{
-		LFATAL("Failed to create Vulkan instance.");
+		sl::log_fatal("Failed to create Vulkan instance.");
 		return false;
 	}
 
 	// Create vulkan surface
 	if (!vulkan_platform_create_vulkan_surface(instance, &surface))
 	{
-		LFATAL("Failed to create vulkan surface.");
+		sl::log_fatal("Failed to create vulkan surface.");
 		return false;
 	}
 
@@ -155,7 +156,7 @@ bool vulkan_initialize(const char* application_name)
 	}
 	catch (std::exception e)
 	{
-		LFATAL("Failed to create a logical device.");
+		sl::log_fatal("Failed to create a logical device.");
 		return false;
 	}
 
@@ -196,7 +197,7 @@ bool vulkan_initialize(const char* application_name)
 	}
 	catch (std::exception e)
 	{
-		LFATAL("Failed to create render pass.");
+		sl::log_fatal("Failed to create render pass.");
 		return false;
 	}
 
@@ -212,7 +213,7 @@ bool vulkan_initialize(const char* application_name)
 	}
 	catch (std::exception e)
 	{
-		LFATAL("Failed to create the swapchain.");
+		sl::log_fatal("Failed to create the swapchain.");
 		return false;
 	}
 
@@ -274,7 +275,7 @@ bool vulkan_initialize(const char* application_name)
 
 	if (!texture_system_initialize(*device))
 	{
-		LFATAL("Failed to initialize the vulkan renderer texture subsystem.");
+		sl::log_fatal("Failed to initialize the vulkan renderer texture subsystem.");
 		return false;
 	}
 
@@ -283,7 +284,7 @@ bool vulkan_initialize(const char* application_name)
 		*swapchain
 	))
 	{
-		LFATAL("Failed to initialize the vulkan renderer shader subsystem.");
+		sl::log_fatal("Failed to initialize the vulkan renderer shader subsystem.");
 		return false;
 	}
 
@@ -293,14 +294,14 @@ bool vulkan_initialize(const char* application_name)
 
 	if (object_shader == nullptr)
 	{
-		LFATAL("Failed to load the object shader.");
+		sl::log_fatal("Failed to load the object shader.");
 		
 		return false;
 	}
 
 	if (ui_shader == nullptr)
 	{
-		LFATAL("Failed to load the ui shader.");
+		sl::log_fatal("Failed to load the ui shader.");
 		
 		return false;
 	}
@@ -311,7 +312,7 @@ bool vulkan_initialize(const char* application_name)
 
 	if (!car_obj)
 	{
-		LFATAL("Failed to load car obj file.");
+		sl::log_fatal("Failed to load car obj file.");
 
 		return false;
 	}
@@ -356,7 +357,7 @@ void vulkan_shutdown()
 
 	vkDestroyInstance(instance, nullptr);
 
-	LINFO("Successfully shut down the vulkan backend.");
+	sl::log_info("Successfully shut down the vulkan backend.");
 }
 
 bool vulkan_begin_frame(float delta_time)
@@ -372,7 +373,7 @@ bool vulkan_begin_frame(float delta_time)
 	// Wait for the current frame
 	if (!in_flight_fences[current_frame].wait())
 	{
-		LWARN("Failed to wait on an in-flight fence.");
+		sl::log_warn("Failed to wait on an in-flight fence.");
 		return false;
 	}
 
@@ -384,7 +385,7 @@ bool vulkan_begin_frame(float delta_time)
 		current_image_index
 	))
 	{
-		LWARN("Failed to acquire next swapchain image");
+		sl::log_warn("Failed to acquire next swapchain image");
 		return false;
 	}
 
@@ -495,7 +496,7 @@ bool vulkan_end_frame(float delta_time)
 		in_flight_fences[current_frame]) != VK_SUCCESS
 	)
 	{
-		LERROR("Failed to submit queue.");
+		sl::log_error("Failed to submit queue.");
 
 		return false;
 	}
@@ -510,7 +511,7 @@ bool vulkan_end_frame(float delta_time)
 	)
 	{
 		// Swapchain is not out of date, so the return value indicates a failure.
-		LFATAL("Failed to present swap chain image.");
+		sl::log_fatal("Failed to present swap chain image.");
 
 		return false;
 	}
@@ -568,7 +569,7 @@ static bool check_validation_layer_support()
 
 void create_command_buffers()
 {
-	LDEBUG("Creating initial command buffers");
+	sl::log_debug("Creating initial command buffers");
 
 	// Clear old command buffers.
 	graphics_command_buffers.clear();
@@ -664,7 +665,7 @@ static bool recreate_swapchain()
 	}
 	catch (std::exception e)
 	{
-		LERROR("Failed to recreate the swapchain");
+		sl::log_error("Failed to recreate the swapchain");
 
 		return false;
 	}

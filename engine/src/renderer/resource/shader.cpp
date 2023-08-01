@@ -2,7 +2,8 @@
 
 #include <vector>
 
-#include "core/logger.hpp"
+#include <simple-logger.hpp>
+
 #include "loader/shader_config_loader.hpp"
 #include "math/vertex.hpp"
 #include "renderer/resource/shader_stage.hpp"
@@ -50,8 +51,8 @@ Shader::Shader(
 		}
 		else
 		{
-			LERROR(
-				"Stage name provided in config `%s`, `%s` is not valid.",
+			sl::log_error(
+				"Stage name provided in config `{}`, `{}` is not valid.",
 				shader_config.name,
 				shader_config.stage_names[i]
 			);
@@ -66,7 +67,7 @@ Shader::Shader(
 		}
 		catch(std::exception e)
 		{
-			LERROR("Failed to open shader binary file for config file `%s`.", shader_config.name);
+			sl::log_error("Failed to open shader binary file for config file `{}`.", shader_config.name);
 
 			throw std::exception();
 		}
@@ -170,7 +171,7 @@ Shader::Shader(
 
 	if (vkCreateDescriptorSetLayout(device, & global_layout_ci, NULL, &global_descriptor_set_layout) != VK_SUCCESS)
 	{
-		LERROR("Failed to create global descriptor set layout.");
+		sl::log_error("Failed to create global descriptor set layout.");
 
 		throw std::exception();
 	}
@@ -188,7 +189,7 @@ Shader::Shader(
 
 	if (vkCreateDescriptorPool(device, &global_pool_ci, NULL, &global_descriptor_pool) != VK_SUCCESS)
 	{
-		LERROR("Failed to create global descriptor pool.");
+		sl::log_error("Failed to create global descriptor pool.");
 		
 		throw std::exception();
 	}
@@ -225,7 +226,7 @@ Shader::Shader(
 
 	if (vkCreateDescriptorSetLayout(device, &instance_layout_ci, NULL, &instance_descriptor_set_layout) != VK_SUCCESS)
 	{
-		LERROR("Failed to create instance descriptor set layout.");
+		sl::log_error("Failed to create instance descriptor set layout.");
 
 		throw std::exception();
 	}
@@ -248,7 +249,7 @@ Shader::Shader(
 
 	if (vkCreateDescriptorPool(device, &instance_pool_ci, NULL, &instance_descriptor_pool) != VK_SUCCESS)
 	{
-		LERROR("Failed to create instance descriptor pool.");
+		sl::log_error("Failed to create instance descriptor pool.");
 
 		throw std::exception();
 	}
@@ -327,7 +328,7 @@ Shader::Shader(
 	}
 	catch (std::exception e)
 	{
-		LERROR("Failed to create graphics pipeline.");
+		sl::log_error("Failed to create graphics pipeline.");
 
 		throw std::exception();
 	}
@@ -347,7 +348,7 @@ Shader::Shader(
 	}
 	catch (std::exception e)
 	{
-		LERROR("Failed to allocate the global uniform buffer object.");
+		sl::log_error("Failed to allocate the global uniform buffer object.");
 
 		throw std::exception();
 	}
@@ -369,7 +370,7 @@ Shader::Shader(
 	global_descriptor_sets.reserve(swapchain_image_count);
 	if (vkAllocateDescriptorSets(device, &global_set_allocate_info, global_descriptor_sets.data()) != VK_SUCCESS)
 	{
-		LERROR("Failed to allocate global descriptor sets.");
+		sl::log_error("Failed to allocate global descriptor sets.");
 
 		throw std::exception();
 	}
@@ -414,7 +415,7 @@ Shader::Shader(
 	}
 	catch (std::exception e)
 	{
-		LERROR("Failed to create the object unbiform buffer.");
+		sl::log_error("Failed to create the object unbiform buffer.");
 
 		throw std::exception();
 	}
@@ -514,7 +515,7 @@ Shader::Instance* Shader::allocate_instance()
 
 	if (!slot_found)
 	{
-		LERROR("Failed to find a free slot in the instance uniform buffer of shader `%s`.", name);
+		sl::log_error("Failed to find a free slot in the instance uniform buffer of shader `{}`.", name);
 
 		return nullptr;
 	}
@@ -546,7 +547,7 @@ Shader::Instance* Shader::allocate_instance()
 
 	if (vkAllocateDescriptorSets(device, &d_set_ai, out_instance.descriptor_sets.data()) != VK_SUCCESS)
 	{
-		LERROR("Failed to allocate instance descriptor sets for shader `%s`.", name);
+		sl::log_error("Failed to allocate instance descriptor sets for shader `{}`.", name);
 
 		return nullptr;
 	}

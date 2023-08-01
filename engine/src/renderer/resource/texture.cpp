@@ -1,9 +1,7 @@
 #include "renderer/resource/texture.hpp"
 
-//#include <stdlib.h>
-//#include <string.h>
+#include <simple-logger.hpp>
 
-#include "core/logger.hpp"
 #include "renderer/vulkan_buffer.hpp"
 
 namespace lise
@@ -90,7 +88,7 @@ Texture::Texture(
 
 	if (vkCreateSampler(device, &sampler_ci, NULL, &sampler) != VK_SUCCESS)
 	{
-		LERROR("Failed to create a sampler for the following texture: `%s`.", path);
+		sl::log_error("Failed to create a sampler for the following texture: `%s`.", path);
 
 		delete image;
 		throw std::exception();

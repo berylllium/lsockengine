@@ -6,7 +6,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-#include "core/logger.hpp"
+#include <simple-logger.hpp>
 
 namespace lise
 {
@@ -25,11 +25,11 @@ bool texture_system_initialize(const Device& device)
 	// Create the default texture.
 	if (!create_default_texture(device))
 	{
-		LFATAL("Failed to create the default texture.");
+		sl::log_fatal("Failed to create the default texture.");
 		return false;
 	}
 	
-	LINFO("Successfully initialized the renderer texture subsystem.");
+	sl::log_info("Successfully initialized the renderer texture subsystem.");
 
 	return true;
 }
@@ -42,7 +42,7 @@ void texture_system_shutdown(const Device& device)
 	// Destroy the default texture.
 	delete default_texture;
 
-	LINFO("Successfully shut down the renderer texture subsystem.");
+	sl::log_info("Successfully shut down the renderer texture subsystem.");
 }
 
 const Texture* texture_system_get_default_texture()
@@ -55,7 +55,7 @@ const Texture* texture_system_load(const Device& device, const std::string& path
 	if (loaded_textures.contains(path))
 	{
 		// Texture is already loaded.
-		LWARN("Attempting to load an already loaded texture.");
+		sl::log_warn("Attempting to load an already loaded texture.");
 		return default_texture;
 	}
 
@@ -69,7 +69,7 @@ const Texture* texture_system_load(const Device& device, const std::string& path
 
 	if (!data)
 	{
-		LERROR(
+		sl::log_error(
 			"STB_image failed to load an image during texture creation of texture `%s`. Error: %s.",
 			path,
 			stbi_failure_reason()
@@ -100,7 +100,7 @@ const Texture* texture_system_load(const Device& device, const std::string& path
 	}
 	catch (std::exception e)
 	{
-		LERROR("Faild to load texture: `%s`. Providing default texture.", path);
+		sl::log_error("Faild to load texture: `%s`. Providing default texture.", path);
 
 		return default_texture;
 	}
@@ -112,7 +112,7 @@ const Texture* texture_system_get(const std::string& path)
 {
 	if (!loaded_textures.contains(path))
 	{
-		LWARN("Texture with path `%s` has not been loaded yet. Providing default texture.", path);
+		sl::log_warn("Texture with path `%s` has not been loaded yet. Providing default texture.", path);
 
 		return default_texture;
 	}
@@ -136,7 +136,7 @@ const Texture* texture_system_get_or_load(const Device& device, const std::strin
 // Static helper functions.
 static bool create_default_texture(const Device& device)
 {
-	LINFO("Creating the default texture.");
+	sl::log_info("Creating the default texture.");
 
 	const uint32_t texture_dims = 256;
 	const uint32_t half = texture_dims / 2;
@@ -187,7 +187,7 @@ static bool create_default_texture(const Device& device)
 	}
 	catch (std::exception)
 	{
-		LERROR("Failed to create texture object for the default texture.");
+		sl::log_error("Failed to create texture object for the default texture.");
 		return false;
 	}
 

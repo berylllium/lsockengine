@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "core/logger.hpp"
+#include <simple-logger.hpp>
 
 namespace lise
 {
@@ -23,7 +23,7 @@ bool event_init()
 		event_register(i);
 	}
 
-	LINFO("Successfully initialized the event subsystem.");
+	sl::log_info("Successfully initialized the event subsystem.");
 
 	initialized = true;
 
@@ -32,7 +32,7 @@ bool event_init()
 
 void event_shutdown()
 {
-	LINFO("Successfully shut down the event system.");
+	sl::log_info("Successfully shut down the event system.");
 }
 
 void event_register(uint16_t event_code)

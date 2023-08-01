@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-#include "core/logger.hpp"
+#include <simple-logger.hpp>
 
 namespace lise
 {
@@ -36,7 +36,7 @@ VulkanImage::VulkanImage(
 
 	if (vkCreateImage(device, &image_create_info, NULL, &image_handle) != VK_SUCCESS)
 	{
-		LERROR("Failed to create image object.");
+		sl::log_error("Failed to create image object.");
 		throw std::exception();
 	}
 
@@ -61,7 +61,7 @@ VulkanImage::VulkanImage(
 
 	if (memory_type == -1)
 	{
-		LERROR("Required memory type was not found.");
+		sl::log_error("Required memory type was not found.");
 		throw std::exception();
 	}
 
@@ -73,14 +73,14 @@ VulkanImage::VulkanImage(
 
 	if (vkAllocateMemory(device, &memory_allocate_info, NULL, &memory) != VK_SUCCESS)
 	{
-		LERROR("Failed to allocate memory for image.");
+		sl::log_error("Failed to allocate memory for image.");
 		throw std::exception();
 	}
 
 	// Bind memory
 	if (vkBindImageMemory(device, image_handle, memory, 0) != VK_SUCCESS)
 	{
-		LERROR("Failed to bind memory to image handle.");
+		sl::log_error("Failed to bind memory to image handle.");
 		throw std::exception();
 	}
 
@@ -102,7 +102,7 @@ VulkanImage::VulkanImage(
 
 		if (vkCreateImageView(device, &image_view_ci, NULL, &image_view) != VK_SUCCESS)
 		{
-			LERROR("Failed to create image view");
+			sl::log_error("Failed to create image view");
 			throw std::exception();
 		}
 	}

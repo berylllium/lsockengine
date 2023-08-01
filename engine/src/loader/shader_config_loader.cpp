@@ -1,6 +1,7 @@
 #include "loader/shader_config_loader.hpp"
 
-#include "core/logger.hpp"
+#include <simple-logger.hpp>
+
 #include "loader/obj_format_loader.hpp"
 
 namespace lise
@@ -12,7 +13,7 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 
 	if (!obj_format_load(path, loaded_format))
 	{
-		LERROR("Failed to load shader config for shader: `%s`.", path);
+		sl::log_error("Failed to load shader config for shader: `{}`.", path);
 		return false;
 	}
 
@@ -21,7 +22,7 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 
 	if (found_lines.size() != 1)
 	{
-		LERROR("Provided config file `%s` %s",
+		sl::log_error("Provided config file `{}` {}",
 			path,
 			found_lines.size() == 0 ?
 				"does not contain a `name` line." :
@@ -33,7 +34,7 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 
 	if (found_lines[0]->tokens.size() != 1)
 	{
-		LERROR("Provided config file `%s` contains a `name` line, %s",
+		sl::log_error("Provided config file `{}` contains a `name` line, {}",
 			path,
 			found_lines[0]->tokens.size() == 0 ?
 				"but no names were specified. Please specify one." :
@@ -50,7 +51,7 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 
 	if (found_lines.size() != 1)
 	{
-		LERROR("Provided config file `%s` %s",
+		sl::log_error("Provided config file `{}` {}",
 			path,
 			found_lines.size() == 0 ?
 				"does not contain a `render_pass` line." :
@@ -62,7 +63,7 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 
 	if (found_lines[0]->tokens.size() != 1)
 	{
-		LERROR("Provided config file `%s` contains a `render_pass` line, %s",
+		sl::log_error("Provided config file `{}` contains a `render_pass` line, {}",
 			path,
 			found_lines[0]->tokens.size() == 0 ?
 				"but no render pass names were specified. Please specify one." :
@@ -79,7 +80,7 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 
 	if (found_lines.size() != 1)
 	{
-		LERROR("Provided config file `%s` %s",
+		sl::log_error("Provided config file `{}` {}",
 			path,
 			found_lines.size() == 0 ?
 				"does not contain a `stages` line." :
@@ -91,8 +92,8 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 
 	if (found_lines[0]->tokens.size() == 0)
 	{
-		LERROR(
-			"Provided config file `%s` contains a `stages` line but no stages were specified."
+		sl::log_error(
+			"Provided config file `{}` contains a `stages` line but no stages were specified."
 			"Please specify one or more.",
 			path
 		);
@@ -107,7 +108,7 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 
 	if (found_lines.size() != 1)
 	{
-		LERROR("Provided config file `%s` %s",
+		sl::log_error("Provided config file `{}` {}",
 			path,
 			found_lines.size() == 0 ?
 				"does not contain a `stage_files` line." :
@@ -119,8 +120,8 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 
 	if (found_lines[0]->tokens.size() == 0)
 	{
-		LERROR(
-			"Provided config file `%s` contains a `stage_files` line but no stage file paths were specified."
+		sl::log_error(
+			"Provided config file `{}` contains a `stage_files` line but no stage file paths were specified."
 			"Please specify one or more.",
 			path
 		);
@@ -130,9 +131,9 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 
 	if (found_lines[0]->tokens.size() != out_config.stage_names.size())
 	{
-		LERROR(
+		sl::log_error(
 			"The amount of provided stage file paths does not math the amount of provided stage names "
-			"in config file `%s`.",
+			"in config file `{}`.",
 			path
 		);
 
@@ -146,7 +147,7 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 
 	if (found_lines.size() == 0)
 	{
-		LERROR("Provided config file `%s` does not contain any `attribute` lines. Please provide one or more.", path);
+		sl::log_error("Provided config file `{}` does not contain any `attribute` lines. Please provide one or more.", path);
 		
 		return false;
 	}
@@ -157,8 +158,8 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 	{
 		if (found_lines[i]->tokens.size() != 2)
 		{
-			LERROR(
-				"An `attribute` line in config file `%s` does not contain exactly two (2) parameters. `attribute` lines"
+			sl::log_error(
+				"An `attribute` line in config file `{}` does not contain exactly two (2) parameters. `attribute` lines"
 				" need to contain exactly two (2) parameters; a type and a name.",
 				path
 			);
@@ -175,7 +176,7 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 
 	if (found_lines.size() == 0)
 	{
-		LERROR("Provided config file `%s` does not contain any `uniform` lines. Please provide one or more.", path);
+		sl::log_error("Provided config file `{}` does not contain any `uniform` lines. Please provide one or more.", path);
 		
 		return false;
 	}
@@ -186,8 +187,8 @@ bool shader_config_load(const std::string& path, ShaderConfig& out_config)
 	{
 		if (found_lines[i]->tokens.size() != 3)
 		{
-			LERROR(
-				"A `uniform` line in config file `%s` does not contain exactly three (3) parameters. `uniform` lines "
+			sl::log_error(
+				"A `uniform` line in config file `{}` does not contain exactly three (3) parameters. `uniform` lines "
 				"need to contain exactly three (3) parameters; a type, a scope and a name.",
 				path
 			);

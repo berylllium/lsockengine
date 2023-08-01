@@ -1,6 +1,6 @@
 #include "renderer/pipeline.hpp"
 
-#include "core/logger.hpp"
+#include <simple-logger.hpp>
 
 namespace lise
 {
@@ -126,7 +126,7 @@ Pipeline::Pipeline(
 	// Create the pipeline layout.
 	if (vkCreatePipelineLayout(device, &pipeline_layout_create_info, NULL, &pipeline_layout) != VK_SUCCESS)
 	{
-		LERROR("Failed to create pipline layout.");
+		sl::log_error("Failed to create pipline layout.");
 		throw std::exception();
 	}
 
@@ -155,7 +155,7 @@ Pipeline::Pipeline(
 
 	if (vkCreateGraphicsPipelines(device, NULL, 1, &pipeline_create_info, NULL, &handle) != VK_SUCCESS)
 	{
-		LERROR("Failed to create the graphics pipeline.");
+		sl::log_error("Failed to create the graphics pipeline.");
 		throw std::exception();
 	}
 }
