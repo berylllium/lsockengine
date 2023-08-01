@@ -2,6 +2,7 @@ build/
 .vscode/
 .cache/
 .ccls-cache/
+.nvim/
 
 docs/
 

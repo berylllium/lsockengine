@@ -14,7 +14,7 @@ struct engine_state
 {
 	bool is_initialized;
 
-	consumer_entry_points entry_points;
+	ConsumerEntryPoints entry_points;
 
 	bool is_running;
 	bool is_suspended;
@@ -30,7 +30,7 @@ void on_window_close(uint16_t event_code, event_context ctx);
 
 static engine_state app_state;
 
-bool engine_create(engine_create_info app_create_info)
+bool engine_create(EngineCreateInfo app_create_info)
 {
 	if (app_state.is_initialized)
 	{

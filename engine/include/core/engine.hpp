@@ -8,7 +8,7 @@ namespace lise
 /**
  * @brief This structure stores function pointers to consumer defined engine functions.
  */
-struct consumer_entry_points
+struct ConsumerEntryPoints
 {
 	/**
 	 * @brief The `initialize` callback gets called once at the initialization phase of the engine.
@@ -47,7 +47,7 @@ struct consumer_entry_points
 /**
  * @brief This structure contains configurations for creating the engine.
  */
-struct engine_create_info
+struct EngineCreateInfo
 {
 	/**
 	 * @brief The desired x-coordinate of the upper left corner of the window on the screen.
@@ -80,7 +80,7 @@ struct engine_create_info
 	 * @brief A \ref lise_game_engine_entry_points object containing all the "entry_points" or callbacks of the
 	 * consumer.
 	 */
-	consumer_entry_points entry_points;
+	ConsumerEntryPoints entry_points;
 };
 
 /**
@@ -90,7 +90,7 @@ struct engine_create_info
  * @return true if the engine was successfully created.
  * @return false if there was an error during engine creation.
  */
-LAPI bool engine_create(engine_create_info engine_create_info);
+LAPI bool engine_create(EngineCreateInfo engine_create_info);
 
 /**
  * @brief Runs the engine, meaning that it will start the engine and transfer ownership of the entire thread to the
