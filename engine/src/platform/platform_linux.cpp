@@ -325,30 +325,30 @@ void platform_sleep(uint64_t ms)
 #endif
 }
 
-const char** platform_get_required_instance_extensions(uint32_t* out_extension_count)
+std::vector<const char*> platform_get_required_instance_extensions()
 {
-	static const char* required_instance_extensions[] = {
+	static std::vector<const char*> required_instance_extensions = {
 		"VK_KHR_surface", "VK_KHR_xcb_surface"
 	};
-
-	*out_extension_count = 2;
 
 	return required_instance_extensions;
 }
 
-bool vulkan_platform_create_vulkan_surface(VkInstance instance, VkSurfaceKHR* out_surface)
+std::optional<vk::SurfaceKHR> vulkan_platform_create_vulkan_surface(vk::Instance instance)
 {
 	VkXcbSurfaceCreateInfoKHR create_info = {VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR};
 	create_info.connection = state.connection;
 	create_info.window = state.window;
 
-	if (vkCreateXcbSurfaceKHR(instance, &create_info, NULL, out_surface) != VK_SUCCESS)
+	VkSurfaceKHR s;
+
+	if (vkCreateXcbSurfaceKHR(instance, &create_info, NULL, &s) != VK_SUCCESS)
 	{
 		sl::log_fatal("Vulkan surface creation failed.");
-		return false;
+		return {};
 	}
 
-	return true;
+	return s;
 }
 
 // Key translation

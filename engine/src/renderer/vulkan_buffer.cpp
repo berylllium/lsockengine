@@ -9,37 +9,52 @@
 namespace lise
 {
 
-VulkanBuffer::VulkanBuffer(
-	const Device& device,
-	VkPhysicalDeviceMemoryProperties memory_properties,
+std::unique_ptr<VulkanBuffer> VulkanBuffer::create(
+	const Device* device,
 	uint64_t size,
-	VkBufferUsageFlagBits usage,
-	uint32_t memory_property_flags,
+	vk::BufferUsageFlags usage,
+	vk::MemoryPropertyFlags memory_property_flags,
 	bool bind_on_create
-) : device(device), size(size), usage(usage), memory_property_flags(memory_property_flags)
+)
 {
-	VkBufferCreateInfo buffer_ci = {};
-	buffer_ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	buffer_ci.size = size;
-	buffer_ci.usage = usage;
-	buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // Only used in one queue.
+	auto out = std::make_unique<VulkanBuffer>();
+	
+	// Copy trivial data.
+	out->size = size;
+	out->usage = usage;
+	out->device = device;
+	
+	vk::BufferCreateInfo buffer_ci(
+		{},
+		size,
+		usage,
+		vk::SharingMode::eExclusive
+	);
 
-	if (vkCreateBuffer(device, &buffer_ci, NULL, &handle) != VK_SUCCESS)
+	vk::Result r;
+
+	std::tie(r, out->handle) = device->logical_device.createBuffer(buffer_ci);
+
+	if (r != vk::Result::eSuccess)
 	{
 		sl::log_error("Failed to create buffer.");
-		throw std::exception();
+
+		return nullptr;
 	}
 
 	// Gather memory requirements
-	VkMemoryRequirements mem_reqs;
-	vkGetBufferMemoryRequirements(device, handle, &mem_reqs);
+	auto memory_properties = out->device->physical_device_memory_properties;
+	auto mem_reqs = out->device->logical_device.getBufferMemoryRequirements(out->handle);
 
 	int32_t memory_type = -1;
 	for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++)
 	{
 		if (mem_reqs.memoryTypeBits & (1 << i) &&
 			(memory_properties.memoryTypes[i].propertyFlags & memory_property_flags) == memory_property_flags &&
-			(memory_properties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) == 0)
+			(static_cast<uint32_t>(
+				memory_properties.memoryTypes[i].propertyFlags &
+				vk::MemoryPropertyFlagBits::eDeviceCoherentAMD
+			) == 0))
 		{
 			memory_type = i;
 		}
@@ -48,99 +63,99 @@ VulkanBuffer::VulkanBuffer(
 	if (memory_type == -1)
 	{
 		sl::log_error("Required memory type was not found.");
-		throw std::exception();
+		return nullptr;
 	}
 
-	memory_index = memory_type;
+	out->memory_index = memory_type;
 
 	// Allocate memory
-	VkMemoryAllocateInfo allocate_info = {};
-	allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocate_info.allocationSize = mem_reqs.size;
-	allocate_info.memoryTypeIndex = memory_type;
+	vk::MemoryAllocateInfo allocate_info(
+		mem_reqs.size,
+		memory_type
+	);
 
-	if (vkAllocateMemory(device, &allocate_info, NULL, &memory) != VK_SUCCESS)
+	std::tie(r, out->memory) = out->device->logical_device.allocateMemory(allocate_info);
+
+	if (r != vk::Result::eSuccess)
 	{
 		sl::log_error("Failed to allocate memory for buffer");
-		throw std::exception();
+		return nullptr;
 	}
 
 	if (bind_on_create)
 	{
-		bind(0);
+		out->bind(0);
 	}
+
+	return out;
 }
 
 VulkanBuffer::~VulkanBuffer()
 {
-	vkFreeMemory(device, memory, NULL);
+	device->logical_device.freeMemory(memory);
 
-	vkDestroyBuffer(device, handle, NULL);
+	device->logical_device.destroyBuffer(handle);
 }
 
-VulkanBuffer::operator VkBuffer() const
+bool VulkanBuffer::resize(uint64_t new_size, vk::Queue& queue, vk::CommandPool& pool)
 {
-	return handle;
-}
+	vk::BufferCreateInfo buffer_ci(
+		{},
+		new_size,
+		usage
+	);
 
-bool VulkanBuffer::resize(
-	uint64_t new_size,
-	VkQueue queue,
-	VkCommandPool pool
-)
-{
-	VkBufferCreateInfo buffer_ci = {};
-	buffer_ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	buffer_ci.size = new_size;
-	buffer_ci.usage = usage;
-	buffer_ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // Only used in one queue.
-	
-	VkBuffer new_buffer;
-	if (vkCreateBuffer(device, &buffer_ci, NULL, &new_buffer) != VK_SUCCESS)
+	vk::Result r;
+	vk::Buffer new_buffer;
+
+	std::tie(r, new_buffer) = device->logical_device.createBuffer(buffer_ci);
+
+	if (r != vk::Result::eSuccess)
 	{
 		sl::log_error("Failed to create buffer.");
 		return false;
 	}
 
 	// Gather memory requirements
-	VkMemoryRequirements mem_reqs;
-	vkGetBufferMemoryRequirements(device, new_buffer, &mem_reqs);
+	auto mem_reqs = device->logical_device.getBufferMemoryRequirements(new_buffer);
 
 	// Allocate memory
-	VkMemoryAllocateInfo allocate_info = {};
-	allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocate_info.allocationSize = mem_reqs.size;
-	allocate_info.memoryTypeIndex = memory_index;
+	vk::MemoryAllocateInfo allocate_info(
+		mem_reqs.size,
+		memory_index
+	);
 
-	VkDeviceMemory new_memory;
-	if (vkAllocateMemory(device, &allocate_info, NULL, &new_memory) != VK_SUCCESS)
+	vk::DeviceMemory new_memory;
+	std::tie(r, new_memory) = device->logical_device.allocateMemory(allocate_info);
+
+	if (r != vk::Result::eSuccess)
 	{
 		sl::log_error("Failed to allocate memory for buffer.");
 		return false;
 	}
 
 	// Bind new memory
-	if (vkBindBufferMemory(device, new_buffer, new_memory, 0) != VK_SUCCESS)
+	if (device->logical_device.bindBufferMemory(new_buffer, new_memory, 0) != vk::Result::eSuccess)
 	{
 		sl::log_error("Failed to bind memory to buffer.");
 		return false;
 	}
 
 	// Copy data over
-	copy_to(pool, NULL, queue, 0, new_buffer, 0, size);
+	copy_to(pool, nullptr, queue, 0, new_buffer, 0, size);
 
 	// Make sure operation finished
-	vkDeviceWaitIdle(device);
+	r = device->logical_device.waitIdle();
 
 	// Destroy old buffer and memory
 	if (memory)
 	{
-		vkFreeMemory(device, memory, NULL);
+		device->logical_device.freeMemory(memory);
 	}
 
 	if (handle)
 	{
-		vkDestroyBuffer(device, handle, NULL);
+		device->logical_device.destroyBuffer(handle);
 	}
 
 	// Set new data
@@ -153,7 +168,7 @@ bool VulkanBuffer::resize(
 
 bool VulkanBuffer::bind(uint64_t offset)
 {
-	if (vkBindBufferMemory(device, handle, memory, offset) != VK_SUCCESS)
+	if (device->logical_device.bindBufferMemory(handle, memory, offset) != vk::Result::eSuccess)
 	{
 		sl::log_error("Failed to bind buffer memory.");
 		return false;
@@ -162,22 +177,25 @@ bool VulkanBuffer::bind(uint64_t offset)
 	return true;
 }
 
-void* VulkanBuffer::lock_memory(uint64_t offset, uint64_t size, uint32_t flags)
+void* VulkanBuffer::lock_memory(uint64_t offset, uint64_t size, vk::MemoryMapFlags flags)
 {
-	void* data;
+	auto [r, v] = device->logical_device.mapMemory(memory, offset, size, flags);
+	
+	if (r != vk::Result::eSuccess)
+	{
+		sl::log_error("Failed to map memory.");
+		return nullptr;
+	}
 
-	// TODO: Add error handling
-	vkMapMemory(device, memory, offset, size, flags, &data);
-
-	return data;
+	return v;
 }
 
 void VulkanBuffer::unlock_memory()
 {
-	vkUnmapMemory(device, memory);
+	device->logical_device.unmapMemory(memory);
 }
 
-void VulkanBuffer::load_data(uint64_t offset, uint64_t size, uint32_t flags, const void* data)
+void VulkanBuffer::load_data(uint64_t offset, uint64_t size, vk::MemoryMapFlags flags, const void* data)
 {
 	void* buffer_data = lock_memory(offset, size, flags);
 
@@ -187,34 +205,36 @@ void VulkanBuffer::load_data(uint64_t offset, uint64_t size, uint32_t flags, con
 }
 
 void VulkanBuffer::copy_to(
-	VkCommandPool pool,
-	VkFence fence,
-	VkQueue queue,
+	vk::CommandPool pool,
+	vk::Fence fence,
+	vk::Queue queue,
 	uint64_t source_offset,
-	VkBuffer dest,
+	vk::Buffer dest,
 	uint64_t dest_offset,
 	uint64_t size
 )
 {
-	vkQueueWaitIdle(queue);
+	vk::Result r = queue.waitIdle();
+
+	if (r != vk::Result::eSuccess)
+	{
+		sl::log_warn("Failed to wait on queue during buffer copy.");
+	}
 
 	// Create one time use command buffer
-	CommandBuffer cb(device, pool, true);
-	cb.begin(true, false, false);
+	auto cb = CommandBuffer::create(device, pool, true);
 
-	VkBufferCopy buffer_copy = {};
-	buffer_copy.srcOffset = source_offset;
-	buffer_copy.dstOffset = dest_offset;
-	buffer_copy.size = size;
+	cb->begin(true, false, false);
 
-	vkCmdCopyBuffer(cb, handle, dest, 1, &buffer_copy);
+	vk::BufferCopy buffer_copy(
+		source_offset,
+		dest_offset,
+		size
+	);
 
-	cb.end_and_submit_single_use(queue);
-}
+	cb->handle.copyBuffer(handle, dest, 1, &buffer_copy);
 
-VkBuffer VulkanBuffer::get_handle() const
-{
-	return handle;
+	cb->end_and_submit_single_use(queue);
 }
 
 }

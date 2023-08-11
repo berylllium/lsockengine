@@ -7,52 +7,65 @@
 namespace lise
 {
 
-VulkanImage::VulkanImage(
-	const Device& device,
-	VkImageType image_type,
+std::unique_ptr<Image> Image::create(
+	const Device* device,
+	vk::ImageType image_type,
 	vector2ui size,
-	VkFormat image_format,
-	VkImageTiling image_tiling,
-	VkImageUsageFlags use_flags,
-	VkMemoryPropertyFlags memory_flags,
+	vk::Format image_format,
+	vk::ImageTiling image_tiling,
+	vk::ImageUsageFlags use_flags,
+	vk::MemoryPropertyFlags memory_flags,
 	bool create_view,
-	VkImageAspectFlags view_aspect_flags
-) : size(size), image_format(image_format), device(device)
+	vk::ImageAspectFlags view_aspect_flags
+)
 {
-	VkImageCreateInfo image_create_info = {};
-	image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	image_create_info.imageType = image_type;
-	image_create_info.extent.width = size.w;
-	image_create_info.extent.height = size.h;
-	image_create_info.extent.depth = 1; // TODO: Support configurable depth.
-	image_create_info.mipLevels = 4;
-	image_create_info.arrayLayers = 1;
-	image_create_info.format = image_format;
-	image_create_info.tiling = image_tiling;
-	image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	image_create_info.usage = use_flags;
-	image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-	image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	auto out = std::make_unique<Image>();
 
-	if (vkCreateImage(device, &image_create_info, NULL, &image_handle) != VK_SUCCESS)
+	// Copy trivial data.
+	out->device = device;
+	out->size = size;
+	out->image_format = image_format;
+
+	vk::ImageCreateInfo image_create_info(
+		{},
+		image_type,
+		image_format,
+		{ size.w, size.h, 1 },
+		4,
+		1,
+		vk::SampleCountFlagBits::e1,
+		image_tiling,
+		use_flags,
+		vk::SharingMode::eExclusive,
+		{},
+		{},
+		vk::ImageLayout::eUndefined
+	);
+
+	vk::Result r;
+
+	std::tie(r, out->handle) = device->logical_device.createImage(image_create_info);
+
+	if (r != vk::Result::eSuccess)
 	{
 		sl::log_error("Failed to create image object.");
-		throw std::exception();
+		return nullptr;
 	}
 
 	// Query memory requirements
-	VkMemoryRequirements memory_reqs;
-	vkGetImageMemoryRequirements(device, image_handle, &memory_reqs);
+	vk::MemoryRequirements memory_reqs = device->logical_device.getImageMemoryRequirements(out->handle);
 
 	// Get memory type index
-	VkPhysicalDeviceMemoryProperties memory_properties = device.get_memory_properties();
+	vk::PhysicalDeviceMemoryProperties memory_properties = device->physical_device_memory_properties;
 
 	int32_t memory_type = -1;
 	for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++)
 	{
 		if (memory_reqs.memoryTypeBits & (1 << i) &&
 			(memory_properties.memoryTypes[i].propertyFlags & memory_flags) == memory_flags &&
-			(memory_properties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) == 0
+			static_cast<uint32_t>(
+				memory_properties.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eDeviceCoherentAMD
+			) == 0
 		)
 		{
 			memory_type = i;
@@ -62,168 +75,154 @@ VulkanImage::VulkanImage(
 	if (memory_type == -1)
 	{
 		sl::log_error("Required memory type was not found.");
-		throw std::exception();
+		return nullptr;
 	}
 
 	// Allocate memory
-	VkMemoryAllocateInfo memory_allocate_info = {};
-	memory_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	memory_allocate_info.allocationSize = memory_reqs.size;
-	memory_allocate_info.memoryTypeIndex = memory_type;
+	vk::MemoryAllocateInfo memory_allocate_info(
+		memory_reqs.size,
+		memory_type
+	);
 
-	if (vkAllocateMemory(device, &memory_allocate_info, NULL, &memory) != VK_SUCCESS)
+	std::tie(r, out->memory) = device->logical_device.allocateMemory(memory_allocate_info);
+
+	if (r != vk::Result::eSuccess)
 	{
 		sl::log_error("Failed to allocate memory for image.");
-		throw std::exception();
+		return nullptr;
 	}
 
+	r = device->logical_device.bindImageMemory(out->handle, out->memory, 0);
+
 	// Bind memory
-	if (vkBindImageMemory(device, image_handle, memory, 0) != VK_SUCCESS)
+	if (r != vk::Result::eSuccess)
 	{
 		sl::log_error("Failed to bind memory to image handle.");
-		throw std::exception();
+		return nullptr;
 	}
 
 	if (create_view)
 	{
 		// Create view
-		VkImageViewCreateInfo image_view_ci = {};
-		image_view_ci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		image_view_ci.image = image_handle;
-		image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D; // TODO: Support configurable viewType
-		image_view_ci.format = image_format;
-		image_view_ci.subresourceRange.aspectMask = view_aspect_flags;
+		vk::ImageViewCreateInfo image_view_ci(
+			{},
+			out->handle,
+			vk::ImageViewType::e2D,
+			image_format,
+			{},
+			vk::ImageSubresourceRange(
+				view_aspect_flags,
+				0,
+				1,
+				0,
+				1
+			)
+		);
 
-		// TODO: Make this configurable
-		image_view_ci.subresourceRange.baseMipLevel = 0;
- 		image_view_ci.subresourceRange.levelCount = 1;
-		image_view_ci.subresourceRange.baseArrayLayer = 0;
- 		image_view_ci.subresourceRange.layerCount = 1;
+		std::tie(r, out->image_view) = device->logical_device.createImageView(image_view_ci);
 
-		if (vkCreateImageView(device, &image_view_ci, NULL, &image_view) != VK_SUCCESS)
+		if (r != vk::Result::eSuccess)
 		{
 			sl::log_error("Failed to create image view");
-			throw std::exception();
+			return nullptr;
 		}
 	}
+
+	return out;
 }
 
-VulkanImage::VulkanImage(VulkanImage&& other) : device(other.device), size(other.size)
-{
-	image_handle = other.image_handle;
-	other.image_handle = nullptr;
-
-	memory = other.memory;
-	other.memory = nullptr;
-
-	image_view = other.image_view;
-	other.image_view = nullptr;
-}
-
-VulkanImage::~VulkanImage()
+Image::~Image()
 {
 	if (image_view)
 	{
-		vkDestroyImageView(device, image_view, NULL);
+		device->logical_device.destroy(image_view);
 	}
 
 	if (memory)
 	{
-		vkFreeMemory(device, memory, NULL);
+		device->logical_device.freeMemory(memory);
 	}
 
-	if (image_handle)
+	if (handle)
 	{
-		vkDestroyImage(device, image_handle, NULL);
+		device->logical_device.destroy(handle);
 	}
 }
 
-void VulkanImage::transition_layout(
-	const CommandBuffer& cb,
-	VkImageLayout old_layout,
-	VkImageLayout new_layout
-)
+bool Image::transition_layout(const CommandBuffer* cb, vk::ImageLayout old_layout, vk::ImageLayout new_layout)
 {
-	VkImageMemoryBarrier barrier = {};
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barrier.oldLayout = old_layout;
-	barrier.newLayout = new_layout;
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = image_handle;
-	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = 1;
-	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = 1;
+	vk::ImageMemoryBarrier barrier(
+		{},
+		{},
+		old_layout,
+		new_layout,
+		VK_QUEUE_FAMILY_IGNORED,
+		VK_QUEUE_FAMILY_IGNORED,
+		handle,
+		vk::ImageSubresourceRange(
+			vk::ImageAspectFlagBits::eColor,
+			0,
+			1,
+			0,
+			1
+		)
+	);
+	
+	vk::PipelineStageFlags source_stage;
+	vk::PipelineStageFlags dest_stage;
 
-	VkPipelineStageFlags source_stage;
-	VkPipelineStageFlags dest_stage;
-
-	if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+	if (old_layout == vk::ImageLayout::eUndefined && new_layout == vk::ImageLayout::eTransferDstOptimal)
 	{
-		barrier.srcAccessMask = 0;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.srcAccessMask = {};
+		barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
 
-		source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		source_stage = vk::PipelineStageFlagBits::eTopOfPipe;
 
-		dest_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		dest_stage = vk::PipelineStageFlagBits::eTransfer;
 	}
-	else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
-		new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+	else if (old_layout == vk::ImageLayout::eTransferDstOptimal &&
+		new_layout == vk::ImageLayout::eShaderReadOnlyOptimal
 	)
 	{
-		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+		barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 
-		source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		source_stage = vk::PipelineStageFlagBits::eTransfer;
 
-		dest_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		dest_stage = vk::PipelineStageFlagBits::eFragmentShader;
 	}
 	else
 	{
-		std::runtime_error("Unsupported layout transition.");
+		sl::log_error("Unsupported layout transition.");
+		return false;
 	}
 
-	vkCmdPipelineBarrier(
-		cb,
-		source_stage, dest_stage,
-		0,
-		0, 0,
-		0, 0,
-		1, &barrier
+	cb->handle.pipelineBarrier(
+			source_stage, dest_stage,
+			{},
+			0, nullptr,
+			0, nullptr,
+			1, &barrier
 	);
+
+	return true;
 }
 
-void VulkanImage::copy_from_buffer(const CommandBuffer& cb, VkBuffer buffer)
+void Image::copy_from_buffer(const CommandBuffer* cb, vk::Buffer buffer)
 {
-	VkBufferImageCopy buff_copy = {};
-	buff_copy.bufferOffset = 0;
-	buff_copy.bufferRowLength = 0;
-	buff_copy.bufferImageHeight = 0;
-
-	buff_copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	buff_copy.imageSubresource.mipLevel = 0;
-	buff_copy.imageSubresource.baseArrayLayer = 0;
-	buff_copy.imageSubresource.layerCount = 1;
-
-	buff_copy.imageExtent.width = size.w;
-	buff_copy.imageExtent.height = size.h;
-	buff_copy.imageExtent.depth = 1;
-
-	vkCmdCopyBufferToImage(
-		cb,
-		buffer,
-		image_handle,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		1,
-		&buff_copy
+	vk::BufferImageCopy buff_copy(
+		0, 0, 0,
+		vk::ImageSubresourceLayers(
+			vk::ImageAspectFlagBits::eColor,
+			0,
+			0,
+			1
+		),
+		{},
+		{ size.w, size.h, 1 }
 	);
-}
 
-VkImageView VulkanImage::get_image_view() const
-{
-	return image_view;
+	cb->handle.copyBufferToImage(buffer, handle, vk::ImageLayout::eTransferDstOptimal, 1, &buff_copy);
 }
 
 }

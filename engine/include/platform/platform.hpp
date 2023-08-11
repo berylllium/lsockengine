@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "definitions.hpp"
 
 namespace lise
@@ -22,6 +24,6 @@ double platform_get_absolute_time();
 
 void platform_sleep(uint64_t ms);
 
-const char** platform_get_required_instance_extensions(uint32_t* out_extension_count);
+std::vector<const char*> platform_get_required_instance_extensions();
 
 }

@@ -7,127 +7,119 @@
 namespace lise
 {
 
-Texture::Texture(
-	const Device& device,
+std::unique_ptr<Texture> Texture::create(
+	const Device* device,
 	const std::string& path,
 	vector2ui size,
 	uint32_t channel_count,
 	const uint8_t* data,
 	bool has_transparency
-) : device(device), path(path), size(size), channel_count(channel_count)
+)
 {
+	auto out = std::make_unique<Texture>();
+
+	// Copy trivial data.
+	out->device = device;
+	out->path = path;
+	out->size = size;
+	out->channel_count = channel_count;
+
 	uint64_t byte_size = size.w * size.h * channel_count;
 
 	// Assume format.
-	VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;
+	vk::Format image_format = vk::Format::eR8G8B8A8Unorm;
 	
 	// Create a staging buffer and load texture data into it.
-	VulkanBuffer staging_buffer(
+	auto staging_buffer = VulkanBuffer::create(
 		device,
-		device.get_memory_properties(),
 		byte_size,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		vk::BufferUsageFlagBits::eTransferSrc,
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
 		true
 	);
 
-	staging_buffer.load_data(0, byte_size, 0, data);
+	staging_buffer->load_data(0, byte_size, {}, data);
 
 	// Create the image. A lot of assumptions are made here to work with the PNG format.
-	image = new VulkanImage(
+	out->image = Image::create(
 		device,
-		VK_IMAGE_TYPE_2D,
+		vk::ImageType::e2D,
 		size,
 		image_format,
-		VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
-		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		vk::ImageTiling::eOptimal,
+		vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled |
+		vk::ImageUsageFlagBits::eColorAttachment,
+		vk::MemoryPropertyFlagBits::eDeviceLocal,
 		true,
-		VK_IMAGE_ASPECT_COLOR_BIT
+		vk::ImageAspectFlagBits::eColor
 	);
 
 	// Create and begin a temporary buffer.
-	CommandBuffer temp_buffer(device, device.get_graphics_command_pool(), true);
-	temp_buffer.begin(true, false, false);
+	auto temp_buffer = CommandBuffer::create(device, device->graphics_command_pool, true);
+
+	if (!temp_buffer)
+	{
+		sl::log_error("Failed failed to create temporary command buffer.");
+		return nullptr;
+	}
+
+	temp_buffer->begin(true, false, false);
 
 	// Transition the image layout from undefined to optimal for receiving data.
-	image->transition_layout(temp_buffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	out->image->transition_layout(temp_buffer.get(), vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
 	// Copy the data from the staging buffer to the image buffer.
-	image->copy_from_buffer(temp_buffer, staging_buffer);
+	out->image->copy_from_buffer(temp_buffer.get(), staging_buffer->handle);
 
 	// Transition the image layout from optimal for receiving data to a shader read only optimal layout.
-	image->transition_layout(
-		temp_buffer,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+	out->image->transition_layout(
+		temp_buffer.get(),
+		vk::ImageLayout::eTransferDstOptimal,
+		vk::ImageLayout::eShaderReadOnlyOptimal
 	);
 
 	// End and submit the temporary command buffer.
-	temp_buffer.end_and_submit_single_use(device.get_graphics_queue());
+	temp_buffer->end_and_submit_single_use(device->graphics_queue);
 
 	// Create a sampler for the texture.
-	VkSamplerCreateInfo sampler_ci = {};
-	sampler_ci.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	sampler_ci.magFilter = VK_FILTER_LINEAR;
-	sampler_ci.minFilter = VK_FILTER_LINEAR;
-	sampler_ci.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	sampler_ci.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	sampler_ci.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	sampler_ci.anisotropyEnable = VK_FALSE;
-	sampler_ci.maxAnisotropy = 16;
-	sampler_ci.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-	sampler_ci.unnormalizedCoordinates = VK_FALSE;
-	sampler_ci.compareEnable = VK_FALSE;
-	sampler_ci.compareOp = VK_COMPARE_OP_ALWAYS;
-	sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	sampler_ci.mipLodBias = 0.0f;
-	sampler_ci.minLod = 0.0f;
-	sampler_ci.maxLod = 0.0f;
+	vk::SamplerCreateInfo sampler_ci(
+		{},
+		vk::Filter::eLinear,
+		vk::Filter::eLinear,
+		vk::SamplerMipmapMode::eLinear,
+		vk::SamplerAddressMode::eRepeat,
+		vk::SamplerAddressMode::eRepeat,
+		vk::SamplerAddressMode::eRepeat,
+		0.0f,
+		vk::False,
+		16.0f,
+		vk::False,
+		vk::CompareOp::eAlways,
+		0.0f,
+		0.0f,
+		vk::BorderColor::eIntOpaqueBlack,
+		vk::False
+	);
 
-	if (vkCreateSampler(device, &sampler_ci, NULL, &sampler) != VK_SUCCESS)
+	vk::Result r;
+
+	std::tie(r, out->sampler) = device->logical_device.createSampler(sampler_ci);
+
+	if (r != vk::Result::eSuccess)
 	{
 		sl::log_error("Failed to create a sampler for the following texture: `%s`.", path);
-
-		delete image;
-		throw std::exception();
+		return nullptr;
 	}
-}
 
-Texture::Texture(Texture&& other) : device(other.device), path(other.path), size(other.size),
-	channel_count(other.channel_count)
-{
-	image = other.image;
-	other.image = nullptr;
-
-	sampler = other.sampler;
-	other.sampler = nullptr;
+	return out;
 }
 
 Texture::~Texture()
 {
-	delete image;
-
 	if (sampler)
 	{
-		vkDestroySampler(device, sampler, NULL);
+		device->logical_device.destroy(sampler);
 	}
-}
-
-Texture::operator const VulkanImage&() const
-{
-	return *image;
-}
-
-VkImageView Texture::get_image_view() const
-{
-	return image->get_image_view();
-}
-
-VkSampler Texture::get_sampler() const
-{
-	return sampler;
 }
 
 }

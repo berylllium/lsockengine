@@ -9,41 +9,34 @@
 namespace lise
 {
 
-class Texture
+struct Texture
 {
-public:
-	const std::string path;
+	std::string path;
 
-	const vector2ui size;
-	const uint8_t channel_count;
+	vector2ui size;
+	uint8_t channel_count;
 
-	Texture(
-		const Device& device,
+	std::unique_ptr<Image> image;
+	vk::Sampler sampler;
+
+	const Device* device;
+
+	Texture() = default;
+
+	Texture(const Texture&) = delete; // Prevent copies.
+
+	~Texture();
+
+	Texture& operator = (const Texture&) = delete; // Prevent copies.
+
+	LAPI static std::unique_ptr<Texture> create(
+		const Device* device,
 		const std::string& path,
 		vector2ui size,
 		uint32_t channel_count,
 		const uint8_t* data,
 		bool has_transparency
 	);
-
-	Texture(Texture&& other);
-
-	Texture(const Texture&) = delete; // Prevent copies.
-
-	~Texture();
-
-	operator const VulkanImage&() const;
-
-	Texture& operator = (const Texture&) = delete; // Prevent copies.
-
-	VkImageView get_image_view() const;
-	VkSampler get_sampler() const;
-
-private:
-	VulkanImage* image;
-	VkSampler sampler;
-
-	const Device& device;
 };
 
 }

@@ -66,43 +66,18 @@ struct ShaderAttribute
 {
 	std::string name;
 
-	VkFormat type;
+	vk::Format type;
 
 	uint32_t size;
 };
 
-class Shader
+struct Shader
 {
-public:
-	class Instance
+	struct Instance
 	{
-		friend class Shader;
-
-	public:
-		Instance(Instance&& other);
-	
-		Instance(const Instance&) = delete; // Prevent copies.
-	
-		~Instance();
-	
-		Instance& operator = (const Instance&) = delete; // Prevent copies.
-		
-		Instance& operator = (Instance&& other);
-	
-		void set_ubo(void* data);
-	
-		void set_sampler(uint32_t sampler_index, const Texture* sampler);
-	
-		void update_ubo(uint32_t current_image);
-
-		void bind_descriptor_set(CommandBuffer& command_buffer, uint32_t current_image);
-
-	private:
-		Instance() = default;
-
 		uint64_t id;
 	
-		std::vector<VkDescriptorSet> descriptor_sets;
+		std::vector<vk::DescriptorSet> descriptor_sets;
 	
 		void* ubo; // NOTE: Maybe make this constant?
 		std::vector<bool> ubo_dirty;
@@ -119,38 +94,24 @@ public:
 		std::vector<bool> sampler_dirty;
 	
 		const Shader* shader;
+
+		Instance() = default;
+
+		Instance(const Instance&) = delete; // Prevent copies.
+	
+		~Instance();
+	
+		Instance& operator = (const Instance&) = delete; // Prevent copies.
+		
+		void set_ubo(void* data);
+	
+		void set_sampler(uint32_t sampler_index, const Texture* sampler);
+	
+		void update_ubo(uint32_t current_image);
+
+		void bind_descriptor_set(CommandBuffer* command_buffer, uint32_t current_image);
 	};
 
-	Shader(
-		const Device& device,
-		const ShaderConfig& shader_config,
-		const RenderPass& render_pass, // TODO: Temporary, add a render pass system.
-		uint32_t framebuffer_width,
-		uint32_t framebuffer_height,
-		uint32_t swapchain_image_count
-	);
-
-	Shader(Shader&& other);
-
-	Shader(const Shader&) = delete; // Prevent copies.
-
-	~Shader();
-
-	Shader& operator = (const Shader&) = delete; // Prevent copies.
-
-	void use(CommandBuffer& command_buffer, uint32_t current_image);
-	
-	void set_global_ubo(void* data);
-
-	void update_global_uniforms(uint32_t current_image);
-
-	const Pipeline& get_pipeline() const;
-
-	Instance* allocate_instance();
-
-	void deallocate_instance(uint64_t id);
-
-private:
 	/**
 	 * @brief The internal identifier of the shader.
 	 */
@@ -175,14 +136,14 @@ private:
 	std::vector<ShaderAttribute> vertex_attributes;
 
 	// Global uniform data.
-	VkDescriptorPool global_descriptor_pool;
-	VkDescriptorSetLayout global_descriptor_set_layout;
+	vk::DescriptorPool global_descriptor_pool;
+	vk::DescriptorSetLayout global_descriptor_set_layout;
 
 	/**
 	 * @brief An array of global descriptor sets. These point to the same resource, but are updated seperately to
 	 * prevent updating a descriptor set mid render pass.
 	 */
-	std::vector<VkDescriptorSet> global_descriptor_sets;
+	std::vector<vk::DescriptorSet> global_descriptor_sets;
 
 	uint64_t global_ubo_size;
 
@@ -197,7 +158,7 @@ private:
 	/**
 	 * @brief The global uniform buffer object.
 	 */
-	VulkanBuffer* global_ub;
+	std::unique_ptr<VulkanBuffer> global_ub;
 
 	std::vector<bool> global_ubo_dirty;
 
@@ -209,20 +170,20 @@ private:
 	std::vector<ShaderUniform> global_uniforms;
 
 	// Instance uniform data.
-	VkDescriptorPool instance_descriptor_pool;
-	VkDescriptorSetLayout instance_descriptor_set_layout;
+	vk::DescriptorPool instance_descriptor_pool;
+	vk::DescriptorSetLayout instance_descriptor_set_layout;
 
 	/**
 	 * @brief The instance uniform buffer.
 	 */
-	VulkanBuffer* instance_ub;
+	std::unique_ptr<VulkanBuffer> instance_ub;
 
 	/**
 	 * @brief An array of booleans representing free slots in the instance uniform buffer.
 	 */
 	std::vector<bool> instance_ubo_free_list;
 
-	std::unordered_map<uint64_t, Instance> instances;
+	std::unordered_map<uint64_t, std::unique_ptr<Instance>> instances;
 
 	std::vector<ShaderUniform> instance_uniforms;
 
@@ -231,9 +192,36 @@ private:
 	uint32_t instance_ubo_size;
 	uint32_t instance_ubo_stride;
 
-	Pipeline* pipeline;
+	std::unique_ptr<Pipeline> pipeline;
 
-	const Device& device;
+	const Device* device;
+
+	Shader() = default;
+
+	Shader(const Shader&) = delete; // Prevent copies.
+
+	~Shader();
+
+	Shader& operator = (const Shader&) = delete; // Prevent copies.
+	
+	static std::unique_ptr<Shader> create(
+		const Device* device,
+		const ShaderConfig& shader_config,
+		const RenderPass* render_pass,
+		uint32_t framebuffer_width,
+		uint32_t framebuffer_height,
+		uint32_t swapchain_image_count
+	);
+
+	void use(CommandBuffer* command_buffer, uint32_t current_image);
+	
+	void set_global_ubo(void* data);
+
+	void update_global_uniforms(uint32_t current_image);
+
+	Instance* allocate_instance();
+
+	void deallocate_instance(uint64_t id);
 };
 
 }

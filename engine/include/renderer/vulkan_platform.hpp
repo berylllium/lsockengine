@@ -1,10 +1,12 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
+#include <optional>
+
+#include <vulkan/vulkan.hpp>
 
 namespace lise
 {
 
-bool vulkan_platform_create_vulkan_surface(VkInstance instance, VkSurfaceKHR* out_surface);
+std::optional<vk::SurfaceKHR> vulkan_platform_create_vulkan_surface(vk::Instance instance);
 
 }

@@ -5,200 +5,210 @@
 namespace lise
 {
 
-Swapchain::Swapchain(
-	const Device& device,
-	VkSurfaceKHR surface,
-	SwapchainInfo swapchain_info,
-	const RenderPass& render_pass
-) : swapchain_info(swapchain_info), device(device), surface(surface),
-	swapchain_out_of_date(false), current_frame(0)
+std::unique_ptr<Swapchain> Swapchain::create(
+	const Device* device,
+	const RenderPass* render_pass,
+	vk::SurfaceKHR surface,
+	SwapchainInfo swapchain_info
+)
 {
-	auto swap_chain_ci = VkSwapchainCreateInfoKHR {};
-	swap_chain_ci.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	swap_chain_ci.surface = surface;
-	swap_chain_ci.minImageCount = swapchain_info.min_image_count;
-	swap_chain_ci.imageFormat = swapchain_info.image_format.format;
-	swap_chain_ci.imageColorSpace = swapchain_info.image_format.colorSpace;
-	swap_chain_ci.imageExtent = swapchain_info.swapchain_extent;
-	swap_chain_ci.imageArrayLayers = 1;
-	swap_chain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	auto out = std::make_unique<Swapchain>();
 
-	auto device_queue_indices = device.get_queue_indices();
+	// Copy trivial data.
+	out->device = device;
+	out->surface = surface;
+	out->swapchain_info = swapchain_info;
+
+	vk::SwapchainCreateInfoKHR swap_chain_ci(
+		{},
+		out->surface,
+		out->swapchain_info.min_image_count,
+		out->swapchain_info.image_format.format,
+		out->swapchain_info.image_format.colorSpace,
+		out->swapchain_info.swapchain_extent,
+		1,
+		vk::ImageUsageFlagBits::eColorAttachment
+	);
+
+	auto device_queue_indices = device->queue_indices;
 
 	uint32_t queue_indices[] = { device_queue_indices.graphics_queue_index, device_queue_indices.present_queue_index };
 
 	if (device_queue_indices.graphics_queue_index != device_queue_indices.present_queue_index)
 	{
-		swap_chain_ci.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+		swap_chain_ci.imageSharingMode = vk::SharingMode::eConcurrent;
 		swap_chain_ci.queueFamilyIndexCount = 2;
 		swap_chain_ci.pQueueFamilyIndices = queue_indices;
 	}
 	else
 	{
-		swap_chain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		swap_chain_ci.imageSharingMode = vk::SharingMode::eExclusive;
 	}
 
-	auto device_swap_chain_support_info = Device::query_swapchain_support(device, surface);
+	auto device_swap_chain_support_info = Device::query_swapchain_support(device->physical_device, surface);
 
 	swap_chain_ci.preTransform = device_swap_chain_support_info.surface_capabilities.currentTransform;
-	swap_chain_ci.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	swap_chain_ci.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
 	swap_chain_ci.presentMode = swapchain_info.present_mode;
-	swap_chain_ci.clipped = VK_TRUE;
-	swap_chain_ci.oldSwapchain = VK_NULL_HANDLE;
+	swap_chain_ci.clipped = vk::True;
+	swap_chain_ci.oldSwapchain = nullptr;
 
-	if (vkCreateSwapchainKHR(device, &swap_chain_ci, NULL, &handle)	!= VK_SUCCESS)
+	vk::Result r;
+
+	std::tie(r, out->handle) = device->logical_device.createSwapchainKHR(swap_chain_ci);
+
+	if (r != vk::Result::eSuccess)
 	{
 		sl::log_fatal("Failed to create the swap chain.");
-		throw std::exception();
+		return nullptr;
 	}
 
 	// Get swapchain images
-	uint32_t image_count;
+	std::tie(r, out->images) = device->logical_device.getSwapchainImagesKHR(out->handle);
 
-	vkGetSwapchainImagesKHR(device, handle, &image_count, NULL);
-
-	images.resize(image_count);
-
-	max_frames_in_flight = image_count - 1;
-
-	vkGetSwapchainImagesKHR(device, handle,	&image_count, images.data());
+	out->max_frames_in_flight = out->images.size() - 1;
 	
 	// Views
-	image_views.resize(image_count);
+	out->image_views.resize(out->images.size());
 
-	for (uint32_t i = 0; i < image_count; i++)
+	for (size_t i = 0; i < out->images.size(); i++)
 	{
-		auto view_ci = VkImageViewCreateInfo {};
-		view_ci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		view_ci.image = images[i];
-		view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		view_ci.format = swapchain_info.image_format.format;
-		view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		view_ci.subresourceRange.baseMipLevel = 0;
-		view_ci.subresourceRange.levelCount = 1;
-		view_ci.subresourceRange.baseArrayLayer = 0;
-		view_ci.subresourceRange.layerCount = 1;
+		vk::ImageViewCreateInfo view_ci(
+			{},
+			out->images[i],
+			vk::ImageViewType::e2D,
+			swapchain_info.image_format.format,
+			{},
+			vk::ImageSubresourceRange(
+				vk::ImageAspectFlagBits::eColor,
+				0,
+				1,
+				0,
+				1
+			)
+		);
 
-		vkCreateImageView(device, &view_ci, NULL, &image_views[i]);
+		std::tie(r, out->image_views[i]) = device->logical_device.createImageView(view_ci);
+
+		if (r != vk::Result::eSuccess)
+		{
+			sl::log_error("Failed to create swapchain image view.");
+			return nullptr;
+		}
 	}
 
 	// Create the depth attachments
-	depth_attachments.reserve(image_count);
+	out->depth_attachments.reserve(out->images.size());
 
-	for (uint32_t i = 0; i < image_count; i++)
+	for (size_t i = 0; i < out->images.size(); i++)
 	{
-		try
-		{
-			depth_attachments.emplace_back(
-				device,
-				VK_IMAGE_TYPE_2D,
-				vector2ui { swapchain_info.swapchain_extent.width, swapchain_info.swapchain_extent.height },
-				swapchain_info.depth_format,
-				VK_IMAGE_TILING_OPTIMAL,
-				VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-				true,
-				VK_IMAGE_ASPECT_DEPTH_BIT
-			);
-		}
-		catch (std::exception e)
+		auto depth_attachment = Image::create(
+			device,
+			vk::ImageType::e2D,
+			vector2ui { swapchain_info.swapchain_extent.width, swapchain_info.swapchain_extent.height },
+			swapchain_info.depth_format,
+			vk::ImageTiling::eOptimal,
+			vk::ImageUsageFlagBits::eDepthStencilAttachment,
+			vk::MemoryPropertyFlagBits::eDeviceLocal,
+			true,
+			vk::ImageAspectFlagBits::eDepth
+		);
+
+		if(!depth_attachment)
 		{
 			sl::log_fatal("Failed to create image swap chain depth attachments.");
-			throw std::exception();
+			return nullptr;
 		}
+
+		out->depth_attachments.push_back(std::move(depth_attachment));
 	}
 
 	// Create framebuffers
-	framebuffers.reserve(image_count);
+	out->framebuffers.resize(out->images.size());
 
-	for (uint32_t i = 0; i < image_count; i++)
+	for (uint32_t i = 0; i < out->images.size(); i++)
 	{
-		uint32_t attachment_count = 1;
-		VkImageView attachments[] = {
-			image_views[i]
-		};
+		std::vector<vk::ImageView> attachments = { out->image_views[i] };
 
-		try
-		{
-			framebuffers.emplace_back(
-				device,
-				render_pass,
-				vector2ui { swapchain_info.swapchain_extent.width, swapchain_info.swapchain_extent.height },
-				attachment_count,
-				attachments
-			);
-		}
-		catch (std::exception e)
+		vk::FramebufferCreateInfo fb_ci(
+			{},
+			render_pass->handle,
+			attachments,
+			swapchain_info.swapchain_extent.width,
+			swapchain_info.swapchain_extent.height,
+			1
+		);
+
+		std::tie(r, out->framebuffers[i]) = device->logical_device.createFramebuffer(fb_ci);
+
+		if (r != vk::Result::eSuccess)
 		{
 			sl::log_fatal("Failed to create swap chain frame buffers");
-			throw std::exception();
+			return nullptr;
 		}
 	}
+
+	return out;
 }
 
 Swapchain::~Swapchain()
 {
+	for (size_t i = 0; i < framebuffers.size(); i++)
+	{
+		device->logical_device.destroy(framebuffers[i]);
+	}
+
 	for (uint32_t i = 0; i < images.size(); i++)
 	{
-		vkDestroyImageView(device, image_views[i], NULL);
+		device->logical_device.destroy(image_views[i]);
 	}
 
-	vkDestroySwapchainKHR(device, handle, NULL);
+	device->logical_device.destroy(handle);
 }
 
-bool Swapchain::acquire_next_image_index(
+std::optional<uint32_t> Swapchain::acquire_next_image_index(
 	uint64_t timeout_ns,
-	VkSemaphore image_available_semaphore,
-	VkFence fence,
-	uint32_t& out_image_index
+	vk::Semaphore image_available_semaphore,
+	vk::Fence fence
 )
 {
-	auto result = vkAcquireNextImageKHR(
-		device,
-		handle,
-		timeout_ns,
-		image_available_semaphore,
-		fence,
-		&out_image_index
-	);
+	uint32_t out_image_index;
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	vk::Result r;
+
+	std::tie(r, out_image_index) = device->logical_device.acquireNextImageKHR(handle, timeout_ns, image_available_semaphore, fence);
+
+	if (r == vk::Result::eErrorOutOfDateKHR)
 	{
 		sl::log_debug("Swapchain is out of date. Attempring to recreate.");
 		swapchain_out_of_date = true;
-		return false;
+		return {};
 	}
-	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	else if (r != vk::Result::eSuccess && r != vk::Result::eSuboptimalKHR)
 	{
 		sl::log_fatal("Failed to acquire next swapchain image.");
-		return false;
+		return {};
 	}
 
-	return true;
+	return out_image_index;
 }
 
-bool Swapchain::present(
-	VkSemaphore render_complete_semaphore,
-	uint32_t present_image_index
-)
+bool Swapchain::present(vk::Semaphore render_complete_semaphore, uint32_t present_image_index)
 {
-	auto present_info = VkPresentInfoKHR {};
-	present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	present_info.waitSemaphoreCount = 1;
-	present_info.pWaitSemaphores = &render_complete_semaphore;
-	present_info.swapchainCount = 1;
-	present_info.pSwapchains = &handle;
-	present_info.pImageIndices = &present_image_index;
-	
-	auto result = vkQueuePresentKHR(device.get_present_queue(), &present_info);
+	vk::PresentInfoKHR present_info(
+		1, &render_complete_semaphore,
+		1, &handle, &present_image_index
+	);
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+	vk::Result r = device->present_queue.presentKHR(present_info);
+
+	if (r == vk::Result::eErrorOutOfDateKHR || r == vk::Result::eSuboptimalKHR)
 	{
 		sl::log_debug("Swapchain is out of date. Attempring to recreate.");
 		swapchain_out_of_date = true;
 		return false;
 	}
-	else if (result != VK_SUCCESS)
+	else if (r != vk::Result::eSuccess)
 	{
 		sl::log_fatal("Failed to present swapchain image.");
 		return false;
@@ -209,80 +219,36 @@ bool Swapchain::present(
 	return true;
 }
 
-const SwapchainInfo& Swapchain::get_swapchain_info() const
+SwapchainInfo Swapchain::query_info(const Device* device, vk::SurfaceKHR surface)
 {
-	return swapchain_info;
-}
+	SwapchainInfo info = {};
 
-const std::vector<Framebuffer>& Swapchain::get_framebuffers() const
-{
-	return framebuffers;
-}
-
-const std::vector<VkImage>& Swapchain::get_images() const
-{
-	return images;
-}
-	
-const std::vector<VkImageView>& Swapchain::get_image_views() const
-{
-	return image_views;
-}
-
-const std::vector<VulkanImage>& Swapchain::get_depth_attachments() const
-{
-	return depth_attachments;
-}
-
-uint8_t Swapchain::get_max_frames_in_flight() const
-{
-	return max_frames_in_flight;
-}
-
-uint8_t Swapchain::get_current_frame() const
-{
-	return current_frame;
-}
-
-bool Swapchain::is_swapchain_out_of_date() const
-{
-	return swapchain_out_of_date;
-}
-
-SwapchainInfo Swapchain::query_info(const Device& device, VkSurfaceKHR surface)
-{
-	auto info = SwapchainInfo {};
-
-	auto swap_chain_support_info = Device::query_swapchain_support(device, surface);
+	auto swap_chain_support_info = Device::query_swapchain_support(device->physical_device, surface);
 	
 	// Choose swap surface format
-	auto surface_format = swap_chain_support_info.surface_formats[0]; // Default, first surface format.
+	info.image_format = swap_chain_support_info.surface_formats[0]; // Default, first surface format.
 
-	for (uint32_t i = 0; i < swap_chain_support_info.surface_format_count; i++)
+	for (auto& surface_format : swap_chain_support_info.surface_formats)
 	{
-		if (swap_chain_support_info.surface_formats[i].format == VK_FORMAT_B8G8R8A8_SRGB &&
-			swap_chain_support_info.surface_formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+		if (surface_format.format == vk::Format::eB8G8R8A8Srgb &&
+			surface_format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
 		{
-			surface_format = swap_chain_support_info.surface_formats[i];
+			info.image_format = surface_format;
 			break;
 		}
 	}
-
-	info.image_format = surface_format;
 
 	// Choose swap present mode
-	auto surface_present_mode = VK_PRESENT_MODE_FIFO_KHR; // Default, guaranteed present mode
+	info.present_mode = vk::PresentModeKHR::eFifo; // Default, guaranteed present mode
 
-	for (uint32_t i = 0; i < swap_chain_support_info.present_mode_count; i++)
+	for (auto& present_mode : swap_chain_support_info.present_modes)
 	{
-		if (swap_chain_support_info.present_modes[i] == VK_PRESENT_MODE_MAILBOX_KHR)
+		if (present_mode == vk::PresentModeKHR::eMailbox)
 		{
-			surface_present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
+			info.present_mode = present_mode;
 			break;
 		}
 	}
-
-	info.present_mode = surface_present_mode;
 
 	// Choose swap extent
 	info.swapchain_extent = swap_chain_support_info.surface_capabilities.currentExtent;
@@ -300,19 +266,18 @@ SwapchainInfo Swapchain::query_info(const Device& device, VkSurfaceKHR surface)
 
 	// Check if device supports depth format
 	const uint32_t candidate_count = 3;
-	const VkFormat candidates[3] = {
-		VK_FORMAT_D32_SFLOAT,
-		VK_FORMAT_D32_SFLOAT_S8_UINT,
-		VK_FORMAT_D24_UNORM_S8_UINT
+	const vk::Format candidates[3] = {
+		vk::Format::eD32Sfloat,
+		vk::Format::eD32SfloatS8Uint,
+		vk::Format::eD24UnormS8Uint
 	};
 
-	auto formats_supported = false;
-	auto depth_format = VkFormat {};
-	auto flags = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+	float formats_supported = false;
+	vk::Format depth_format;
+	auto flags = vk::FormatFeatureFlagBits::eDepthStencilAttachment;
 	for (uint32_t i = 0; i < candidate_count; i++)
 	{
-		auto format_properties = VkFormatProperties {};
-		vkGetPhysicalDeviceFormatProperties(device, candidates[i], &format_properties);
+		vk::FormatProperties format_properties = device->physical_device.getFormatProperties(candidates[i]);
 
 		if ((format_properties.linearTilingFeatures & flags) == flags)
 		{
@@ -330,7 +295,7 @@ SwapchainInfo Swapchain::query_info(const Device& device, VkSurfaceKHR surface)
 
 	if (!formats_supported)
 	{
-		sl::log_fatal("Failed to find supported depth format during swapchain creation.");
+		sl::log_error("Failed to find supported depth format during swapchain creation.");
 		return SwapchainInfo {};
 	}
 

@@ -1,44 +1,4 @@
 
-set(LISE_HEADERS
-	core/clock.hpp
-	core/engine.hpp
-	core/event.hpp
-	core/input.hpp
-	loader/obj_format_loader.hpp
-	loader/obj_loader.hpp
-	loader/shader_config_loader.hpp
-	math/arithmetic.hpp
-	math/mat4x4.hpp
-	math/math.hpp
-	math/transform.hpp
-	math/vector2.hpp
-	math/vector3.hpp
-	math/vector4.hpp
-	math/vertex.hpp
-	platform/platform.hpp
-	renderer/resource/mesh.hpp
-	renderer/resource/model.hpp
-	renderer/resource/shader_stage.hpp
-	renderer/resource/shader.hpp
-	renderer/resource/texture.hpp
-	renderer/system/shader_system.hpp
-	renderer/system/texture_system.hpp
-	renderer/command_buffer.hpp
-	renderer/device.hpp
-	renderer/fence.hpp
-	renderer/framebuffer.hpp
-	renderer/pipeline.hpp
-	renderer/render_pass.hpp
-	renderer/renderer.hpp
-	renderer/swapchain.hpp
-	renderer/vulkan_backend.hpp
-	renderer/vulkan_buffer.hpp
-	renderer/vulkan_image.hpp
-	renderer/vulkan_platform.hpp
-	util/string_utils.hpp
-)
-list(TRANSFORM LISE_HEADERS PREPEND "include/")
-
 set(LISE_SOURCES
 	core/clock.cpp
 	core/engine.cpp
@@ -62,7 +22,6 @@ set(LISE_SOURCES
 	renderer/command_buffer.cpp
 	renderer/device.cpp
 	renderer/fence.cpp
-	renderer/framebuffer.cpp
 	renderer/pipeline.cpp
 	renderer/render_pass.cpp
 	renderer/renderer.cpp
@@ -74,10 +33,10 @@ set(LISE_SOURCES
 )
 list(TRANSFORM LISE_SOURCES PREPEND "src/")
 
-add_library(lise SHARED ${LISE_SOURCES} ${LISE_HEADERS})
+add_library(lise SHARED ${LISE_SOURCES})
 target_include_directories(lise PUBLIC include/ ../deps/stb)
-target_compile_definitions(lise PRIVATE L_EXPORT)
-target_compile_options(lise PRIVATE -fvisibility=hidden)
+target_compile_definitions(lise PRIVATE L_EXPORT PUBLIC VULKAN_HPP_NO_EXCEPTIONS)
+target_compile_options(lise PRIVATE -fvisibility=hidden PUBLIC -fno-exceptions)
 
 target_link_libraries(lise PUBLIC m PUBLIC simple-logger) # Link math
 

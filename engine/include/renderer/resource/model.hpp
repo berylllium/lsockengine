@@ -13,23 +13,25 @@
 namespace lise
 {
 
-class Model
+struct Model
 {
-public:
-	Model(const Device* device, Shader* shader, const Obj& obj);
-
-	void draw(CommandBuffer& command_buffer, uint32_t current_image);
-
-	Transform& get_transform();
-
-private:
 	Transform transform;
+
+	std::vector<std::unique_ptr<Mesh>> meshes;
 
 	Shader* shader;
 
-	std::vector<Mesh> meshes;
-
 	const Device* device;
+
+	Model() = default;
+
+	Model(Model&) = delete;
+
+	Model& operator = (Model&) = delete;
+
+	static std::unique_ptr<Model> create(const Device* device, Shader* shader, const Obj& obj);
+
+	void draw(CommandBuffer* command_buffer, uint32_t current_image);
 };
 
 }

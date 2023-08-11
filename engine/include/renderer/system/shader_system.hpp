@@ -22,16 +22,13 @@ namespace lise
  * @return true if the initialisation succeeded.
  * @return false if the initialisation failed.
  */
-bool shader_system_initialize(
-	const Device& device,
-	const Swapchain& swapchain
-);
+bool shader_system_initialize(const Device* device, const Swapchain* swapchain);
 
 void shader_system_shutdown();
 
 void shader_system_update_cache(const Swapchain* swapchain);
 
-Shader* shader_system_load(const std::string& path, const RenderPass& render_pass);
+Shader* shader_system_load(const std::string& path, const RenderPass* render_pass);
 
 Shader* shader_system_get(const std::string& path);
 

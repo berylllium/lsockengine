@@ -1,7 +1,6 @@
 #include "renderer/system/texture_system.hpp"
 
-//#include <stdlib.h>
-#include <map>
+#include <unordered_map>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -11,21 +10,21 @@
 namespace lise
 {
 
-static std::map<std::string, Texture> loaded_textures;
+static std::unordered_map<std::string, std::unique_ptr<Texture>> loaded_textures;
 
-static const char* default_texture_path = "__default_texture_path__";
+static std::string default_texture_path = "__default_texture_path__";
 static Texture* default_texture;
 
-static bool create_default_texture(const Device& device);
+static bool create_default_texture(const Device* device);
 
-bool texture_system_initialize(const Device& device)
+bool texture_system_initialize(const Device* device)
 {
 	stbi_set_flip_vertically_on_load(true);
 
 	// Create the default texture.
 	if (!create_default_texture(device))
 	{
-		sl::log_fatal("Failed to create the default texture.");
+		sl::log_error("Failed to create the default texture.");
 		return false;
 	}
 	
@@ -34,7 +33,7 @@ bool texture_system_initialize(const Device& device)
 	return true;
 }
 
-void texture_system_shutdown(const Device& device)
+void texture_system_shutdown()
 {
 	// Free all textures.
 	loaded_textures.clear();
@@ -50,7 +49,7 @@ const Texture* texture_system_get_default_texture()
 	return default_texture;
 }
 
-const Texture* texture_system_load(const Device& device, const std::string& path)
+const Texture* texture_system_load(const Device* device, const std::string& path)
 {
 	if (loaded_textures.contains(path))
 	{
@@ -93,19 +92,18 @@ const Texture* texture_system_load(const Device& device, const std::string& path
 	}
 
 	// Create texture.
-	try
-	{
-		// TODO: Use std::piecewise_construct
-		loaded_textures.emplace(path, std::move(Texture(device, path, vector2ui { width, height} , channel_count, data, has_transparency)));
-	}
-	catch (std::exception e)
+	auto texture = Texture::create(device, path, vector2ui { width, height} , channel_count, data, has_transparency);
+
+	if (!texture)
 	{
 		sl::log_error("Faild to load texture: `%s`. Providing default texture.", path);
 
 		return default_texture;
 	}
 
-	return &loaded_textures.at(path);
+	auto& i_result = *loaded_textures.insert({ path, std::move(texture) }).first;
+
+	return i_result.second.get();
 }
 
 const Texture* texture_system_get(const std::string& path)
@@ -117,15 +115,15 @@ const Texture* texture_system_get(const std::string& path)
 		return default_texture;
 	}
 
-	return &loaded_textures.at(path);
+	return loaded_textures.at(path).get();
 }
 
-const Texture* texture_system_get_or_load(const Device& device, const std::string& path)
+const Texture* texture_system_get_or_load(const Device* device, const std::string& path)
 {
 	if (loaded_textures.contains(path))
 	{
 		// Texture has already been loaded.
-		return &loaded_textures.at(path);
+		return loaded_textures.at(path).get();
 	}
 	else
 	{
@@ -134,9 +132,9 @@ const Texture* texture_system_get_or_load(const Device& device, const std::strin
 }
 
 // Static helper functions.
-static bool create_default_texture(const Device& device)
+static bool create_default_texture(const Device* device)
 {
-	sl::log_info("Creating the default texture.");
+	sl::log_debug("Creating the default texture.");
 
 	const uint32_t texture_dims = 256;
 	const uint32_t half = texture_dims / 2;
@@ -174,22 +172,22 @@ static bool create_default_texture(const Device& device)
 		}
 	}
 
-	try
-	{
-		default_texture = new Texture(
-			device,
-			default_texture_path,
-			vector2ui { texture_dims, texture_dims },
-			channels,
-			data.get(),
-			false
-		);
-	}
-	catch (std::exception)
+	auto texture = Texture::create(
+		device,
+		default_texture_path,
+		vector2ui { texture_dims, texture_dims },
+		channels,
+		data.get(),
+		false
+	);
+
+	if (!texture)
 	{
 		sl::log_error("Failed to create texture object for the default texture.");
 		return false;
 	}
+
+	default_texture = texture.release();
 
 	return true;
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <memory>
 #include <vector>
 
 #include "definitions.hpp"
@@ -23,42 +24,14 @@ struct MeshInstanceUBO
 class Mesh
 {
 public:
-	Mesh(
-		const Device* device,
-		VkCommandPool command_pool,
-		VkQueue queue,
-		Shader* shader,
-		std::string name,
-		std::vector<vertex> vertices,
-		std::vector<uint32_t> indices,
-		vector4f diffuse_color,
-		const Texture* diffuse_texture
-	);
-
-	Mesh(Mesh&& other);
-
-	Mesh(const Mesh&) = delete;
-
-	~Mesh();
-
-	Mesh& operator = (Mesh&& other);
-
-	Mesh& operator = (const Mesh&) = delete;
-
-	void draw(CommandBuffer& command_buffer, mat4x4 model, uint32_t current_image);
-
-private:
-	/**
-	 * @brief The name of the mesh.
-	 */
 	std::string name;
 
 	std::vector<vertex> vertices;
 
 	std::vector<uint32_t> indices;
 
-	VulkanBuffer* vertex_buffer;
-	VulkanBuffer* index_buffer;
+	std::unique_ptr<VulkanBuffer> vertex_buffer;
+	std::unique_ptr<VulkanBuffer> index_buffer;
 
 	MeshInstanceUBO instance_ubo;
 	Shader::Instance* shader_instance;
@@ -71,6 +44,28 @@ private:
 	Shader* shader;
 
 	const Device* device;
+
+	Mesh() = default;
+
+	Mesh(const Mesh&) = delete;
+
+	~Mesh();
+
+	Mesh& operator = (const Mesh&) = delete;
+
+	static std::unique_ptr<Mesh> create(
+		const Device* device,
+		vk::CommandPool command_pool,
+		vk::Queue queue,
+		Shader* shader,
+		std::string name,
+		std::vector<vertex> vertices,
+		std::vector<uint32_t> indices,
+		vector4f diffuse_color,
+		const Texture* diffuse_texture
+	);
+
+	void draw(CommandBuffer* command_buffer, const mat4x4& model, uint32_t current_image);
 };
 
 }

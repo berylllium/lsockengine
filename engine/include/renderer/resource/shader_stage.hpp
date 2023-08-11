@@ -2,36 +2,32 @@
 
 #include <string>
 
-#include <vulkan/vulkan.h>
-
 #include "renderer/device.hpp"
 #include "definitions.hpp"
 
 namespace lise
 {
 
-class ShaderStage
+struct ShaderStage
 {
-public:
-	ShaderStage(const Device& device, std::string path, VkShaderStageFlagBits shader_stage_flags);
+	vk::ShaderModule module_handle;
+	vk::PipelineShaderStageCreateInfo shader_stage_create_info;
 
-	ShaderStage(ShaderStage&& other);
+	const Device* device;
+
+	ShaderStage() = default;
 
 	ShaderStage(const ShaderStage&) = delete; // Prevent copies.
 
 	~ShaderStage();
 
 	ShaderStage& operator = (const ShaderStage&) = delete; // Prevent copies.
-
-	VkShaderModule get_module() const;
-
-	VkPipelineShaderStageCreateInfo get_pipeline_shader_stage_creation_info() const;
-
-private:
-	VkShaderModule module_handle;
-	VkPipelineShaderStageCreateInfo shader_stage_create_info;
-
-	const Device& device;
+	
+	LAPI static std::unique_ptr<ShaderStage> create(
+		const Device* device,
+		std::string path,
+		vk::ShaderStageFlagBits shader_stage
+	);
 };
 
 }

@@ -10,46 +10,42 @@
 namespace lise
 {
 
-class VulkanImage
+struct Image
 {
-public:
-	const vector2ui size;
+	vector2ui size;
 
-	VulkanImage(
-		const Device& device,
-		VkImageType image_type,
+	vk::Image handle;
+
+	vk::DeviceMemory memory;
+	vk::ImageView image_view;
+
+	vk::Format image_format;
+
+	const Device* device;
+
+	Image() = default;
+
+	Image(Image&) = delete; // Prevent copies.
+
+	~Image();
+
+	Image& operator = (const Image&) = delete; // Prevent copies.
+	
+	LAPI static std::unique_ptr<Image> create(
+		const Device* device,
+		vk::ImageType image_type,
 		vector2ui size,
-		VkFormat image_format,
-		VkImageTiling image_tiling,
-		VkImageUsageFlags use_flags,
-		VkMemoryPropertyFlags memory_flags,
+		vk::Format image_format,
+		vk::ImageTiling image_tiling,
+		vk::ImageUsageFlags use_flags,
+		vk::MemoryPropertyFlags memory_flags,
 		bool create_view,
-		VkImageAspectFlags view_aspect_flags
+		vk::ImageAspectFlags view_aspect_flags
 	);
 
-	VulkanImage(VulkanImage&& other);
+	bool transition_layout(const CommandBuffer* command_buffer, vk::ImageLayout old_layout, vk::ImageLayout new_layout);
 
-	VulkanImage(VulkanImage&) = delete; // Prevent copies.
-
-	~VulkanImage();
-
-	VulkanImage& operator = (const VulkanImage&) = delete; // Prevent copies.
-
-	void transition_layout(const CommandBuffer& command_buffer, VkImageLayout old_layout, VkImageLayout new_layout);
-
-	void copy_from_buffer(const CommandBuffer& command_buffer, VkBuffer buffer);
-
-	VkImageView get_image_view() const;
-
-private:
-	VkImage image_handle = nullptr;
-
-	VkDeviceMemory memory = nullptr;
-	VkImageView image_view = nullptr;
-
-	VkFormat image_format;
-
-	const Device& device;
+	void copy_from_buffer(const CommandBuffer* command_buffer, vk::Buffer buffer);
 };
 
 }

@@ -16,9 +16,9 @@ namespace lise
 {
 
 // State variables.
-static VkInstance instance;
+static vk::Instance instance;
 
-static VkSurfaceKHR surface;
+static vk::SurfaceKHR surface;
 
 static Device* device;
 
@@ -26,14 +26,13 @@ static Swapchain* swapchain;
 static RenderPass* world_render_pass;
 static RenderPass* ui_render_pass;
 
-static std::vector<CommandBuffer> graphics_command_buffers;
+static std::vector<std::unique_ptr<CommandBuffer>> graphics_command_buffers;
 
-static std::vector<VkSemaphore> image_available_semaphores;
+static std::vector<vk::Semaphore> image_available_semaphores;
 
-static std::vector<VkSemaphore> queue_complete_semaphores;
+static std::vector<vk::Semaphore> queue_complete_semaphores;
 
-static uint32_t in_flight_fence_count;
-static std::vector<Fence> in_flight_fences;
+static std::vector<std::unique_ptr<Fence>> in_flight_fences;
 
 static std::vector<Fence*> images_in_flight;
 
@@ -43,7 +42,7 @@ static Shader* object_shader;
 
 static Shader* ui_shader;
 
-static std::vector<Framebuffer> world_framebuffers;
+static std::vector<vk::Framebuffer> world_framebuffers;
 
 #ifdef NDEBUG
 	static constexpr bool enable_validation_layers = false;
@@ -52,20 +51,18 @@ static std::vector<Framebuffer> world_framebuffers;
 #endif
 
 // Hardcoded validation layers
-static const char* validation_layers[] = {
+static std::vector<const char*> validation_layers = {
 	"VK_LAYER_KHRONOS_validation"
 };
-static uint32_t validation_layer_count = 1;
 
 // Hardcoded device extensions
-static const char* device_extensions[] = {
+static std::vector<const char*> device_extensions = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
-static uint32_t device_extension_count = 1;
 
 // Static helper functions.
 static bool check_validation_layer_support();
-static void create_command_buffers();
+static bool create_command_buffers();
 static bool recreate_swapchain();
 
 // TODO: temp statics
@@ -74,6 +71,7 @@ static Texture* temp_texture;
 
 //static Model test_model;
 static Model* car_model;
+static Model* car2;
 
 struct GlobalUBO
 {
@@ -95,202 +93,221 @@ bool vulkan_initialize(const char* application_name)
 	}
 
 	// Vulkan Instance 
-	VkApplicationInfo app_info = {};
-	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	app_info.apiVersion = VK_API_VERSION_1_3;
-	app_info.pApplicationName = application_name;
-	app_info.applicationVersion = VK_MAKE_VERSION(0, 1, 0);
-	app_info.pEngineName = "Lipin Sock Engine";
-	app_info.engineVersion = VK_MAKE_VERSION(0, 1, 0);
-
-	VkInstanceCreateInfo create_info = {};
-	create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-	create_info.pApplicationInfo = &app_info;
+	vk::ApplicationInfo app_info(
+		application_name,
+		VK_MAKE_VERSION(0, 1, 0),
+		"Lipin Sock Engine",
+		VK_MAKE_VERSION(0, 1, 0),
+		VK_API_VERSION_1_3
+	);
 
 	// Instance Extensions
-	uint32_t platform_extension_count;
-	const char** platform_extensions;
+	auto platform_extensions = platform_get_required_instance_extensions();
 
-	platform_extensions = platform_get_required_instance_extensions(&platform_extension_count);
+	// Instance validation layers.
+	auto enabled_validation_layers = validation_layers;
 
-	create_info.enabledExtensionCount = platform_extension_count;
-	create_info.ppEnabledExtensionNames = platform_extensions;
-
-	// Validation layers
-	if (enable_validation_layers)
+	if (!enable_validation_layers)
 	{
-		create_info.enabledLayerCount = validation_layer_count;
-		create_info.ppEnabledLayerNames = validation_layers;
+		enabled_validation_layers.clear();
 	}
-	else
-	{
-		create_info.enabledLayerCount = 0;
-	}
+
+	// Instance creation.
+	vk::InstanceCreateInfo create_info(
+		{},
+		&app_info,
+		enabled_validation_layers,
+		platform_extensions
+	);
+
+	vk::Result r;
+
+	std::tie(r, instance) = vk::createInstance(create_info);
 
 	// Create vulkan instance
-	if (vkCreateInstance(&create_info, NULL, &instance) != VK_SUCCESS)
+	if (r != vk::Result::eSuccess)
 	{
 		sl::log_fatal("Failed to create Vulkan instance.");
 		return false;
 	}
 
 	// Create vulkan surface
-	if (!vulkan_platform_create_vulkan_surface(instance, &surface))
+	auto _surface = vulkan_platform_create_vulkan_surface(instance);
+
+	if (!_surface)
 	{
 		sl::log_fatal("Failed to create vulkan surface.");
 		return false;
 	}
 
+	surface = *_surface;
 
 	// Create the device
-	try
+	std::vector<std::string> device_extensions_str(device_extensions.size());
+	for (size_t i = 0; i < device_extensions.size(); i++)
 	{
-		device = new Device(
-			instance,
-			device_extensions,
-			device_extension_count,
-			validation_layers,
-			validation_layer_count,
-			surface
-		);
+		device_extensions_str[i] = device_extensions[i];
 	}
-	catch (std::exception e)
+
+	std::vector<std::string> validation_layers_str(validation_layers.size());
+	for (size_t i = 0; i < validation_layers.size(); i++)
+	{
+		validation_layers_str[i] = validation_layers[i];
+	}
+
+	device = Device::create(
+		instance,
+		device_extensions_str,
+		validation_layers_str,
+		surface
+	).release();
+
+	if (device == nullptr)
 	{
 		sl::log_fatal("Failed to create a logical device.");
 		return false;
 	}
 
 	// Get swapchain info
-	SwapchainInfo swapchain_info = Swapchain::query_info(*device, surface);
-	
-	// Create the render pass
-	try
-	{
-		world_render_pass = new RenderPass(
-			*device,
-			swapchain_info.image_format.format,
-			swapchain_info.depth_format,
-			vector2ui { 0, 0 },
-			vector2ui { swapchain_info.swapchain_extent.width, swapchain_info.swapchain_extent.height },
-			vector4f { 0.4f, 0.5f, 0.6f, 0.0f },
-			1.0f,
-			0,
-			RenderPassClearFlag::COLOR_BUFFER_FLAG | RenderPassClearFlag::DEPTH_BUFFER_FLAG |
-				RenderPassClearFlag::STENCIL_BUFFER_FLAG,
-			false,
-			true
-		);
+	SwapchainInfo swapchain_info = Swapchain::query_info(device, surface);
 
-		ui_render_pass = new RenderPass(
-			*device,
-			swapchain_info.image_format.format,
-			swapchain_info.depth_format,
-			vector2ui { 0, 0 },
-			vector2ui { swapchain_info.swapchain_extent.width, swapchain_info.swapchain_extent.height },
-			vector4f { 0.0f, 0.0f, 0.0f, 0.0f },
-			1.0f,
-			0,
-			RenderPassClearFlag::NONE_FLAG,
-			true,
-			false
-		);
-	}
-	catch (std::exception e)
+	// Create the render passs
+	world_render_pass = RenderPass::create(
+		device,
+		swapchain_info.image_format.format,
+		swapchain_info.depth_format,
+		vector2ui { 0, 0 },
+		vector2ui { swapchain_info.swapchain_extent.width, swapchain_info.swapchain_extent.height },
+		vector4f { 0.4f, 0.5f, 0.6f, 0.0f },
+		1.0f,
+		0,
+		RenderPassClearFlagBits::COLOR_BUFFER_FLAG | RenderPassClearFlagBits::DEPTH_BUFFER_FLAG |
+			RenderPassClearFlagBits::STENCIL_BUFFER_FLAG,
+		false,
+		true
+	).release();
+
+	ui_render_pass = RenderPass::create(
+		device,
+		swapchain_info.image_format.format,
+		swapchain_info.depth_format,
+		vector2ui { 0, 0 },
+		vector2ui { swapchain_info.swapchain_extent.width, swapchain_info.swapchain_extent.height },
+		vector4f { 0.0f, 0.0f, 0.0f, 0.0f },
+		1.0f,
+		0,
+		RenderPassClearFlagBits::NONE_FLAG,
+		true,
+		false
+	).release();
+	
+	if (!world_render_pass)
 	{
-		sl::log_fatal("Failed to create render pass.");
+		sl::log_fatal("Failed to create the world render pass.");
+		return false;
+	}
+
+	if (!ui_render_pass)
+	{
+		sl::log_fatal("Failed to create the ui render pass.");
 		return false;
 	}
 
 	// Create the swapchain
-	try
-	{
-		swapchain = new Swapchain(
-			*device,
-			surface,
-			swapchain_info,
-			*ui_render_pass
-		);
-	}
-	catch (std::exception e)
+	swapchain = Swapchain::create(
+		device,
+		ui_render_pass,
+		surface,
+		swapchain_info
+	).release();
+
+	if (!swapchain)
 	{
 		sl::log_fatal("Failed to create the swapchain.");
 		return false;
 	}
 
 	// Create world framebuffers.
-	world_framebuffers.reserve(swapchain->get_images().size());
+	world_framebuffers.resize(swapchain->images.size());
 
-	for (size_t i = 0; i < swapchain->get_images().size(); i++)
+	for (size_t i = 0; i < swapchain->images.size(); i++)
 	{
-		VkImageView attachments[2] = {
-			swapchain->get_image_views()[i],
-			swapchain->get_depth_attachments()[i].get_image_view()
+		std::vector<vk::ImageView> attachments = {
+			swapchain->image_views[i],
+			swapchain->depth_attachments[i]->image_view
 		};
 
-		world_framebuffers.emplace_back(
-			*device,
-			*world_render_pass,
-			vulkan_get_framebuffer_size(),
-			2,
-			attachments
+		vk::FramebufferCreateInfo fb_ci(
+			{},
+			world_render_pass->handle,
+			attachments,
+			vulkan_get_framebuffer_size().w,
+			vulkan_get_framebuffer_size().h,
+			1
 		);
+
+		std::tie(r, world_framebuffers[i]) = device->logical_device.createFramebuffer(fb_ci);
 	}
-	
+
 	// Create command buffers.
 	create_command_buffers();
 
 	// Create sync objects
-	uint8_t max_frames_in_flight = swapchain->get_max_frames_in_flight();
-	
-	image_available_semaphores.resize(max_frames_in_flight);
-	
-	queue_complete_semaphores.resize(max_frames_in_flight);
+	image_available_semaphores.resize(swapchain->max_frames_in_flight);
 
-	in_flight_fences.reserve(max_frames_in_flight);
+	queue_complete_semaphores.resize(swapchain->max_frames_in_flight);
 
-	for (uint32_t i = 0; i < max_frames_in_flight; i++)
+	in_flight_fences.reserve(swapchain->max_frames_in_flight);
+
+	for (uint32_t i = 0; i < swapchain->max_frames_in_flight; i++)
 	{
-		VkSemaphoreCreateInfo semaphore_ci = {};
-		semaphore_ci.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+		vk::SemaphoreCreateInfo semaphore_ci;
 
-		vkCreateSemaphore(
-			*device,
-			&semaphore_ci,
-			NULL,
-			&image_available_semaphores[i]
-		);
+		std::tie(r, image_available_semaphores[i]) = device->logical_device.createSemaphore(semaphore_ci);
 
-		vkCreateSemaphore(
-			*device,
-			&semaphore_ci,
-			NULL,
-			&queue_complete_semaphores[i]
-		);
+		if (r != vk::Result::eSuccess)
+		{
+			sl::log_error("Failed to create image available semaphore.");
+			return false;
+		}
 
-		in_flight_fences.emplace_back(*device, true); 
+		std::tie(r, queue_complete_semaphores[i]) = device->logical_device.createSemaphore(semaphore_ci);
+
+		if (r != vk::Result::eSuccess)
+		{
+			sl::log_error("Failed to create queue complete semaphore.");
+			return false;
+		}
+
+		auto fence = Fence::create(device, true);
+
+		if (!fence)
+		{
+			sl::log_error("Failed to create fence.");
+			return false;
+		}
+
+		in_flight_fences.push_back(std::move(fence)); 
 	}
 
 	// Preallocate the in flight images and set them to nullptr;
-	images_in_flight.resize(swapchain->get_images().size(), nullptr);
+	images_in_flight.resize(swapchain->images.size(), nullptr);
 
-	if (!texture_system_initialize(*device))
+	if (!texture_system_initialize(device))
 	{
 		sl::log_fatal("Failed to initialize the vulkan renderer texture subsystem.");
 		return false;
 	}
 
-	if (!shader_system_initialize(
-		*device,
-		*swapchain
-	))
+	if (!shader_system_initialize(device, swapchain))
 	{
 		sl::log_fatal("Failed to initialize the vulkan renderer shader subsystem.");
 		return false;
 	}
 
 	// Load default shaders.
-	object_shader = shader_system_load("assets/shaders/builtin.object_shader.scfg", *world_render_pass);
-	ui_shader = shader_system_load("assets/shaders/builtin.ui_shader.scfg", *ui_render_pass);
+	object_shader = shader_system_load("assets/shaders/builtin.object_shader.scfg", world_render_pass);
+	ui_shader = shader_system_load("assets/shaders/builtin.ui_shader.scfg", ui_render_pass);
 
 	if (object_shader == nullptr)
 	{
@@ -307,7 +324,6 @@ bool vulkan_initialize(const char* application_name)
 	}
 
 	// TEMP:
-	
 	std::optional<Obj> car_obj = Obj::load("assets/models/obj/car.obj");
 
 	if (!car_obj)
@@ -317,33 +333,36 @@ bool vulkan_initialize(const char* application_name)
 		return false;
 	}
 
-	car_model = new Model(device, object_shader, *car_obj);
-	car_model->get_transform().set_position(0, 0, -10);
+	car_model = Model::create(device, object_shader, *car_obj).release();
+	car_model->transform.set_position(0, 0, -10);
 
 	return true;
 }
 
 void vulkan_shutdown()
 {
-	vkDeviceWaitIdle(*device);
+	vk::Result r = device->logical_device.waitIdle();
 
 	delete car_model;
 
 	shader_system_shutdown();
 
-	texture_system_shutdown(*device);
+	texture_system_shutdown();
 
 	for (size_t i = 0; i < image_available_semaphores.size(); i++)
 	{
-		vkDestroySemaphore(*device, image_available_semaphores[i], nullptr);
-		vkDestroySemaphore(*device, queue_complete_semaphores[i], nullptr);
+		device->logical_device.destroy(image_available_semaphores[i]);
+		device->logical_device.destroy(queue_complete_semaphores[i]);
 	}
 
 	in_flight_fences.clear();
 
 	graphics_command_buffers.clear();
 
-	world_framebuffers.clear();
+	for (size_t i = 0; i < world_framebuffers.size(); i++)
+	{
+		device->logical_device.destroy(world_framebuffers[i]);
+	}
 
 	delete ui_render_pass;
 
@@ -353,64 +372,67 @@ void vulkan_shutdown()
 
 	delete device;
 
-	vkDestroySurfaceKHR(instance, surface, nullptr);
+	instance.destroy(surface);
 
-	vkDestroyInstance(instance, nullptr);
+	instance.destroy();
 
 	sl::log_info("Successfully shut down the vulkan backend.");
 }
 
 bool vulkan_begin_frame(float delta_time)
 {
-	if (swapchain->is_swapchain_out_of_date())
+	if (swapchain->swapchain_out_of_date)
 	{
 		recreate_swapchain();
 		return vulkan_begin_frame(delta_time);
 	}
 
-	uint8_t current_frame = swapchain->get_current_frame();
+	uint8_t current_frame = swapchain->current_frame;
 
 	// Wait for the current frame
-	if (!in_flight_fences[current_frame].wait())
+	if (!in_flight_fences[current_frame]->wait())
 	{
 		sl::log_warn("Failed to wait on an in-flight fence.");
 		return false;
 	}
 
 	// Acquire next image in swapchain
-	if (!swapchain->acquire_next_image_index(
-		UINT64_MAX,
+	auto next_image_index = swapchain->acquire_next_image_index(
+		UINT64_MAX, 
 		image_available_semaphores[current_frame],
-		NULL,
-		current_image_index
-	))
+		nullptr
+	);
+
+	if (!next_image_index)
 	{
 		sl::log_warn("Failed to acquire next swapchain image");
 		return false;
 	}
 
+	current_image_index = *next_image_index;
+
 	// Begin command buffer
-	CommandBuffer& command_buffer = graphics_command_buffers[current_frame];
-	command_buffer.reset();
-	command_buffer.begin(false, false, false);
+	CommandBuffer* command_buffer = graphics_command_buffers[current_frame].get();
+	command_buffer->reset();
+	command_buffer->begin(false, false, false);
 
 	// Dynamic state
-	VkViewport viewport;
+	vk::Viewport viewport;
 	viewport.x = 0.0f;
-	viewport.y = (float) swapchain->get_swapchain_info().swapchain_extent.height;
-	viewport.width = (float) swapchain->get_swapchain_info().swapchain_extent.width;
-	viewport.height = -(float) swapchain->get_swapchain_info().swapchain_extent.height;
+	viewport.y = (float) swapchain->swapchain_info.swapchain_extent.height;
+	viewport.width = (float) swapchain->swapchain_info.swapchain_extent.width;
+	viewport.height = -(float) swapchain->swapchain_info.swapchain_extent.height;
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
 	// Scissor
-	VkRect2D scissor;
+	vk::Rect2D scissor;
 	scissor.offset.x = scissor.offset.y = 0;
-	scissor.extent.width = swapchain->get_swapchain_info().swapchain_extent.width;
-	scissor.extent.height = swapchain->get_swapchain_info().swapchain_extent.height;
+	scissor.extent.width = swapchain->swapchain_info.swapchain_extent.width;
+	scissor.extent.height = swapchain->swapchain_info.swapchain_extent.height;
 
-	vkCmdSetViewport(command_buffer, 0, 1, &viewport);
-	vkCmdSetScissor(command_buffer, 0, 1, &scissor);
+	command_buffer->handle.setViewport(0, 1, &viewport);
+	command_buffer->handle.setScissor(0, 1, &scissor);
 
 	world_render_pass->begin(command_buffer, world_framebuffers[current_image_index]);
 
@@ -428,7 +450,7 @@ bool vulkan_begin_frame(float delta_time)
 
 	//test_model.transform.rotation.y += LQUARTER_PI * delta_time;
 	//lise_transform_update(&test_model.transform);
-	car_model->get_transform().set_rotation(car_model->get_transform().get_rotation() + vector3f {0, LQUARTER_PI * delta_time});
+	car_model->transform.set_rotation(car_model->transform.get_rotation() + vector3f {0, LQUARTER_PI * delta_time});
 	
 	car_model->draw(command_buffer, current_frame);
 
@@ -443,17 +465,17 @@ bool vulkan_begin_frame(float delta_time)
 
 bool vulkan_end_frame(float delta_time)
 {
-	uint8_t current_frame = swapchain->get_current_frame();
-	CommandBuffer& command_buffer = graphics_command_buffers[current_frame];
+	uint8_t current_frame = swapchain->current_frame;
+	CommandBuffer* command_buffer = graphics_command_buffers[current_frame].get();
 
 	// End render pass.
 	world_render_pass->end(command_buffer);
 
-	ui_render_pass->begin(command_buffer, swapchain->get_framebuffers()[current_image_index]);
+	ui_render_pass->begin(command_buffer, swapchain->framebuffers[current_image_index]);
 
 	ui_render_pass->end(command_buffer);
 
-	command_buffer.end();
+	command_buffer->end();
 
 	// Wait if a previous frame is still using this image.
 	if (images_in_flight[current_frame] != NULL)
@@ -462,57 +484,43 @@ bool vulkan_end_frame(float delta_time)
 	}
 
 	// Mark fence as being in use by this image.
-	images_in_flight[current_frame] = &in_flight_fences[current_frame];
+	images_in_flight[current_frame] = in_flight_fences[current_frame].get();
 
 	// Reset the fence
 	images_in_flight[current_frame]->reset();
 
 	// Submit queue
-	VkSubmitInfo submit_info = {};
-	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-	submit_info.commandBufferCount = 1;
-	submit_info.pCommandBuffers = &((const VkCommandBuffer&) command_buffer);
-
-	// Semaphores to be signaled when the queue is completed
-	submit_info.signalSemaphoreCount = 1;
-	submit_info.pSignalSemaphores = &queue_complete_semaphores[current_frame];
-
-	// Wait before queue execution until image is available (image available semaphore is signaled)
-	submit_info.waitSemaphoreCount = 1;
-	submit_info.pWaitSemaphores = &image_available_semaphores[current_frame];
-
-	// Wait destination
-	VkPipelineStageFlags stage_flags[1] = {
-		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+	vk::PipelineStageFlags stage_flags[1] = {
+		vk::PipelineStageFlagBits::eColorAttachmentOutput
 	};
 
-	submit_info.pWaitDstStageMask = stage_flags;
-
-	if (vkQueueSubmit(
-		device->get_graphics_queue(),
+	vk::SubmitInfo submit_info(
 		1,
-		&submit_info,
-		in_flight_fences[current_frame]) != VK_SUCCESS
-	)
+		&image_available_semaphores[current_frame],
+		stage_flags,
+		1,
+		&command_buffer->handle,
+		1,
+		&queue_complete_semaphores[current_frame]
+	);
+
+	vk::Result r = device->graphics_queue.submit(1, &submit_info, in_flight_fences[current_frame]->handle);
+
+	if (r != vk::Result::eSuccess)
 	{
 		sl::log_error("Failed to submit queue.");
-
 		return false;
 	}
 
-	command_buffer.set_state(CommandBufferState::SUBMITTED);
+	command_buffer->set_state(CommandBufferState::SUBMITTED);
 
 	// Give images back to the swapchain
-	if (!swapchain->present(
-		queue_complete_semaphores[swapchain->get_current_frame()],
-		current_image_index
-		) && !swapchain->is_swapchain_out_of_date()
+	if (!swapchain->present(queue_complete_semaphores[swapchain->current_frame], current_image_index) &&
+		!swapchain->swapchain_out_of_date
 	)
 	{
 		// Swapchain is not out of date, so the return value indicates a failure.
 		sl::log_fatal("Failed to present swap chain image.");
-
 		return false;
 	}
 
@@ -522,8 +530,8 @@ bool vulkan_end_frame(float delta_time)
 vector2ui vulkan_get_framebuffer_size()
 {
 	return vector2ui {
-		swapchain->get_swapchain_info().swapchain_extent.width,
-		swapchain->get_swapchain_info().swapchain_extent.height
+		swapchain->swapchain_info.swapchain_extent.width,
+		swapchain->swapchain_info.swapchain_extent.height
 	};
 }
 
@@ -537,19 +545,20 @@ LAPI void vulkan_set_view_matrix_temp(const mat4x4& view)
 static bool check_validation_layer_support()
 {
 	// Get available validation layers.
-	uint32_t available_layer_count;
-	vkEnumerateInstanceLayerProperties(&available_layer_count, NULL);
+	auto [r, available_layers] = vk::enumerateInstanceLayerProperties();
 
-	std::unique_ptr<VkLayerProperties[]> available_layers =
-		std::make_unique<VkLayerProperties[]>(available_layer_count);
-	vkEnumerateInstanceLayerProperties(&available_layer_count, available_layers.get());
+	if (r != vk::Result::eSuccess)
+	{
+		sl::log_error("Failed to enumerate instane layer properties.");
+		return false;
+	}
 
-	for (uint32_t i = 0; i < validation_layer_count; i++)
+	for (uint32_t i = 0; i < validation_layers.size(); i++)
 	{
 		bool layer_found = false;
 
 		// Loop through available layers and check if our layers are among them
-		for (uint32_t j = 0; j < available_layer_count; j++)
+		for (uint32_t j = 0; j < available_layers.size(); j++)
 		{
 			if (strcmp(validation_layers[i], available_layers[j].layerName) == 0)
 			{
@@ -567,29 +576,43 @@ static bool check_validation_layer_support()
 	return true;
 }
 
-void create_command_buffers()
+bool create_command_buffers()
 {
 	sl::log_debug("Creating initial command buffers");
 
 	// Clear old command buffers.
 	graphics_command_buffers.clear();
 
-	graphics_command_buffers.reserve(swapchain->get_max_frames_in_flight());
+	graphics_command_buffers.reserve(swapchain->max_frames_in_flight);
 
-	for (uint32_t i = 0; i < swapchain->get_max_frames_in_flight(); i++)
+	for (uint32_t i = 0; i < swapchain->max_frames_in_flight; i++)
 	{
-		graphics_command_buffers.emplace_back(
-			*device,
-			device->get_graphics_command_pool(),
-			true
-		);
+		auto cb = CommandBuffer::create(device, device->graphics_command_pool, true);
+
+		if (!cb)
+		{
+			sl::log_fatal("Failed to create command buffers");
+			return false;
+		}
+
+		graphics_command_buffers.push_back(std::move(cb));
 	}
+
+	return true;
 }
 
 static bool recreate_swapchain()
 {
+	sl::log_debug("Recreating swapchain.");
+
 	// Wait for the device to idle.
-	vkDeviceWaitIdle(*device);
+	vk::Result r = device->logical_device.waitIdle();
+
+	if (r != vk::Result::eSuccess)
+	{
+		sl::log_error("Failed to wait for device to idle.");
+		return false;
+	}
 
 	// Reset inflight fences,
 	for (uint64_t i = 0; i < images_in_flight.size(); i++)
@@ -597,77 +620,100 @@ static bool recreate_swapchain()
 		images_in_flight[i] = nullptr;
 	}
 
-	SwapchainInfo new_info = Swapchain::query_info(*device, surface);
+	SwapchainInfo new_info = Swapchain::query_info(device, surface);
 
+	for (size_t i = 0; i < world_framebuffers.size(); i++)
+	{
+		device->logical_device.destroy(world_framebuffers[i]);
+	}
 	world_framebuffers.clear();
+
 	delete ui_render_pass;
 	delete world_render_pass;
 	delete swapchain;
 
-	try
+	world_render_pass = RenderPass::create(
+		device,
+		new_info.image_format.format,
+		new_info.depth_format,
+		vector2ui { 0, 0 },
+		vector2ui { new_info.swapchain_extent.width, new_info.swapchain_extent.height },
+		vector4f { 0.4f, 0.5f, 0.6f, 0.0f },
+		1.0f,
+		0,
+		RenderPassClearFlagBits::COLOR_BUFFER_FLAG | RenderPassClearFlagBits::DEPTH_BUFFER_FLAG |
+			RenderPassClearFlagBits::STENCIL_BUFFER_FLAG,
+		false,
+		true
+	).release();
+
+	ui_render_pass = RenderPass::create(
+		device,
+		new_info.image_format.format,
+		new_info.depth_format,
+		vector2ui { 0, 0 },
+		vector2ui { new_info.swapchain_extent.width, new_info.swapchain_extent.height },
+		vector4f { 0.0f, 0.0f, 0.0f, 0.0f },
+		1.0f,
+		0,
+		RenderPassClearFlagBits::NONE_FLAG,
+		true,
+		false
+	).release();
+
+	if (!world_render_pass)
 	{
-		world_render_pass = new RenderPass(
-			*device,
-			new_info.image_format.format,
-			new_info.depth_format,
-			vector2ui { 0, 0 },
-			vector2ui { new_info.swapchain_extent.width, new_info.swapchain_extent.height },
-			vector4f { 0.4f, 0.5f, 0.6f, 0.0f },
-			1.0f,
-			0,
-			RenderPassClearFlag::COLOR_BUFFER_FLAG | RenderPassClearFlag::DEPTH_BUFFER_FLAG |
-				RenderPassClearFlag::STENCIL_BUFFER_FLAG,
-			false,
-			true
-		);
-
-		ui_render_pass = new RenderPass(
-			*device,
-			new_info.image_format.format,
-			new_info.depth_format,
-			vector2ui { 0, 0 },
-			vector2ui { new_info.swapchain_extent.width, new_info.swapchain_extent.height },
-			vector4f { 0.0f, 0.0f, 0.0f, 0.0f },
-			1.0f,
-			0,
-			RenderPassClearFlag::NONE_FLAG,
-			true,
-			false
-		);
-
-		swapchain = new Swapchain(
-			*device,
-			surface,
-			new_info,
-			*ui_render_pass
-		);
-
-		// World framebuffers.
-		size_t swapchain_image_count = swapchain->get_images().size();
-
-		world_framebuffers.reserve(swapchain_image_count);
-
-		for (size_t i = 0; i < swapchain_image_count; i++)
-		{
-			VkImageView attachments[2] = {
-				swapchain->get_image_views()[i],
-				swapchain->get_depth_attachments()[i].get_image_view()
-			};
-
-			world_framebuffers.emplace_back(
-				*device,
-				*world_render_pass,
-				vulkan_get_framebuffer_size(),
-				2,
-				attachments
-			);
-		}
-	}
-	catch (std::exception e)
-	{
-		sl::log_error("Failed to recreate the swapchain");
-
+		sl::log_fatal("Failed to recreate the world render pass.");
 		return false;
+	}
+
+	if (!ui_render_pass)
+	{
+		sl::log_fatal("Failed to recreate the ui render pass.");
+		return false;
+	}
+
+	swapchain = Swapchain::create(
+		device,
+		ui_render_pass,
+		surface,
+		new_info
+	).release();
+
+	if (!swapchain)
+	{
+		sl::log_fatal("Failed to recreate the swapchain.");
+		return false;
+	}
+
+	// World framebuffers.
+	size_t swapchain_image_count = swapchain->images.size();
+
+	world_framebuffers.resize(swapchain_image_count);
+
+	for (size_t i = 0; i < swapchain_image_count; i++)
+	{
+		std::vector<vk::ImageView> attachments = {
+			swapchain->image_views[i],
+			swapchain->depth_attachments[i]->image_view
+		};
+
+		vk::FramebufferCreateInfo fb_ci(
+			{},
+			world_render_pass->handle,
+			attachments,
+			vulkan_get_framebuffer_size().w,
+			vulkan_get_framebuffer_size().h,
+			1
+		);
+
+		std::tie(r, world_framebuffers[i]) = device->logical_device.createFramebuffer(fb_ci);
+
+		if (r != vk::Result::eSuccess)
+		{
+			sl::log_error("Failed to recreate world frame buffers.");
+			return false;
+		}
 	}
 
 	return true;

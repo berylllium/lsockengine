@@ -11,7 +11,7 @@
 namespace lise
 {
 
-enum class render_pass_state
+enum class RenderPassState
 {
 	READY,
 	RECORDING,
@@ -21,7 +21,7 @@ enum class render_pass_state
 	NOT_ALLOCATED
 };
 
-enum RenderPassClearFlag
+enum RenderPassClearFlagBits
 {
 	NONE_FLAG = 0x0,
 	COLOR_BUFFER_FLAG = 0x1,
@@ -29,37 +29,9 @@ enum RenderPassClearFlag
 	STENCIL_BUFFER_FLAG = 0x4
 };
 
-class RenderPass
+struct RenderPass
 {
-public:
-	RenderPass(
-		const Device& device,
-		VkFormat color_format,
-		VkFormat depth_format,
-		vector2ui render_area_start,
-		vector2ui render_area_size,
-		vector4f clear_color,
-		float depth,
-		uint32_t stencil,
-		uint8_t clear_flags,
-		bool has_prev_pass,
-		bool has_next_pass
-	);
-
-	RenderPass(RenderPass&& other);
-
-	RenderPass(RenderPass&) = delete; // Prevent copies.
-
-	~RenderPass();
-
-	operator VkRenderPass() const;
-
-	void begin(CommandBuffer& cb, VkFramebuffer frame_buffer);
-
-	void end(CommandBuffer& cb);
-
-private:
-	VkRenderPass handle;
+	vk::RenderPass handle;
 
 	vector2ui render_area_start;
 	vector2ui render_area_size;
@@ -73,9 +45,33 @@ private:
 	bool has_prev_pass;
 	bool has_next_pass;
 
-	render_pass_state state;
+	RenderPassState state;
 
-	const Device& device;
+	const Device* device;
+
+	RenderPass() = default;
+
+	RenderPass(RenderPass&) = delete; // Prevent copies.
+
+	~RenderPass();
+
+	LAPI static std::unique_ptr<RenderPass> create(
+		const Device* device,
+		vk::Format color_format,
+		vk::Format depth_format,
+		vector2ui render_area_start,
+		vector2ui render_area_size,
+		vector4f clear_color,
+		float depth,
+		uint32_t stencil,
+		uint8_t clear_flags,
+		bool has_prev_pass,
+		bool has_next_pass
+	);
+
+	void begin(CommandBuffer* cb, vk::Framebuffer frame_buffer);
+
+	void end(CommandBuffer* cb);
 };
 
 }

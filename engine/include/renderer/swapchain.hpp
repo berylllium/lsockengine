@@ -1,12 +1,13 @@
 #pragma once
 
 #include <vector>
+#include <optional>
 
 #include <vulkan/vulkan.h>
 
 #include "renderer/device.hpp"
 #include "renderer/vulkan_image.hpp"
-#include "renderer/framebuffer.hpp"
+#include "renderer/render_pass.hpp"
 
 #include "definitions.hpp"
 
@@ -15,78 +16,62 @@ namespace lise
 
 struct SwapchainInfo
 {
-	VkSurfaceFormatKHR image_format;
-	VkPresentModeKHR present_mode;
-	VkExtent2D swapchain_extent;
+	vk::SurfaceFormatKHR image_format;
+	vk::PresentModeKHR present_mode;
+	vk::Extent2D swapchain_extent;
 
-	VkFormat depth_format;
+	vk::Format depth_format;
 
 	uint32_t min_image_count;
 };
 
-class Swapchain
+struct Swapchain
 {
-public:
-	Swapchain(
-		const Device& device, 
-		VkSurfaceKHR surface,
-		SwapchainInfo swapchain_info,
-		const RenderPass& render_pass
-	);
+	vk::SwapchainKHR handle;
+
+	SwapchainInfo swapchain_info;
+
+	vk::SurfaceFormatKHR image_format;
+
+	std::vector<vk::Image> images;
+	std::vector<vk::ImageView> image_views;
+
+	uint8_t max_frames_in_flight;
+	uint8_t current_frame = 0;
+	
+	vk::Format depth_format;
+	std::vector<std::unique_ptr<Image>> depth_attachments;
+
+	std::vector<vk::Framebuffer> framebuffers;
+
+	bool swapchain_out_of_date = false;
+
+	vk::SurfaceKHR surface;
+
+	const Device* device;
+
+	Swapchain() = default;
 
 	Swapchain(const Swapchain&) = delete; // Prevent copies.
 
 	~Swapchain();
 
-	bool acquire_next_image_index(
-		uint64_t timeout_ns,
-		VkSemaphore image_available_semaphore,
-		VkFence fence,
-		uint32_t& out_image_index
+	static std::unique_ptr<Swapchain> create(
+		const Device* device,
+		const RenderPass* render_pass,
+		vk::SurfaceKHR surface,
+		SwapchainInfo swapchain_info
 	);
 
-	bool present(VkSemaphore render_complete_semaphore, uint32_t present_image_index);
+	std::optional<uint32_t> acquire_next_image_index(
+		uint64_t timeout_ns,
+		vk::Semaphore image_available_semaphore,
+		vk::Fence fence
+	);
 
-	const SwapchainInfo& get_swapchain_info() const;
+	bool present(vk::Semaphore render_complete_semaphore, uint32_t present_image_index);
 
-	const std::vector<Framebuffer>& get_framebuffers() const;
-
-	const std::vector<VkImage>& get_images() const;
-	
-	const std::vector<VkImageView>& get_image_views() const;
-
-	const std::vector<VulkanImage>& get_depth_attachments() const;
-
-	uint8_t get_max_frames_in_flight() const;
-
-	uint8_t get_current_frame() const;
-
-	bool is_swapchain_out_of_date() const;
-
-	static SwapchainInfo query_info(const Device& device, VkSurfaceKHR surface);
-
-private:
-	VkSwapchainKHR handle;
-
-	SwapchainInfo swapchain_info;
-
-	VkSurfaceFormatKHR image_format;
-
-	std::vector<VkImage> images;
-	std::vector<VkImageView> image_views;
-
-	uint8_t max_frames_in_flight;
-	uint8_t current_frame;
-	
-	VkFormat depth_format;
-	std::vector<VulkanImage> depth_attachments;
-
-	std::vector<Framebuffer> framebuffers;
-
-	bool swapchain_out_of_date;
-
-	const Device& device;
-	const VkSurfaceKHR& surface;
+	static SwapchainInfo query_info(const Device* device, vk::SurfaceKHR surface);
 };
 
 }

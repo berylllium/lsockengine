@@ -8,158 +8,125 @@ namespace lise
 {
 
 static void upload_data_range(
-	const Device& device,
-	VkCommandPool command_pool,
-	VkQueue queue,
-	VulkanBuffer& buffer,
+	const Device* device,
+	vk::CommandPool command_pool,
+	vk::Queue queue,
+	VulkanBuffer* buffer,
 	uint64_t offset,
 	uint64_t size,
 	void* data
 );
 
-Mesh::Mesh(
+std::unique_ptr<Mesh> Mesh::create(
 	const Device* device,
-	VkCommandPool command_pool,
-	VkQueue queue,
+	vk::CommandPool command_pool,
+	vk::Queue queue,
 	Shader* shader,
 	std::string name,
 	std::vector<vertex> vertices,
 	std::vector<uint32_t> indices,
 	vector4f diffuse_color,
 	const Texture* diffuse_texture
-) : device(device), shader(shader), name(name), vertices(vertices), indices(indices), diffuse_texture(diffuse_texture)
+)
 {
+	auto out = std::make_unique<Mesh>();
+
+	// Copy trivial data.
+	out->name = name;
+	out->vertices = vertices;
+	out->indices = indices;
+	out->diffuse_texture = diffuse_texture;
+	out->instance_ubo.diffuse_color = diffuse_color;
+	out->shader = shader;
+	out->device = device;
+
 	uint64_t index_array_size = indices.size() * sizeof(uint32_t);
 	uint64_t vertex_array_size = vertices.size() * sizeof(vertex);
 
 	// Create the vertex buffer.
-	vertex_buffer = new VulkanBuffer(
-		*device,
-		device->get_memory_properties(),
+	out->vertex_buffer = VulkanBuffer::create(
+		device,
 		vertex_array_size,
-		static_cast<VkBufferUsageFlagBits>(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT),
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst |
+			vk::BufferUsageFlagBits::eTransferSrc,
+		vk::MemoryPropertyFlagBits::eDeviceLocal,
 		true
 	);
 
+	if (!out->vertex_buffer)
+	{
+		sl::log_error("Failed to create vertex buffer for mesh `{}`.", name);
+		return nullptr;
+	}
+
 	// Create the index buffer.
-	index_buffer = new VulkanBuffer(
-		*device,
-		device->get_memory_properties(),
+	out->index_buffer = VulkanBuffer::create(
+		device,
 		index_array_size,
-		static_cast<VkBufferUsageFlagBits>(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT),
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst |
+			vk::BufferUsageFlagBits::eTransferSrc,
+		vk::MemoryPropertyFlagBits::eDeviceLocal,
 		true
 	);
+
+	if (!out->index_buffer)
+	{
+		sl::log_error("Failed to create index buffer for mesh `{}`.", name);
+		return nullptr;
+	}
 
 	// Upload data to buffers.
 	upload_data_range(
-		*device,
+		device,
 		command_pool,
 		queue,
-		*vertex_buffer,
+		out->vertex_buffer.get(),
 		0,
 		vertex_array_size,
 		vertices.data()
 	);
 
 	upload_data_range(
-		*device,
+		device,
 		command_pool,
 		queue,
-		*index_buffer,
+		out->index_buffer.get(),
 		0,
 		index_array_size,
 		indices.data()
 	);
 
 	// Create shader instance.
-	shader_instance = shader->allocate_instance();
-	if (shader_instance == nullptr)
-	{
-		sl::log_error("Failed to allocate a shader instance for mesh `%s`.", name);
+	out->shader_instance = shader->allocate_instance();
 
-		throw std::runtime_error("Failed to allocate a shader instance");
+	if (!out->shader_instance)
+	{
+		sl::log_error("Failed to allocate a shader instance for mesh `{}`.", name);
+		return nullptr;
 	}
 
-	// Populate ubo.
-	instance_ubo.diffuse_color = diffuse_color;
-
 	// Update shader instance.
-	shader_instance->set_ubo(&instance_ubo);
-	shader_instance->set_sampler(0, diffuse_texture);
-}
+	out->shader_instance->set_ubo(&out->instance_ubo);
+	out->shader_instance->set_sampler(0, out->diffuse_texture);
 
-Mesh::Mesh(Mesh&& other)
-{
-	name = other.name;
-
-	vertices = other.vertices;
-
-	indices = other.indices;
-
-	vertex_buffer = other.vertex_buffer;
-	other.vertex_buffer = nullptr;
-
-	index_buffer = other.index_buffer;
-	other.index_buffer = nullptr;
-
-	instance_ubo = other.instance_ubo;
-
-	shader_instance = other.shader_instance;
-	other.shader_instance = nullptr;
-
-	diffuse_texture = other.diffuse_texture;
-
-	shader = other.shader;
-	
-	device = other.device;
+	return out;
 }
 
 Mesh::~Mesh()
 {
-	delete vertex_buffer;
-	delete index_buffer;
-
 	// TODO: free shader_instance.
 }
 
-Mesh& Mesh::operator = (Mesh&& other)
-{
-	this->~Mesh();
-
-	name = other.name;
-
-	vertices = other.vertices;
-
-	indices = other.indices;
-
-	vertex_buffer = other.vertex_buffer;
-	other.vertex_buffer = nullptr;
-
-	index_buffer = other.index_buffer;
-	other.index_buffer = nullptr;
-
-	instance_ubo = other.instance_ubo;
-
-	shader_instance = other.shader_instance;
-	other.shader_instance = nullptr;
-
-	diffuse_texture = other.diffuse_texture;
-
-	shader = other.shader;
-	
-	device = other.device;
-
-	return *this;
-}
-
-void Mesh::draw(CommandBuffer& command_buffer, mat4x4 model, uint32_t current_image)
+void Mesh::draw(CommandBuffer* command_buffer, const mat4x4& model, uint32_t current_image)
 {
 	// Push the transformation matrix as a push constant.
-	vkCmdPushConstants(command_buffer, shader->get_pipeline().get_layout(), VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &model);
+	command_buffer->handle.pushConstants(
+		shader->pipeline->pipeline_layout,
+		vk::ShaderStageFlagBits::eVertex,
+		0,
+		64,
+		&model
+	);
 
 	// Update the uniforms (if needed).
 	shader_instance->update_ubo(current_image);
@@ -171,49 +138,48 @@ void Mesh::draw(CommandBuffer& command_buffer, mat4x4 model, uint32_t current_im
 	shader->use(command_buffer, current_image);
 
 	// Bind buffers.
-	VkDeviceSize offsets[1] = {0};
-	VkBuffer vhandle = *vertex_buffer;
-	vkCmdBindVertexBuffers(command_buffer, 0, 1, &vhandle, offsets);
+	vk::DeviceSize offsets[1] = {0};
+	command_buffer->handle.bindVertexBuffers(0, 1, &vertex_buffer->handle, offsets);
 
-	vkCmdBindIndexBuffer(command_buffer, *index_buffer, 0, VK_INDEX_TYPE_UINT32);
+	command_buffer->handle.bindIndexBuffer(index_buffer->handle, 0, vk::IndexType::eUint32);
 
 	// Issue draw call.
-	vkCmdDrawIndexed(command_buffer, indices.size(), 1, 0, 0, 0);
+	command_buffer->handle.drawIndexed(indices.size(), 1, 0, 0, 0);
 }
 
 // Static helper functions.
 static void upload_data_range(
-	const Device& device,
-	VkCommandPool command_pool,
-	VkQueue queue,
-	VulkanBuffer& buffer,
+	const Device* device,
+	vk::CommandPool command_pool,
+	vk::Queue queue,
+	VulkanBuffer* buffer,
 	uint64_t offset,
 	uint64_t size,
 	void* data
 )
 {
 	// Create a host-visible staging buffer to upload to. Mark it as the source of the transfer.
-	VkBufferUsageFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	vk::MemoryPropertyFlags flags =
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
 
-	VulkanBuffer staging(
+	auto staging = VulkanBuffer::create(
 		device,
-		device.get_memory_properties(),
 		size,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		vk::BufferUsageFlagBits::eTransferSrc,
 		flags,
 		true
 	);
 
 	// Load the data into the staging buffer.
-	staging.load_data(0, size, 0, data);
+	staging->load_data(0, size, {}, data);
 
 	// Perform the copy from staging to the device local buffer.
-	staging.copy_to(
+	staging->copy_to(
 		command_pool,
-		0,
+		nullptr,
 		queue,
 		0,
-		buffer,
+		buffer->handle,
 		offset,
 		size
 	);

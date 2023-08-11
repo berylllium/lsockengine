@@ -1,8 +1,9 @@
 #pragma once
 
+#include <span>
 #include <memory>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 
 #include "definitions.hpp"
 
@@ -11,13 +12,11 @@ namespace lise
 
 struct DeviceSwapChainSupportInfo
 {
-	VkSurfaceCapabilitiesKHR surface_capabilities;
+	vk::SurfaceCapabilitiesKHR surface_capabilities;
 
-	uint32_t surface_format_count;
-	std::unique_ptr<VkSurfaceFormatKHR[]> surface_formats;
+	std::vector<vk::SurfaceFormatKHR> surface_formats;
 
-	uint32_t present_mode_count;
-	std::unique_ptr<VkPresentModeKHR[]> present_modes;
+	std::vector<vk::PresentModeKHR> present_modes;
 };
 
 /**
@@ -31,80 +30,64 @@ struct DeviceQueueIndices
 	uint32_t transfer_queue_index;
 };
 
-class Device
+
+struct Device
 {
-public:
-	// TODO: Use vectors instead of pointer + count.
-	Device(
-		VkInstance vulkan_instance,
-		const char** physical_device_extensions,
-		uint32_t physical_device_extension_count,
-		const char** validation_layers,
-		uint32_t validation_layer_count,
-		VkSurfaceKHR surface
-	);
+	vk::PhysicalDevice physical_device;
+
+	vk::PhysicalDeviceProperties physical_device_properties;
+	vk::PhysicalDeviceFeatures physical_device_features;
+	vk::PhysicalDeviceMemoryProperties physical_device_memory_properties;
+
+	DeviceQueueIndices queue_indices;
+
+	vk::Device logical_device;
+
+	vk::Queue graphics_queue;
+	vk::Queue present_queue;
+	vk::Queue transfer_queue;
+
+	vk::CommandPool graphics_command_pool;
+
+	Device() = default;
 
 	Device(Device&) = delete; // Prevent copies.
-
+	
 	~Device();
 
-	operator VkDevice() const;
-	operator VkPhysicalDevice() const;
+	Device& operator = (Device&) = delete;
 
-	VkPhysicalDeviceMemoryProperties get_memory_properties() const;
-	VkPhysicalDeviceProperties get_properties() const;
-
-	DeviceQueueIndices get_queue_indices() const;
-
-	VkQueue get_graphics_queue() const;
-
-	VkQueue get_present_queue() const;
-
-	VkCommandPool get_graphics_command_pool() const;
+	static std::unique_ptr<Device> create(
+		vk::Instance instance,
+		std::span<std::string> physical_device_extensions,
+		std::span<std::string> validation_layers,
+		vk::SurfaceKHR surface
+	);
 
 	/**
 	 * @brief Queries the devices swapchain suppot for the given surface to be used with the swapchain. 
 	 * 
 	 * @param surface The surface to be used with the swapchain.
 	 */
-	static DeviceSwapChainSupportInfo query_swapchain_support(VkPhysicalDevice physical_device, VkSurfaceKHR surface);
+	static DeviceSwapChainSupportInfo query_swapchain_support(vk::PhysicalDevice physical_device, vk::SurfaceKHR surface);
 
 private:
-	VkPhysicalDevice physical_device;
-
-	VkPhysicalDeviceProperties physical_device_properties;
-	VkPhysicalDeviceFeatures physical_device_features;
-	VkPhysicalDeviceMemoryProperties physical_device_memory_properties;
-
-	DeviceQueueIndices queue_indices;
-
-	VkDevice logical_device;
-
-	VkQueue graphics_queue;
-	VkQueue present_queue;
-	VkQueue transfer_queue;
-
-	VkCommandPool graphics_command_pool;
-
-	void pick_physical_device(
-		VkInstance vulkan_instance,
-		const char** physical_device_extensions,
-		uint32_t physical_device_extension_count,
-		VkSurfaceKHR surface
+	bool pick_physical_device(
+		vk::Instance& instance,
+		std::span<std::string> physical_device_extensions,
+		vk::SurfaceKHR& surface
 	);
 
 	static bool is_physical_device_suitable(
-		VkPhysicalDevice physical_device,
-		const char** physical_device_extensions,
-		uint32_t physical_device_extension_count,
-		VkSurfaceKHR surface
+		vk::PhysicalDevice& physical_device,
+		std::span<std::string> physical_device_extensions,
+		vk::SurfaceKHR& surface
 	);
 
 	static DeviceQueueIndices find_queue_families(
-		VkPhysicalDevice physical_device,
-		VkSurfaceKHR surface
+		vk::PhysicalDevice& physical_device,
+		vk::SurfaceKHR& surface
 	);
-
 };
 
 }
