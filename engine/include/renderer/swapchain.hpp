@@ -3,8 +3,6 @@
 #include <vector>
 #include <optional>
 
-#include <vulkan/vulkan.h>
-
 #include "renderer/device.hpp"
 #include "renderer/vulkan_image.hpp"
 #include "renderer/render_pass.hpp"

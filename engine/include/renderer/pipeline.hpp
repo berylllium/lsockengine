@@ -1,9 +1,5 @@
 #pragma once
 
-#include <span>
-
-#include <vulkan/vulkan.h>
-
 #include "definitions.hpp"
 #include "renderer/command_buffer.hpp"
 #include "renderer/device.hpp"

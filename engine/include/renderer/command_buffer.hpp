@@ -2,8 +2,6 @@
 
 #include <memory>
 
-#include <vulkan/vulkan.h>
-
 #include "definitions.hpp"
 #include "renderer/device.hpp"
 
