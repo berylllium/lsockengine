@@ -7,3 +7,5 @@ build/
 docs/
 
 *.spv
+
+log.txt
