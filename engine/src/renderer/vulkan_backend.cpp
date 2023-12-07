@@ -12,6 +12,8 @@
 #include "renderer/system/texture_system.hpp"
 #include "renderer/system/shader_system.hpp"
 
+#include "node/node_tree.hpp"
+
 namespace lise
 {
 
@@ -324,6 +326,42 @@ bool vulkan_initialize(const char* application_name)
 	}
 
 	// TEMP:
+	// Node tree.
+	NodeTree node_tree;
+
+	ViewPort root_vp;
+
+	ViewPort node_2; node_2.node_name = "node_2";
+	ViewPort node_3; node_3.node_name = "node_3";
+	ViewPort node_4; node_4.node_name = "node_4";
+	ViewPort node_5; node_5.node_name = "node_5";
+	ViewPort node_6; node_6.node_name = "node_6";
+	ViewPort node_7; node_7.node_name = "node_7";
+	ViewPort node_8; node_8.node_name = "node_8";
+	ViewPort node_9; node_9.node_name = "node_9";
+	ViewPort node_10; node_10.node_name = "node_10";
+	ViewPort node_11; node_11.node_name = "node_11";
+
+	node_7.add_child(&node_8);
+	node_7.add_child(&node_9);
+
+	node_4.add_child(&node_5);
+	node_4.add_child(&node_6);
+	node_4.add_child(&node_7);
+
+	node_3.add_child(&node_4);
+	node_3.add_child(&node_10);
+
+	node_2.add_child(&node_3);
+	node_2.add_child(&node_11);
+	
+	root_vp.add_child(&node_2);
+
+	node_tree.set_root_view_port(&root_vp);
+
+	root_vp.propagate_notification_down(Node::NOTIFICATION_INIT, true);
+
+	// Car model.
 	std::optional<Obj> car_obj = Obj::load("assets/models/obj/car.obj");
 
 	if (!car_obj)
