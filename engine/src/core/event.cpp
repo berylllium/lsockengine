@@ -7,18 +7,18 @@
 namespace lise
 {
 
-typedef struct event_entry
+struct EventEntry
 {
 	uint16_t event_code;
 	std::vector<on_event_cb> listeners;
-} event_entry;
+};
 
-static std::vector<event_entry> registered_events;
+static std::vector<EventEntry> registered_events;
 static bool initialized = false;
 
 bool event_init()
 {
-	for (int i = event_codes::ON_WINDOW_CLOSE; i < event_codes::MAX_ENUM; i++)
+	for (int i = EventCodes::ON_WINDOW_CLOSE; i < EventCodes::MAX_ENUM; i++)
 	{
 		event_register(i);
 	}
@@ -37,7 +37,7 @@ void event_shutdown()
 
 void event_register(uint16_t event_code)
 {
-	event_entry entry = {};
+	EventEntry entry = {};
 	entry.event_code = event_code;
 
 	registered_events.push_back(entry);

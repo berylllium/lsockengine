@@ -12,7 +12,7 @@ namespace lise
 /**
  * @brief This enum contains all the types of engine specific events.
  */
-enum event_codes
+enum EventCodes
 {
 	/**
 	 * @brief Called when the game window should close.

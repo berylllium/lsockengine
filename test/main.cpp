@@ -18,16 +18,16 @@ void on_event(uint16_t event_code, lise::event_context ctx)
 {
 	switch (event_code)
 	{
-	case lise::event_codes::ON_KEY_DOWN:
+	case lise::EventCodes::ON_KEY_DOWN:
 		sl::log_debug("Key pressed: {}", ctx.data.u32[0]);
 	break;
-	case lise::event_codes::ON_KEY_UP:
+	case lise::EventCodes::ON_KEY_UP:
 		sl::log_debug("Key released: {}", ctx.data.u32[0]);
 	break;
-	case lise::event_codes::ON_MOUSE_MOVE:
+	case lise::EventCodes::ON_MOUSE_MOVE:
 		sl::log_debug("Mouse moved: {}, {}", ctx.data.u32[0], ctx.data.u32[1]);
 	break;
-	case lise::event_codes::ON_MOUSE_WHEEL_MOVE:
+	case lise::EventCodes::ON_MOUSE_WHEEL_MOVE:
 		sl::log_debug("Mouse wheel moved: {}", ctx.data.i8[0]);
 	break;
 	}
@@ -63,15 +63,15 @@ bool game_initialize()
 	sl::log_debug("A test message: {}", 2.72f);
 	sl::log_trace("A test message: {}", 2.72f);
 
-	lise::event_add_listener(lise::event_codes::ON_KEY_DOWN, on_event);
+	lise::event_add_listener(lise::EventCodes::ON_KEY_DOWN, on_event);
 
-	lise::event_add_listener(lise::event_codes::ON_KEY_UP, on_event);
+	lise::event_add_listener(lise::EventCodes::ON_KEY_UP, on_event);
 
 	//lise::event_add_listener(lise::event_codes::ON_MOUSE_MOVE, on_mouse_move);
 
-	lise::event_add_listener(lise::event_codes::ON_MOUSE_WHEEL_MOVE, on_event);
+	lise::event_add_listener(lise::EventCodes::ON_MOUSE_WHEEL_MOVE, on_event);
 
-	lise::event_add_listener(lise::event_codes::ON_WINDOW_RESIZE, on_window_resize);
+	lise::event_add_listener(lise::EventCodes::ON_WINDOW_RESIZE, on_window_resize);
 
 	cam_pos = (lise::vector3f) { 0.0f, 0.0f, 10.0f };
 	cam_rot = LVEC3_ZERO;
@@ -101,19 +101,19 @@ bool game_update(float delta_time)
 	}
 
 	// temp look
-	if (lise::input_is_key_down(lise::keys::LEFT))
+	if (lise::input_is_key_down(lise::Keys::LEFT))
 	{
 		camera_yaw(1.0f * delta_time);
 	}
-	if (lise::input_is_key_down(lise::keys::RIGHT))
+	if (lise::input_is_key_down(lise::Keys::RIGHT))
 	{
 		camera_yaw(-1.0f * delta_time);
 	}
-	if (lise::input_is_key_down(lise::keys::UP))
+	if (lise::input_is_key_down(lise::Keys::UP))
 	{
 		camera_pitch(1.0f * delta_time);
 	}
-	if (lise::input_is_key_down(lise::keys::DOWN))
+	if (lise::input_is_key_down(lise::Keys::DOWN))
 	{
 		camera_pitch(-1.0f * delta_time);
 	}
@@ -122,22 +122,22 @@ bool game_update(float delta_time)
 	const float move_speed = 5.0f;
 	lise::vector3f dir = LVEC3_ZERO;
 
-	if (lise::input_is_key_down(lise::keys::W))
+	if (lise::input_is_key_down(lise::Keys::W))
 	{
 		dir = dir + view.forward();
 		view_is_dirty = true;
 	}
-	if (lise::input_is_key_down(lise::keys::S))
+	if (lise::input_is_key_down(lise::Keys::S))
 	{
 		dir = dir + view.backward();
 		view_is_dirty = true;
 	}
-	if (lise::input_is_key_down(lise::keys::A))
+	if (lise::input_is_key_down(lise::Keys::A))
 	{
 		dir = dir + view.left();
 		view_is_dirty = true;
 	}
-	if (lise::input_is_key_down(lise::keys::D))
+	if (lise::input_is_key_down(lise::Keys::D))
 	{
 		dir = dir + view.right();
 		view_is_dirty = true;

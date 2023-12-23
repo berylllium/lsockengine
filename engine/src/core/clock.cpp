@@ -5,12 +5,12 @@
 namespace lise
 {
 
-void clock::reset()
+void Clock::reset()
 {
 	start_time = platform_get_absolute_time();
 }
 
-double clock::get_elapsed_time() const
+double Clock::get_elapsed_time() const
 {
 	return platform_get_absolute_time() - start_time;
 }

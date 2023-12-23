@@ -33,7 +33,7 @@
 namespace lise
 {
 
-keys translate_keycode(uint32_t x_keycode);
+Keys translate_keycode(uint32_t x_keycode);
 
 typedef struct internal_state
 {
@@ -212,7 +212,7 @@ bool platform_poll_messages()
 					code & ShiftMask ? 1 : 0
 				);
 
-				keys key = translate_keycode(key_sym);
+				Keys key = translate_keycode(key_sym);
 
 				// Pass to the input subsystem for processing.
 				input_process_keys(key, pressed);
@@ -223,26 +223,26 @@ bool platform_poll_messages()
 				// TODO: Mouse button presses and releases
 				xcb_button_press_event_t *mouse_event = (xcb_button_press_event_t *)event;
 				bool pressed = event->response_type == XCB_BUTTON_PRESS;
-				mouse_buttons mouse_button = mouse_buttons::MAX_BUTTONS;
+				MouseButtons mouse_button = MouseButtons::MAX_BUTTONS;
 
 				switch (mouse_event->detail)
 				{
 					case XCB_BUTTON_INDEX_1:
-						mouse_button = mouse_buttons::LEFT;
+						mouse_button = MouseButtons::LEFT;
 						
 						break;
 					case XCB_BUTTON_INDEX_2:
-						mouse_button = mouse_buttons::MIDDLE;
+						mouse_button = MouseButtons::MIDDLE;
 
 						break;
 					case XCB_BUTTON_INDEX_3:
-						mouse_button = mouse_buttons::RIGHT;
+						mouse_button = MouseButtons::RIGHT;
 
 						break;
 				}
 
 				// Pass over to the input subsystem.
-				if (mouse_button != mouse_buttons::MAX_BUTTONS)
+				if (mouse_button != MouseButtons::MAX_BUTTONS)
 				{
 					input_process_button(mouse_button, pressed);
 				}
@@ -264,7 +264,7 @@ bool platform_poll_messages()
 				ctx.data.u32[0] = configure_event->width;
 				ctx.data.u32[1] = configure_event->height;
 
-				event_fire(event_codes::ON_WINDOW_RESIZE, ctx);
+				event_fire(EventCodes::ON_WINDOW_RESIZE, ctx);
 			} break;
 			case XCB_CLIENT_MESSAGE:
 			{
@@ -273,7 +273,7 @@ bool platform_poll_messages()
 				// Window close
 				if (cm->data.data32[0] == state.wm_delete_win)
 				{
-					event_fire(event_codes::ON_WINDOW_CLOSE, event_context {});
+					event_fire(EventCodes::ON_WINDOW_CLOSE, event_context {});
 				}
 			} break;
 			default:
@@ -352,24 +352,24 @@ std::optional<vk::SurfaceKHR> vulkan_platform_create_vulkan_surface(vk::Instance
 }
 
 // Key translation
-keys translate_keycode(uint32_t x_keycode) {
+Keys translate_keycode(uint32_t x_keycode) {
 	switch (x_keycode) {
 		case XK_BackSpace:
-			return keys::BACKSPACE;
+			return Keys::BACKSPACE;
 		case XK_Return:
-			return keys::ENTER;
+			return Keys::ENTER;
 		case XK_Tab:
-			return keys::TAB;
+			return Keys::TAB;
 			//case XK_Shift: return keys::SHIFT;
 			//case XK_Control: return keys::CONTROL;
 
 		case XK_Pause:
-			return keys::PAUSE;
+			return Keys::PAUSE;
 		case XK_Caps_Lock:
-			return keys::CAPITAL;
+			return Keys::CAPITAL;
 
 		case XK_Escape:
-			return keys::ESCAPE;
+			return Keys::ESCAPE;
 
 			// Not supported
 			// case : return keys::CONVERT;
@@ -377,245 +377,245 @@ keys translate_keycode(uint32_t x_keycode) {
 			// case : return keys::ACCEPT;
 
 		case XK_Mode_switch:
-			return keys::MODECHANGE;
+			return Keys::MODECHANGE;
 
 		case XK_space:
-			return keys::SPACE;
+			return Keys::SPACE;
 		case XK_Prior:
-			return keys::PRIOR;
+			return Keys::PRIOR;
 		case XK_Next:
-			return keys::NEXT;
+			return Keys::NEXT;
 		case XK_End:
-			return keys::END;
+			return Keys::END;
 		case XK_Home:
-			return keys::HOME;
+			return Keys::HOME;
 		case XK_Left:
-			return keys::LEFT;
+			return Keys::LEFT;
 		case XK_Up:
-			return keys::UP;
+			return Keys::UP;
 		case XK_Right:
-			return keys::RIGHT;
+			return Keys::RIGHT;
 		case XK_Down:
-			return keys::DOWN;
+			return Keys::DOWN;
 		case XK_Select:
-			return keys::SELECT;
+			return Keys::SELECT;
 		case XK_Print:
-			return keys::PRINT;
+			return Keys::PRINT;
 		case XK_Execute:
-			return keys::EXECUTE;
+			return Keys::EXECUTE;
 		// case XK_snapshot: return keys::SNAPSHOT; // not supported
 		case XK_Insert:
-			return keys::INSERT;
+			return Keys::INSERT;
 		case XK_Delete:
-			return keys::DELETE;
+			return Keys::DELETE;
 		case XK_Help:
-			return keys::HELP;
+			return Keys::HELP;
 
 		case XK_Meta_L:
-			return keys::LWIN;  // TODO: not sure this is right
+			return Keys::LWIN;  // TODO: not sure this is right
 		case XK_Meta_R:
-			return keys::RWIN;
+			return Keys::RWIN;
 			// case XK_apps: return keys::APPS; // not supported
 
 			// case XK_sleep: return keys::SLEEP; //not supported
 
 		case XK_KP_0:
-			return keys::NUMPAD0;
+			return Keys::NUMPAD0;
 		case XK_KP_1:
-			return keys::NUMPAD1;
+			return Keys::NUMPAD1;
 		case XK_KP_2:
-			return keys::NUMPAD2;
+			return Keys::NUMPAD2;
 		case XK_KP_3:
-			return keys::NUMPAD3;
+			return Keys::NUMPAD3;
 		case XK_KP_4:
-			return keys::NUMPAD4;
+			return Keys::NUMPAD4;
 		case XK_KP_5:
-			return keys::NUMPAD5;
+			return Keys::NUMPAD5;
 		case XK_KP_6:
-			return keys::NUMPAD6;
+			return Keys::NUMPAD6;
 		case XK_KP_7:
-			return keys::NUMPAD7;
+			return Keys::NUMPAD7;
 		case XK_KP_8:
-			return keys::NUMPAD8;
+			return Keys::NUMPAD8;
 		case XK_KP_9:
-			return keys::NUMPAD9;
+			return Keys::NUMPAD9;
 		case XK_multiply:
-			return keys::MULTIPLY;
+			return Keys::MULTIPLY;
 		case XK_KP_Add:
-			return keys::ADD;
+			return Keys::ADD;
 		case XK_KP_Separator:
-			return keys::SEPARATOR;
+			return Keys::SEPARATOR;
 		case XK_KP_Subtract:
-			return keys::SUBTRACT;
+			return Keys::SUBTRACT;
 		case XK_KP_Decimal:
-			return keys::DECIMAL;
+			return Keys::DECIMAL;
 		case XK_KP_Divide:
-			return keys::DIVIDE;
+			return Keys::DIVIDE;
 		case XK_F1:
-			return keys::F1;
+			return Keys::F1;
 		case XK_F2:
-			return keys::F2;
+			return Keys::F2;
 		case XK_F3:
-			return keys::F3;
+			return Keys::F3;
 		case XK_F4:
-			return keys::F4;
+			return Keys::F4;
 		case XK_F5:
-			return keys::F5;
+			return Keys::F5;
 		case XK_F6:
-			return keys::F6;
+			return Keys::F6;
 		case XK_F7:
-			return keys::F7;
+			return Keys::F7;
 		case XK_F8:
-			return keys::F8;
+			return Keys::F8;
 		case XK_F9:
-			return keys::F9;
+			return Keys::F9;
 		case XK_F10:
-			return keys::F10;
+			return Keys::F10;
 		case XK_F11:
-			return keys::F11;
+			return Keys::F11;
 		case XK_F12:
-			return keys::F12;
+			return Keys::F12;
 		case XK_F13:
-			return keys::F13;
+			return Keys::F13;
 		case XK_F14:
-			return keys::F14;
+			return Keys::F14;
 		case XK_F15:
-			return keys::F15;
+			return Keys::F15;
 		case XK_F16:
-			return keys::F16;
+			return Keys::F16;
 		case XK_F17:
-			return keys::F17;
+			return Keys::F17;
 		case XK_F18:
-			return keys::F18;
+			return Keys::F18;
 		case XK_F19:
-			return keys::F19;
+			return Keys::F19;
 		case XK_F20:
-			return keys::F20;
+			return Keys::F20;
 		case XK_F21:
-			return keys::F21;
+			return Keys::F21;
 		case XK_F22:
-			return keys::F22;
+			return Keys::F22;
 		case XK_F23:
-			return keys::F23;
+			return Keys::F23;
 		case XK_F24:
-			return keys::F24;
+			return Keys::F24;
 
 		case XK_Num_Lock:
-			return keys::NUMLOCK;
+			return Keys::NUMLOCK;
 		case XK_Scroll_Lock:
-			return keys::SCROLL;
+			return Keys::SCROLL;
 
 		case XK_KP_Equal:
-			return keys::NUMPAD_EQUAL;
+			return Keys::NUMPAD_EQUAL;
 
 		case XK_Shift_L:
-			return keys::LSHIFT;
+			return Keys::LSHIFT;
 		case XK_Shift_R:
-			return keys::RSHIFT;
+			return Keys::RSHIFT;
 		case XK_Control_L:
-			return keys::LCONTROL;
+			return Keys::LCONTROL;
 		case XK_Control_R:
-			return keys::RCONTROL;
+			return Keys::RCONTROL;
 		// case XK_Menu: return keys::LMENU;
 		case XK_Menu:
-			return keys::RMENU;
+			return Keys::RMENU;
 
 		case XK_semicolon:
-			return keys::SEMICOLON;
+			return Keys::SEMICOLON;
 		case XK_plus:
-			return keys::PLUS;
+			return Keys::PLUS;
 		case XK_comma:
-			return keys::COMMA;
+			return Keys::COMMA;
 		case XK_minus:
-			return keys::MINUS;
+			return Keys::MINUS;
 		case XK_period:
-			return keys::PERIOD;
+			return Keys::PERIOD;
 		case XK_slash:
-			return keys::SLASH;
+			return Keys::SLASH;
 		case XK_grave:
-			return keys::GRAVE;
+			return Keys::GRAVE;
 
 		case XK_a:
 		case XK_A:
-			return keys::A;
+			return Keys::A;
 		case XK_b:
 		case XK_B:
-			return keys::B;
+			return Keys::B;
 		case XK_c:
 		case XK_C:
-			return keys::C;
+			return Keys::C;
 		case XK_d:
 		case XK_D:
-			return keys::D;
+			return Keys::D;
 		case XK_e:
 		case XK_E:
-			return keys::E;
+			return Keys::E;
 		case XK_f:
 		case XK_F:
-			return keys::F;
+			return Keys::F;
 		case XK_g:
 		case XK_G:
-			return keys::G;
+			return Keys::G;
 		case XK_h:
 		case XK_H:
-			return keys::H;
+			return Keys::H;
 		case XK_i:
 		case XK_I:
-			return keys::I;
+			return Keys::I;
 		case XK_j:
 		case XK_J:
-			return keys::J;
+			return Keys::J;
 		case XK_k:
 		case XK_K:
-			return keys::K;
+			return Keys::K;
 		case XK_l:
 		case XK_L:
-			return keys::L;
+			return Keys::L;
 		case XK_m:
 		case XK_M:
-			return keys::M;
+			return Keys::M;
 		case XK_n:
 		case XK_N:
-			return keys::N;
+			return Keys::N;
 		case XK_o:
 		case XK_O:
-			return keys::O;
+			return Keys::O;
 		case XK_p:
 		case XK_P:
-			return keys::P;
+			return Keys::P;
 		case XK_q:
 		case XK_Q:
-			return keys::Q;
+			return Keys::Q;
 		case XK_r:
 		case XK_R:
-			return keys::R;
+			return Keys::R;
 		case XK_s:
 		case XK_S:
-			return keys::S;
+			return Keys::S;
 		case XK_t:
 		case XK_T:
-			return keys::T;
+			return Keys::T;
 		case XK_u:
 		case XK_U:
-			return keys::U;
+			return Keys::U;
 		case XK_v:
 		case XK_V:
-			return keys::V;
+			return Keys::V;
 		case XK_w:
 		case XK_W:
-			return keys::W;
+			return Keys::W;
 		case XK_x:
 		case XK_X:
-			return keys::X;
+			return Keys::X;
 		case XK_y:
 		case XK_Y:
-			return keys::Y;
+			return Keys::Y;
 		case XK_z:
 		case XK_Z:
-			return keys::Z;
+			return Keys::Z;
 
 		default:
-			return keys::A;
+			return Keys::A;
 	}
 }
 

@@ -13,7 +13,7 @@ namespace lise
  * A clock can be used in many ways; to store a certain moment in time, to calculate the elapsed time since a moment in
  * time, etc.
  */
-struct clock
+struct Clock
 {
 	/**
 	 * @brief A point in time in seconds.

@@ -11,7 +11,7 @@
 namespace lise
 {
 
-struct engine_state
+struct EngineState
 {
 	bool is_initialized;
 
@@ -23,20 +23,20 @@ struct engine_state
 	int16_t width;
 	int16_t height;
 
-	clock delta_clock;
+	Clock delta_clock;
 	double delta_time;
 };
 
 void on_window_close(uint16_t event_code, event_context ctx);
 
-static engine_state app_state;
+static EngineState engine_state;
 
 bool engine_create(EngineCreateInfo app_create_info)
 {
 	sl::set_log_to_file(true);
 	sl::set_log_time(true);
 
-	if (app_state.is_initialized)
+	if (engine_state.is_initialized)
 	{
 		sl::log_error("'engine_create' has been called more than once.");
 		return false;
@@ -44,16 +44,16 @@ bool engine_create(EngineCreateInfo app_create_info)
 
 	sl::log_info("Creating the engine / starting the engine...");
 
-	app_state.entry_points = app_create_info.entry_points;
+	engine_state.entry_points = app_create_info.entry_points;
 
-	app_state.width = app_create_info.window_width;
-	app_state.height = app_create_info.window_height;
+	engine_state.width = app_create_info.window_width;
+	engine_state.height = app_create_info.window_height;
 
 	// Initialize subsystems
 	event_init();
 	
-	app_state.is_running = true;
-	app_state.is_suspended = false;
+	engine_state.is_running = true;
+	engine_state.is_suspended = false;
 
 	if (!platform_init(
 		app_create_info.window_name,
@@ -67,7 +67,7 @@ bool engine_create(EngineCreateInfo app_create_info)
 		return false;
 	}
 
-	app_state.delta_clock.reset();
+	engine_state.delta_clock.reset();
 
 	if (!renderer_initialize(app_create_info.window_name))
 	{
@@ -76,16 +76,16 @@ bool engine_create(EngineCreateInfo app_create_info)
 	}
 
 	// Run consumer initialization function
-	if (!app_state.entry_points.initialize())
+	if (!engine_state.entry_points.initialize())
 	{
 		sl::log_fatal("Consumer failed to initialize");
 		return false;
 	}
 
 	// Register events
-	event_add_listener(event_codes::ON_WINDOW_CLOSE, on_window_close);
+	event_add_listener(EventCodes::ON_WINDOW_CLOSE, on_window_close);
 
-	app_state.is_initialized = true;
+	engine_state.is_initialized = true;
 
 	sl::log_info("Successfully created the engine / engine.");
 
@@ -96,38 +96,38 @@ bool engine_run()
 {
 	sl::log_info("Starting the engine.");
 
-	while (app_state.is_running)
+	while (engine_state.is_running)
 	{
 		// Calculate delta time.
-		app_state.delta_time = app_state.delta_clock.get_elapsed_time();
-		app_state.delta_clock.reset();
+		engine_state.delta_time = engine_state.delta_clock.get_elapsed_time();
+		engine_state.delta_clock.reset();
 
 		if (!platform_poll_messages())
 		{
 			sl::log_fatal("Failed to poll platform messages");
-			app_state.is_running = false;
+			engine_state.is_running = false;
 		}
 		
-		if (!app_state.is_suspended)
+		if (!engine_state.is_suspended)
 		{
-			if (!app_state.entry_points.update(app_state.delta_time))
+			if (!engine_state.entry_points.update(engine_state.delta_time))
 			{
 				sl::log_fatal("Consumer game update failed.");
-				app_state.is_running = false;
+				engine_state.is_running = false;
 				break;
 			}
 
-			if (!app_state.entry_points.render(app_state.delta_time))
+			if (!engine_state.entry_points.render(engine_state.delta_time))
 			{
 				sl::log_fatal("Consumer game render failed.");
-				app_state.is_running = false;
+				engine_state.is_running = false;
 				break;
 			}
 
-			if (!renderer_draw_frame(app_state.delta_time))
+			if (!renderer_draw_frame(engine_state.delta_time))
 			{
 				sl::log_fatal("Failed to draw the next frame.");
-				app_state.is_running = false;
+				engine_state.is_running = false;
 				break;
 			}
 
@@ -135,7 +135,7 @@ bool engine_run()
 		}
 	}
 
-	app_state.is_running = false;
+	engine_state.is_running = false;
 
 	// Perform shutdown code
 	sl::log_info("Shutting down the engine...");
@@ -153,7 +153,7 @@ bool engine_run()
 
 void on_window_close(uint16_t event_code, event_context ctx)
 {
-	app_state.is_running = false;
+	engine_state.is_running = false;
 }
 
 }

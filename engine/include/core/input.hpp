@@ -14,7 +14,7 @@ namespace lise
 /**
  * @brief An enum of all the supported mouse buttons.
  */
-enum class mouse_buttons
+enum class MouseButtons
 {
 	LEFT, RIGHT, MIDDLE,
 
@@ -24,7 +24,7 @@ enum class mouse_buttons
 /**
  * @brief An enum of all the supported keys.
  */
-enum class keys {
+enum class Keys {
 	BACKSPACE = 0x08,
 	ENTER = 0x0D,
 	TAB = 0x09,
@@ -169,7 +169,7 @@ void input_update();
  * @return true if the key is down.
  * @return false if the key is up
  */
-LAPI bool input_is_key_down(keys key);
+LAPI bool input_is_key_down(Keys key);
 
 /**
  * @brief Returns whether a key is up.
@@ -178,7 +178,7 @@ LAPI bool input_is_key_down(keys key);
  * @return true if the key is up.
  * @return false if the key is down.
  */
-LAPI bool input_is_key_up(keys key);
+LAPI bool input_is_key_up(Keys key);
 
 /**
  * @brief Returns whether a key was down the last frame.
@@ -187,7 +187,7 @@ LAPI bool input_is_key_up(keys key);
  * @return true if the key was down.
  * @return false if the key was up.
  */
-LAPI bool input_was_key_down(keys key);
+LAPI bool input_was_key_down(Keys key);
 
 /**
  * @brief Returns whether a key was up the last frame.
@@ -196,7 +196,7 @@ LAPI bool input_was_key_down(keys key);
  * @return true if the key was up
  * @return false if the key was down.
  */
-LAPI bool input_was_key_up(keys key);
+LAPI bool input_was_key_up(Keys key);
 
 /**
  * @brief Processes input from the platform backend.
@@ -206,7 +206,7 @@ LAPI bool input_was_key_up(keys key);
  * @param key The key to process.
  * @param down Whether the key is up or down.
  */
-void input_process_keys(keys key, bool down);
+void input_process_keys(Keys key, bool down);
 
 // Mouse input
 
@@ -217,7 +217,7 @@ void input_process_keys(keys key, bool down);
  * @return true if the mouse button is down.
  * @return false if the mouse button is up.
  */
-LAPI bool input_is_mouse_button_down(mouse_buttons button);
+LAPI bool input_is_mouse_button_down(MouseButtons button);
 
 /**
  * @brief Checks whether the given mouse button is up.
@@ -226,7 +226,7 @@ LAPI bool input_is_mouse_button_down(mouse_buttons button);
  * @return true if the mouse button is up.
  * @return false if the mouse button is down.
  */
-LAPI bool input_is_mouse_button_up(mouse_buttons button);
+LAPI bool input_is_mouse_button_up(MouseButtons button);
 
 /**
  * @brief Checks whether the given mouse button was down in the last frame.
@@ -235,7 +235,7 @@ LAPI bool input_is_mouse_button_up(mouse_buttons button);
  * @return true the mouse button was down in the last frame.
  * @return false the mouse button was up in the last frame.
  */
-LAPI bool input_was_mouse_button_down(mouse_buttons button);
+LAPI bool input_was_mouse_button_down(MouseButtons button);
 
 /**
  * @brief Checks whether the given mouse button was up in the last frame.
@@ -244,7 +244,7 @@ LAPI bool input_was_mouse_button_down(mouse_buttons button);
  * @return true the mouse button was up in the last frame.
  * @return false the mouse button was down in the last frame.
  */
-LAPI bool input_was_mouse_button_up(mouse_buttons button);
+LAPI bool input_was_mouse_button_up(MouseButtons button);
 
 /**
  * @brief Returns the coordinates of the mouse on the screen in pixels.
@@ -260,7 +260,7 @@ LAPI vector2i input_get_mouse_position();
  */
 LAPI vector2i input_get_previous_mouse_position();
 
-void input_process_button(mouse_buttons button, bool down);
+void input_process_button(MouseButtons button, bool down);
 void input_process_mouse_move(vector2i pos);
 void input_process_mouse_wheel(int8_t dz);
 

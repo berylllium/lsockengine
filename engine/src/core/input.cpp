@@ -8,12 +8,12 @@ namespace lise
 struct mouse_state
 {
 	vector2i pos;
-	bool buttons[static_cast<int>(mouse_buttons::MAX_BUTTONS)];
+	bool buttons[static_cast<int>(MouseButtons::MAX_BUTTONS)];
 };
 
 struct keyboard_state
 {
-	bool keys_pressed[static_cast<int>(keys::MAX_KEYS)];
+	bool keys_pressed[static_cast<int>(Keys::MAX_KEYS)];
 };
 
 static mouse_state mouse_current;
@@ -28,7 +28,7 @@ void input_update()
 	keyboard_previous = keyboard_current;
 }
 
-void input_process_keys(keys key, bool down)
+void input_process_keys(Keys key, bool down)
 {
 	// Fire event if the state has changed
 	if (keyboard_current.keys_pressed[static_cast<int>(key)] != down)
@@ -37,11 +37,11 @@ void input_process_keys(keys key, bool down)
 
 		event_context ctx = {};
 		ctx.data.u32[0] = static_cast<uint32_t>(key);
-		event_fire(down ? event_codes::ON_KEY_DOWN : event_codes::ON_KEY_UP, ctx);
+		event_fire(down ? EventCodes::ON_KEY_DOWN : EventCodes::ON_KEY_UP, ctx);
 	}
 }
 
-void input_process_button(mouse_buttons button, bool down)
+void input_process_button(MouseButtons button, bool down)
 {
 	// Fire event if the state has changed
 	if (mouse_current.buttons[static_cast<int>(button)] != down)
@@ -51,7 +51,7 @@ void input_process_button(mouse_buttons button, bool down)
 		// Fire event
 		event_context ctx = {};
 		ctx.data.u16[0] = static_cast<uint16_t>(button);
-		event_fire(down ? event_codes::ON_MOUSE_BUTTON_DOWN : event_codes::ON_MOUSE_BUTTON_UP, ctx);
+		event_fire(down ? EventCodes::ON_MOUSE_BUTTON_DOWN : EventCodes::ON_MOUSE_BUTTON_UP, ctx);
 	}
 }
 
@@ -65,7 +65,7 @@ void input_process_mouse_move(vector2i pos)
 		event_context ctx = {};
 		ctx.data.i32[0] = pos.x;
 		ctx.data.i32[1] = pos.y;
-		event_fire(event_codes::ON_MOUSE_MOVE, ctx);
+		event_fire(EventCodes::ON_MOUSE_MOVE, ctx);
 	}
 }
 
@@ -76,47 +76,47 @@ void input_process_mouse_wheel(int8_t dz)
 	// Fire event
 	event_context ctx = {};
 	ctx.data.i8[0] = dz;
-	event_fire(event_codes::ON_MOUSE_WHEEL_MOVE, ctx);
+	event_fire(EventCodes::ON_MOUSE_WHEEL_MOVE, ctx);
 }
 
 // Exported getters
 
-bool input_is_key_down(keys key)
+bool input_is_key_down(Keys key)
 {
 	return keyboard_current.keys_pressed[static_cast<uint32_t>(key)];
 }
 
-bool input_is_key_up(keys key)
+bool input_is_key_up(Keys key)
 {
 	return !keyboard_current.keys_pressed[static_cast<uint32_t>(key)];
 }
 
-bool input_was_key_down(keys key)
+bool input_was_key_down(Keys key)
 {
 	return keyboard_previous.keys_pressed[static_cast<uint32_t>(key)];
 }
 
-bool input_was_key_up(keys key)
+bool input_was_key_up(Keys key)
 {
 	return !keyboard_previous.keys_pressed[static_cast<uint32_t>(key)];
 }
 
-bool input_is_mouse_button_down(mouse_buttons button)
+bool input_is_mouse_button_down(MouseButtons button)
 {
 	return mouse_current.buttons[static_cast<uint16_t>(button)];
 }
 
-bool input_is_mouse_button_up(mouse_buttons button)
+bool input_is_mouse_button_up(MouseButtons button)
 {
 	return !mouse_current.buttons[static_cast<uint16_t>(button)];
 }
 
-bool input_was_mouse_button_down(mouse_buttons button)
+bool input_was_mouse_button_down(MouseButtons button)
 {
 	return mouse_previous.buttons[static_cast<uint16_t>(button)];
 }
 
-bool input_was_mouse_button_up(mouse_buttons button)
+bool input_was_mouse_button_up(MouseButtons button)
 {
 	return !mouse_previous.buttons[static_cast<uint16_t>(button)];
 }
