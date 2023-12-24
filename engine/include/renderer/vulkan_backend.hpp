@@ -19,6 +19,10 @@ void vulkan_shutdown();
 
 bool vulkan_begin_frame(float delta_time);
 
+
+
+
+
 bool vulkan_end_frame(float delta_time);
 
 vector2ui vulkan_get_framebuffer_size();

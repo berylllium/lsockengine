@@ -10,9 +10,12 @@ set(LISE_SOURCES
 	math/mat4x4.cpp
 	math/math.cpp
 	math/transform.cpp
+	node/mesh_renderer3d.cpp
 	node/node_tree.cpp
 	node/node.cpp
+	node/node3d.cpp
 	node/view_port.cpp
+	node/visual_node3d.cpp
 	platform/platform_linux.cpp
 	platform/platform_win32.cpp
 	renderer/resource/mesh.cpp

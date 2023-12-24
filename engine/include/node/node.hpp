@@ -25,12 +25,20 @@ struct Node
     // Notifications.
     enum
     {
+        // Node
         NOTIFICATION_TREE_CHANGED,
         NOTIFICATION_ENTER_TREE,
         NOTIFICATION_LEFT_TREE,
         NOTIFICATION_INIT,
         NOTIFICATION_PROCESS,
-        NOTIFICATION_PHYSICS_PROCESS
+        NOTIFICATION_POST_PROCESS,
+        NOTIFICATION_PHYSICS_PROCESS,
+
+        // Node3D
+        NOTIFICATION_TRANSFORM_DIRTIED,
+
+        // VisualNode3D
+        NOTIFICATION_DRAW
     };
 
     virtual void _notification(int n);
@@ -42,6 +50,9 @@ struct Node
     virtual void _init() {};
 
     virtual void _enter_tree() {}
+
+    virtual void _process() {}
+    virtual void _post_process() {}
 };
 
 }

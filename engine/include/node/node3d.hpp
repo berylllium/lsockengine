@@ -1,17 +1,14 @@
 #pragma once
 
-#include <vector>
-
-#include "definitions.hpp"
 #include "math/mat4x4.hpp"
+#include "node/node.hpp"
 
 namespace lise
 {
 
-struct Transform
+struct Node3D : public Node
 {
-	void update(const Transform* parent);
-
+    // Transform.
 	void set_scale(vector3f new_scale);
 	void set_scale(float new_x, float new_y, float new_z);
 
@@ -21,15 +18,22 @@ struct Transform
 	void set_position(vector3f new_pos);
 	void set_position(float new_x, float new_y, float new_z);
 
-	const vector3f& get_scale() const;
-	const vector3f& get_rotation() const;
-	const vector3f& get_position() const;
+	const vector3f& get_scale();
+	const vector3f& get_rotation();
+	const vector3f& get_position();
 
-	const mat4x4& get_transformation_matrix() const;
+	const mat4x4& get_transformation_matrix();
 
-	void recalculate_transformation_matrix(const Transform* parent);
+	void recalculate_transformation_matrix();
 
-	bool _dirty = true;
+    void _set_transform_dirty();
+
+    // Notification.
+
+    virtual void _notification(int n) override;
+
+    // Transform.
+	bool _transform_dirty = true;
 
 	vector3f _scale = LVEC3_ONE;
 	vector3f _rotation = LVEC3_ZERO;
